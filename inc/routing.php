@@ -115,13 +115,20 @@ add_filter('woocommerce_get_checkout_page_id', 'polyglot_wc_page_id');
 
 function polyglot_wc_page_id(int $page_id): int
 {
-    global $wpdb;
+    static $cache = [];
 
     if (polyglot_is_master()) {
         return $page_id;
     }
 
     $locale = polyglot_get_current_locale();
+    $key = "{$page_id}|{$locale}";
+
+    if (isset($cache[$key])) {
+        return $cache[$key];
+    }
+
+    global $wpdb;
     $shadow_id = $wpdb->get_var($wpdb->prepare(
         "SELECT pm1.post_id FROM $wpdb->postmeta pm1
          JOIN $wpdb->postmeta pm2 ON pm1.post_id = pm2.post_id AND pm2.meta_key = '_locale'
@@ -131,7 +138,7 @@ function polyglot_wc_page_id(int $page_id): int
         $locale
     ));
 
-    return $shadow_id ? (int) $shadow_id : $page_id;
+    return $cache[$key] = $shadow_id ? (int) $shadow_id : $page_id;
 }
 
 // ============================================================

@@ -26,6 +26,33 @@ class VirtualReviewsTest extends WP_UnitTestCase
         update_post_meta($this->shadow_id, '_locale', 'en_IE');
     }
 
+    public function testReviewCountEqualsRatingCountsSum(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        // Create two approved reviews with ratings on the master product
+        $c1 = self::factory()->comment->create([
+            'comment_post_ID' => $this->master_id,
+            'comment_approved' => 1,
+            'comment_type' => 'review',
+        ]);
+        update_comment_meta($c1, 'rating', 5);
+        update_comment_meta($c1, '_source_locale', 'fr_FR');
+
+        $c2 = self::factory()->comment->create([
+            'comment_post_ID' => $this->master_id,
+            'comment_approved' => 1,
+            'comment_type' => 'review',
+        ]);
+        update_comment_meta($c2, 'rating', 3);
+        update_comment_meta($c2, '_source_locale', 'fr_FR');
+
+        $counts = polyglot_locale_rating_counts($this->master_id);
+        $review_count = polyglot_count_locale_reviews($this->master_id);
+
+        $this->assertSame(array_sum($counts), $review_count);
+    }
+
     public function testReviewSubmissionRedirectsToMaster(): void
     {
         $commentdata = [

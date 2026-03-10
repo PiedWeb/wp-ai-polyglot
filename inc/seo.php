@@ -11,6 +11,23 @@
  */
 function polyglot_get_locale_paths(): array
 {
+    // Build a context key for memoization
+    static $cache = [];
+
+    if (is_front_page()) {
+        $context = 'front';
+    } elseif (is_singular()) {
+        $context = 'post_'.get_queried_object_id();
+    } elseif (is_category() || is_tag() || is_tax()) {
+        $context = 'term_'.get_queried_object_id();
+    } else {
+        $context = 'none';
+    }
+
+    if (isset($cache[$context])) {
+        return $cache[$context];
+    }
+
     $paths = [];
 
     // --- HOMEPAGE ---
@@ -19,7 +36,7 @@ function polyglot_get_locale_paths(): array
             $paths[$authority] = '/';
         }
 
-        return $paths;
+        return $cache[$context] = $paths;
     }
 
     // --- SINGLE POSTS / PAGES / PRODUCTS ---
@@ -51,7 +68,7 @@ function polyglot_get_locale_paths(): array
             }
         }
 
-        return $paths;
+        return $cache[$context] = $paths;
     }
 
     // --- CATEGORIES / TAGS ---
@@ -91,10 +108,10 @@ function polyglot_get_locale_paths(): array
             }
         }
 
-        return $paths;
+        return $cache[$context] = $paths;
     }
 
-    return [];
+    return $cache[$context] = [];
 }
 
 add_action('wp_head', 'polyglot_inject_hreflang');

@@ -111,6 +111,13 @@ function polyglot_get_post_types(): array
 
 function polyglot_find_shadow_id(int $master_id, string $locale): ?int
 {
+    static $cache = [];
+    $key = "{$master_id}|{$locale}";
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
     global $wpdb;
     $id = $wpdb->get_var($wpdb->prepare(
         "SELECT pm1.post_id FROM $wpdb->postmeta pm1
@@ -121,7 +128,41 @@ function polyglot_find_shadow_id(int $master_id, string $locale): ?int
         $locale
     ));
 
-    return $id ? (int) $id : null;
+    return $cache[$key] = $id ? (int) $id : null;
+}
+
+/**
+ * Batch lookup: find shadow IDs for multiple master IDs in one query.
+ *
+ * @param int[] $master_ids
+ *
+ * @return array<int, int> Map of master_id => shadow_id
+ */
+function polyglot_find_shadow_ids(array $master_ids, string $locale): array
+{
+    if (empty($master_ids)) {
+        return [];
+    }
+
+    global $wpdb;
+    $placeholders = implode(',', array_fill(0, count($master_ids), '%d'));
+    $params = array_merge($master_ids, [$locale]);
+
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT pm1.meta_value AS master_id, pm1.post_id
+         FROM $wpdb->postmeta pm1
+         JOIN $wpdb->postmeta pm2 ON pm1.post_id = pm2.post_id AND pm2.meta_key = '_locale'
+         WHERE pm1.meta_key = '_master_id' AND pm1.meta_value IN ($placeholders)
+         AND pm2.meta_value = %s",
+        ...$params
+    ));
+
+    $map = [];
+    foreach ($rows as $row) {
+        $map[(int) $row->master_id] = (int) $row->post_id;
+    }
+
+    return $map;
 }
 
 // ============================================================

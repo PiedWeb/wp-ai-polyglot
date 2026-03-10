@@ -184,14 +184,9 @@ function polyglot_virtual_related_products(array $related_ids, int $product_id, 
     $master_related = wc_get_related_products($master_id, $args['limit'] ?? 4);
     add_filter('woocommerce_related_products', 'polyglot_virtual_related_products', 10, 3);
 
-    // Map each master related ID to its shadow for current locale
-    $shadow_ids = [];
-    foreach ($master_related as $related_master_id) {
-        $shadow = polyglot_find_shadow_id((int) $related_master_id, $locale);
-        if ($shadow) {
-            $shadow_ids[] = $shadow;
-        }
-    }
+    // Map each master related ID to its shadow for current locale (single batch query)
+    $shadow_map = polyglot_find_shadow_ids(array_map('intval', $master_related), $locale);
+    $shadow_ids = array_values($shadow_map);
 
     return $shadow_ids ?: $related_ids;
 }

@@ -6,10 +6,16 @@
 
 function polyglot_cookie_translations(): array
 {
+    static $cache = null;
+
+    if (null !== $cache) {
+        return $cache;
+    }
+
     $hreflang = polyglot_get_current_entry()['hreflang'] ?? '';
     $translations = apply_filters('polyglot_cookie_translations', []);
 
-    return $translations[$hreflang] ?? [];
+    return $cache = $translations[$hreflang] ?? [];
 }
 
 // Filter cookie bar HTML
@@ -41,6 +47,10 @@ function polyglot_cookie_modal_ob_start(): void
         return;
     }
 
+    if (empty(polyglot_cookie_translations())) {
+        return;
+    }
+
     ob_start();
 }
 
@@ -50,12 +60,13 @@ function polyglot_cookie_modal_ob_end(): void
         return;
     }
 
-    $html = ob_get_clean();
     $map = polyglot_cookie_translations();
-    if (! empty($map)) {
-        $html = str_replace(array_keys($map), array_values($map), $html);
+    if (empty($map)) {
+        return;
     }
-    echo $html;
+
+    $html = ob_get_clean();
+    echo str_replace(array_keys($map), array_values($map), $html);
 }
 
 // ============================================================
@@ -90,20 +101,18 @@ function polyglot_enqueue_bar_assets(): void
         return;
     }
 
-    $dir = POLYGLOT_PLUGIN_DIR.'assets/';
-
     wp_enqueue_style(
         'polyglot-bar',
         plugins_url('assets/polyglot-bar.css', POLYGLOT_PLUGIN_FILE),
         [],
-        filemtime($dir.'polyglot-bar.css')
+        POLYGLOT_VERSION
     );
 
     wp_enqueue_script(
         'polyglot-bar',
         plugins_url('assets/polyglot-bar.js', POLYGLOT_PLUGIN_FILE),
         [],
-        filemtime($dir.'polyglot-bar.js'),
+        POLYGLOT_VERSION,
         true
     );
 }

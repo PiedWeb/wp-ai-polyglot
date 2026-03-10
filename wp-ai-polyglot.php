@@ -43,6 +43,7 @@ if (is_multisite()) {
     return;
 }
 
+define('POLYGLOT_VERSION', '2.0.0');
 define('POLYGLOT_PLUGIN_FILE', __FILE__);
 define('POLYGLOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('POLYGLOT_WC_SLUGS_OPTION', 'polyglot_wc_slugs');

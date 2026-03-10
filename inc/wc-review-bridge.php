@@ -18,25 +18,7 @@ function polyglot_virtual_review_count($value, $product)
 
 function polyglot_count_locale_reviews($post_id)
 {
-    global $wpdb;
-    $locale = polyglot_get_current_locale();
-
-    return (int) $wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(*) FROM {$wpdb->comments} c
-         LEFT JOIN {$wpdb->commentmeta} pcm_source ON (c.comment_ID = pcm_source.comment_id AND pcm_source.meta_key = '_source_locale')
-         LEFT JOIN {$wpdb->commentmeta} pcm_master ON (c.comment_ID = pcm_master.comment_id AND pcm_master.meta_key = '_master_comment_id')
-         LEFT JOIN {$wpdb->commentmeta} pcm_locale ON (c.comment_ID = pcm_locale.comment_id AND pcm_locale.meta_key = '_locale')
-         WHERE c.comment_post_ID = %d
-           AND c.comment_approved = '1'
-           AND c.comment_type IN ('review', '')
-           AND (
-               (pcm_source.meta_value = %s AND pcm_master.comment_id IS NULL)
-               OR (pcm_locale.meta_value = %s AND pcm_master.comment_id IS NOT NULL)
-           )",
-        $post_id,
-        $locale,
-        $locale
-    ));
+    return array_sum(polyglot_locale_rating_counts($post_id));
 }
 
 function polyglot_virtual_average_rating($value, $product)
@@ -68,8 +50,15 @@ function polyglot_virtual_rating_counts($value, $product)
 
 function polyglot_locale_rating_counts($post_id)
 {
-    global $wpdb;
+    static $cache = [];
     $locale = polyglot_get_current_locale();
+    $key = "{$post_id}|{$locale}";
+
+    if (isset($cache[$key])) {
+        return $cache[$key];
+    }
+
+    global $wpdb;
 
     $rows = $wpdb->get_results($wpdb->prepare(
         "SELECT cm_rating.meta_value AS rating, COUNT(*) AS cnt
@@ -96,7 +85,7 @@ function polyglot_locale_rating_counts($post_id)
         $counts[(int) $row->rating] = (int) $row->cnt;
     }
 
-    return $counts;
+    return $cache[$key] = $counts;
 }
 
 add_filter('preprocess_comment', 'polyglot_redirect_review_submission');
