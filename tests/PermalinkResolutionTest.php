@@ -379,4 +379,103 @@ class PermalinkResolutionTest extends WP_UnitTestCase
 
         $this->assertStringEndsWith('/my-blog/', $link);
     }
+
+    // ================================================================
+    // Canonical URL tests
+    // ================================================================
+
+    public function testCanonicalUrlForMasterPageWithCustomPermalink(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        $canonical = wp_get_canonical_url($this->child_page);
+        $path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+
+        $this->assertSame('blog', $path);
+    }
+
+    public function testCanonicalUrlForMasterChildPageWithoutCustomPermalink(): void
+    {
+        // Create a child page with parent but no custom_permalink
+        $child_no_cp = self::factory()->post->create([
+            'post_type' => 'page',
+            'post_title' => 'FAQ',
+            'post_name' => 'faq',
+            'post_parent' => $this->parent_page,
+            'post_status' => 'publish',
+        ]);
+
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        $canonical = wp_get_canonical_url($child_no_cp);
+        $path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+
+        // Should be flat /faq/, not hierarchical /accueil/faq/
+        $this->assertSame('faq', $path);
+    }
+
+    public function testCanonicalUrlForShadowPage(): void
+    {
+        update_post_meta($this->child_shadow_en, 'custom_permalink', 'blog');
+
+        $_SERVER['HTTP_HOST'] = 'en.test';
+
+        $canonical = wp_get_canonical_url($this->child_shadow_en);
+        $path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+
+        $this->assertSame('blog', $path);
+    }
+
+    public function testCanonicalUrlForProduct(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        $canonical = wp_get_canonical_url($this->product);
+        $path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+
+        // Product should have flat URL
+        $this->assertSame('origin', $path);
+    }
+
+    public function testFrontPagePermalinkIsRoot(): void
+    {
+        update_option('show_on_front', 'page');
+        update_option('page_on_front', $this->parent_page);
+        update_post_meta($this->parent_page, 'custom_permalink', 'accueil');
+
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        $link = get_permalink($this->parent_page);
+        $path = trim(parse_url($link, PHP_URL_PATH), '/');
+
+        // Front page should be "/" not "/accueil/"
+        $this->assertSame('', $path);
+    }
+
+    public function testShadowFrontPagePermalinkIsRoot(): void
+    {
+        // EN shadow of the front page
+        $GLOBALS['polyglot_pending_locale'] = 'en_IE';
+        $shadow_home = self::factory()->post->create([
+            'post_type' => 'page',
+            'post_title' => 'Home EN',
+            'post_name' => 'home',
+            'post_status' => 'publish',
+        ]);
+        unset($GLOBALS['polyglot_pending_locale']);
+        update_post_meta($shadow_home, '_master_id', $this->parent_page);
+        update_post_meta($shadow_home, '_locale', 'en_IE');
+        update_post_meta($shadow_home, 'custom_permalink', 'home');
+
+        update_option('show_on_front', 'page');
+        update_option('page_on_front', $this->parent_page);
+
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        // Even when called from master domain, shadow front page should return /
+        $link = get_permalink($shadow_home);
+        $path = trim(parse_url($link, PHP_URL_PATH), '/');
+
+        $this->assertSame('', $path);
+    }
 }

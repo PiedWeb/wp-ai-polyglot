@@ -80,6 +80,32 @@ add_filter('pre_wp_unique_post_slug', function ($override, $slug, $post_id, $pos
 // ============================================================
 
 /**
+ * Check whether a post ID is the static front page or a shadow of it.
+ *
+ * Reads the real (unswapped) page_on_front so this works cross-domain
+ * (e.g. when the FR master sitemap generates hreflang for the EN shadow homepage).
+ */
+function polyglot_is_front_page(int $post_id): bool
+{
+    // Read the real (unswapped) page_on_front option
+    remove_filter('pre_option_page_on_front', 'polyglot_swap_static_page');
+    $master_front_id = (int) get_option('page_on_front');
+    add_filter('pre_option_page_on_front', 'polyglot_swap_static_page');
+
+    if (!$master_front_id) {
+        return false;
+    }
+
+    // Direct match (master front page or swapped front page on shadow domain)
+    if ($post_id === $master_front_id) {
+        return true;
+    }
+
+    // Shadow of the front page
+    return (int) get_post_meta($post_id, '_master_id', true) === $master_front_id;
+}
+
+/**
  * Resolve a slug to a post ID based on locale and post type.
  *
  * On master domain: finds the post with no _master_id (i.e. the master post),
@@ -234,9 +260,20 @@ add_filter('post_type_link', function ($link, $post) {
  * Flat page URLs: use custom_permalink meta when set (all domains).
  */
 add_filter('page_link', function ($link, $post_id) {
+    // Don't override the static front page or its shadows — homepage is always /
+    if ('page' === get_option('show_on_front') && polyglot_is_front_page((int) $post_id)) {
+        return home_url('/');
+    }
+
     $cp = get_post_meta($post_id, 'custom_permalink', true);
     if ($cp) {
         return home_url('/'.trim($cp, '/').'/');
+    }
+
+    // Flatten hierarchical URLs for child pages (polyglot resolves all pages by flat slug)
+    $post = get_post($post_id);
+    if ($post && $post->post_parent) {
+        return home_url('/'.$post->post_name.'/');
     }
 
     return $link;
@@ -258,6 +295,11 @@ add_action('template_redirect', function () {
         return;
     }
 
+    // Never redirect the static front page — it's served at /
+    if ('page' === get_option('show_on_front') && polyglot_is_front_page($post->ID)) {
+        return;
+    }
+
     $cp = get_post_meta($post->ID, 'custom_permalink', true);
     $request = trim(parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
 
@@ -274,6 +316,32 @@ add_action('template_redirect', function () {
         }
     }
 }, 5);
+
+/**
+ * Prevent WordPress redirect_canonical() from redirecting polyglot-resolved flat URLs
+ * to hierarchical ones (e.g. /faq/ → /accueil/faq/).
+ */
+add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
+    if (!is_singular()) {
+        return $redirect_url;
+    }
+
+    $post = get_queried_object();
+    if (!$post || !in_array($post->post_type, polyglot_get_post_types(), true)) {
+        return $redirect_url;
+    }
+
+    // If the requested path matches the polyglot-generated permalink, no redirect needed
+    $canonical = get_permalink($post->ID);
+    $requested_path = trim(parse_url($requested_url, PHP_URL_PATH), '/');
+    $canonical_path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+
+    if ($requested_path === $canonical_path) {
+        return false;
+    }
+
+    return $redirect_url;
+}, 10, 2);
 
 /**
  * Add rewrite rules for ALL locale product/category/tag bases so incoming URLs resolve
