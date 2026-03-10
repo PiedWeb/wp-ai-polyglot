@@ -21,6 +21,12 @@ set -ex
 
 if [ "$WP_VERSION" = "latest" ]; then
     WP_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | grep -o '"version":"[^"]*"' | head -1 | cut -d'"' -f4)
+else
+    # Resolve minor version (e.g. 6.7) to latest patch (e.g. 6.7.2)
+    RESOLVED=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | grep -o '"version":"'"${WP_VERSION}"'\.[^"]*"' | head -1 | cut -d'"' -f4)
+    if [ -n "$RESOLVED" ]; then
+        WP_VERSION="$RESOLVED"
+    fi
 fi
 
 # Set up WP test suite (download via GitHub tarball — no svn required)
