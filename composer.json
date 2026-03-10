@@ -1,0 +1,31 @@
+{
+    "name": "piedweb/wp-ai-polyglot",
+    "description": "Master/Shadow i18n architecture for WordPress + WooCommerce",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "homepage": "https://wap.piedweb.com",
+    "authors": [
+        {
+            "name": "Robin",
+            "homepage": "https://en.piedweb.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/PiedWeb/wp-ai-polyglot/issues",
+        "source": "https://github.com/PiedWeb/wp-ai-polyglot"
+    },
+    "require": {
+        "php": ">=8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "yoast/phpunit-polyfills": "^2.0"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:filter": "phpunit --filter"
+    },
+    "config": {
+        "allow-plugins": {}
+    }
+}
