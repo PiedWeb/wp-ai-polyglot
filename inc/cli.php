@@ -1111,6 +1111,559 @@ class Polyglot_CLI
 
         WP_CLI::success("WC slugs for '$target_locale' saved: ".json_encode($slugs, \JSON_UNESCAPED_UNICODE));
     }
+    /**
+     * Check post content for mislocalized internal links and localhost URLs.
+     *
+     * Scans href attributes, Gutenberg mediaLink JSON, and any localhost
+     * URLs embedded in content (excluding wp-content/ image paths).
+     *
+     * ## USAGE
+     *
+     *   wp polyglot check-links [--locale=<locale>] [--fix] [--rendered]
+     *
+     * ## OPTIONS
+     *
+     * [--locale=<locale>]
+     * : Limit to one shadow locale (default: all shadows + master).
+     *
+     * [--fix]
+     * : Replace wrong slugs/domains in post_content and save.
+     *
+     * [--rendered]
+     * : Scan rendered HTML via HTTP instead of post_content. Report-only, no --fix.
+     */
+    public function check_links($args, $assoc_args)
+    {
+        $filter_locale = $assoc_args['locale'] ?? null;
+        $fix = ! empty($assoc_args['fix']);
+        $rendered = ! empty($assoc_args['rendered']);
+        if ($rendered && $fix) {
+            WP_CLI::error('--fix cannot be used with --rendered.');
+        }
+        global $wpdb;
+
+        $post_types = polyglot_get_post_types();
+
+        // 1. Build authority maps from POLYGLOT_LOCALES
+        $known_authorities = [];       // authority → locale
+        $master_authority = null;
+        $locale_to_authority = [];
+        foreach (POLYGLOT_LOCALES as $authority => $cfg) {
+            $known_authorities[$authority] = $cfg['locale'];
+            $locale_to_authority[$cfg['locale']] = $authority;
+            if (! empty($cfg['master'])) {
+                $master_authority = $authority;
+            }
+        }
+        $master_locale = polyglot_get_master_locale();
+
+        // 2. Build slug map: $slug_map[$locale][$fr_slug] = $shadow_slug
+        $placeholders = implode(',', array_fill(0, count($post_types), '%s'));
+
+        // All master posts (no _master_id meta)
+        $masters_rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.ID, p.post_name,
+                    COALESCE(pm.meta_value, '') AS custom_permalink
+             FROM $wpdb->posts p
+             LEFT JOIN $wpdb->postmeta pm ON p.ID = pm.post_id AND pm.meta_key = 'custom_permalink'
+             WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
+             AND p.ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')",
+            ...$post_types
+        ));
+
+        $master_slugs    = []; // master_id => trimmed slug (for lookup)
+        $all_known_slugs = []; // $all_known_slugs[$locale][$slug] = true
+        $slug_paths      = []; // $slug_paths[$locale][$slug] = raw path (ltrim only, preserves trailing slash)
+
+        foreach ($masters_rows as $m) {
+            $raw  = $m->custom_permalink ?: $m->post_name;
+            $slug = trim($raw, '/');
+            $master_slugs[(int) $m->ID]        = $slug;
+            $all_known_slugs[$master_locale][$slug] = true;
+            $slug_paths[$master_locale][$slug]      = ltrim($raw, '/');
+        }
+
+        // All shadow posts
+        $shadows_rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.ID, p.post_name,
+                    COALESCE(cp.meta_value, '') AS custom_permalink,
+                    loc.meta_value AS locale,
+                    mid.meta_value AS master_id
+             FROM $wpdb->posts p
+             JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
+             JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
+             LEFT JOIN $wpdb->postmeta cp ON p.ID = cp.post_id AND cp.meta_key = 'custom_permalink'
+             WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'",
+            ...$post_types
+        ));
+
+        $slug_map = []; // $slug_map[$locale][$fr_slug] = $shadow_slug
+
+        foreach ($shadows_rows as $s) {
+            $raw         = $s->custom_permalink ?: $s->post_name;
+            $shadow_slug = trim($raw, '/');
+            $locale      = $s->locale;
+            $fr_slug     = $master_slugs[(int) $s->master_id] ?? null;
+
+            $all_known_slugs[$locale][$shadow_slug] = true;
+            $slug_paths[$locale][$shadow_slug]      = ltrim($raw, '/');
+
+            if ($fr_slug && $fr_slug !== $shadow_slug) {
+                $slug_map[$locale][$fr_slug] = $shadow_slug;
+            }
+        }
+
+        if ($rendered) {
+            $this->check_links_rendered($filter_locale, $all_known_slugs, $slug_paths, $known_authorities);
+
+            return;
+        }
+
+        // 3. Query posts with content (shadows + masters)
+        if ($filter_locale && $filter_locale !== $master_locale) {
+            // Single shadow locale
+            $query_params = $post_types;
+            $query_params[] = $filter_locale;
+            $posts_to_scan = $wpdb->get_results($wpdb->prepare(
+                "SELECT p.ID, p.post_content, p.post_title, loc.meta_value AS locale
+                 FROM $wpdb->posts p
+                 JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
+                 JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
+                 WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
+                 AND p.post_content != '' AND loc.meta_value = %s
+                 ORDER BY p.ID",
+                ...$query_params
+            ));
+        } elseif ($filter_locale === $master_locale) {
+            // Master locale only
+            $posts_to_scan = $wpdb->get_results($wpdb->prepare(
+                "SELECT p.ID, p.post_content, p.post_title, %s AS locale
+                 FROM $wpdb->posts p
+                 WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
+                 AND p.post_content != ''
+                 AND p.ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')
+                 ORDER BY p.ID",
+                $master_locale,
+                ...$post_types
+            ));
+        } else {
+            // All: shadows + masters
+            $shadow_query = $wpdb->prepare(
+                "SELECT p.ID, p.post_content, p.post_title, loc.meta_value AS locale
+                 FROM $wpdb->posts p
+                 JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
+                 WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
+                 AND p.post_content != ''
+                 AND p.ID IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')",
+                ...$post_types
+            );
+            $master_query = $wpdb->prepare(
+                "SELECT p.ID, p.post_content, p.post_title, %s AS locale
+                 FROM $wpdb->posts p
+                 WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
+                 AND p.post_content != ''
+                 AND p.ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')",
+                $master_locale,
+                ...$post_types
+            );
+            $posts_to_scan = $wpdb->get_results("($shadow_query) UNION ALL ($master_query) ORDER BY locale, ID");
+        }
+
+        // 4. Scan each post
+        $total_issues = 0;
+        $fixed_posts = 0;
+
+        foreach ($posts_to_scan as $sp) {
+            $locale = $sp->locale;
+            $content = $sp->post_content;
+            $issues = [];
+            $new_content = $content;
+            $is_master = ($locale === $master_locale);
+
+            // A. Extract href and mediaLink URLs
+            $urls_found = [];
+            // href="..." or href='...'
+            if (preg_match_all('/href=["\']([^"\']+)["\']/i', $content, $m)) {
+                foreach ($m[1] as $url) {
+                    $urls_found[] = ['href', $url];
+                }
+            }
+            // "mediaLink":"..." in Gutenberg block JSON comments
+            if (preg_match_all('/"mediaLink":"([^"]+)"/i', $content, $m)) {
+                foreach ($m[1] as $url) {
+                    $urls_found[] = ['mediaLink', $url];
+                }
+            }
+
+            // B. Detect any remaining localhost URLs (not already captured)
+            if (preg_match_all('#https?://(?:127\.0\.0\.1|localhost)[:\d]*/(?!wp-content/)[^\s"\'<>\]},)]+#i', $content, $m)) {
+                $already = array_column($urls_found, 1);
+                foreach ($m[0] as $url) {
+                    if (! in_array($url, $already, true)) {
+                        $urls_found[] = ['content', $url];
+                    }
+                }
+            }
+
+            if (empty($urls_found)) {
+                continue;
+            }
+
+            foreach ($urls_found as [$source, $url]) {
+                // Skip anchors, mailto, tel, wp-content paths
+                if (preg_match('#^(mailto:|tel:|\#|/wp-content/)#i', $url)) {
+                    continue;
+                }
+
+                $issue_type = null;
+                $original_url = $url;
+
+                // Parse the URL
+                $parsed = parse_url($url);
+                $path = $parsed['path'] ?? '';
+                $host = $parsed['host'] ?? null;
+                $port = $parsed['port'] ?? null;
+                $fragment = isset($parsed['fragment']) ? '#'.$parsed['fragment'] : '';
+
+                // Build authority (host:port)
+                $authority = $host;
+                if ($port) {
+                    $authority .= ':'.$port;
+                }
+
+                if ($authority) {
+                    // Localhost URL? Always flag
+                    $is_localhost = str_contains($authority, '127.0.0.1') || str_contains($authority, 'localhost');
+
+                    if (! $is_localhost && ! isset($known_authorities[$authority])) {
+                        continue; // external
+                    }
+
+                    // Skip wp-content paths in absolute URLs
+                    if (str_contains($path, '/wp-content/')) {
+                        continue;
+                    }
+
+                    $slug = trim($path, '/');
+
+                    if ($is_localhost) {
+                        $issue_type = 'LOCALHOST';
+                    } elseif ($known_authorities[$authority] !== $locale) {
+                        $issue_type = 'WRONG_DOMAIN';
+                    }
+                } else {
+                    $slug = trim($path, '/');
+                }
+
+                if (! $slug) {
+                    continue;
+                }
+
+                // Check if this slug is a French master slug that should be localized (shadows only)
+                $localized_slug = (! $is_master) ? ($slug_map[$locale][$slug] ?? null) : null;
+                $has_wrong_slug = (null !== $localized_slug);
+
+                // Check for trailing slash on known internal links (href only)
+                // Respect user-defined trailing slash in custom_permalink
+                $trailing_slash = false;
+                if ('href' === $source && ! $authority) {
+                    $is_known_slug = isset($all_known_slugs[$locale][$slug]);
+                    $raw_path = $slug_paths[$locale][$slug] ?? null;
+                    $cp_has_slash = $raw_path && str_ends_with($raw_path, '/');
+                    if ($is_known_slug && str_ends_with($path, '/') && '/' !== $path && ! $cp_has_slash) {
+                        $trailing_slash = true;
+                    }
+                }
+
+                if (! $has_wrong_slug && ! $issue_type && ! $trailing_slash) {
+                    continue;
+                }
+
+                $replacement_slug = $has_wrong_slug ? $localized_slug : $slug;
+
+                $issue_type = implode('+', array_filter([
+                    $issue_type,
+                    $has_wrong_slug ? 'WRONG_SLUG' : null,
+                    $trailing_slash ? 'TRAILING_SLASH' : null,
+                ]));
+
+                $issues[] = [$issue_type, $source, $original_url, $replacement_slug];
+
+                // --fix: build replacement (use raw path to preserve user-defined trailing slash)
+                if ($fix) {
+                    $raw = $slug_paths[$locale][$replacement_slug] ?? $replacement_slug;
+                    $new_href = '/'.$raw;
+                    if ($fragment) {
+                        $new_href = '/'.rtrim($raw, '/').$fragment;
+                    }
+                    // Replace with full attribute context to avoid substring collisions
+                    if ('href' === $source) {
+                        $new_content = str_replace(
+                            'href="'.$original_url.'"',
+                            'href="'.$new_href.'"',
+                            $new_content
+                        );
+                        $new_content = str_replace(
+                            "href='".$original_url."'",
+                            "href='".$new_href."'",
+                            $new_content
+                        );
+                    } elseif ('mediaLink' === $source) {
+                        $new_content = str_replace(
+                            '"mediaLink":"'.$original_url.'"',
+                            '"mediaLink":"'.$new_href.'"',
+                            $new_content
+                        );
+                    } else {
+                        $new_content = str_replace($original_url, $new_href, $new_content);
+                    }
+                }
+            }
+
+            if (! empty($issues)) {
+                WP_CLI::line("\n[$locale] Post {$sp->ID} — {$sp->post_title}");
+                foreach ($issues as [$type, $source, $url, $suggestion]) {
+                    WP_CLI::line("  [$type] $source=\"$url\" → /$suggestion");
+                    ++$total_issues;
+                }
+
+                if ($fix && $new_content !== $content) {
+                    wp_update_post([
+                        'ID' => (int) $sp->ID,
+                        'post_content' => $new_content,
+                    ]);
+                    ++$fixed_posts;
+                }
+            }
+        }
+
+        if (0 === $total_issues) {
+            WP_CLI::success('No mislocalized links found.');
+        } else {
+            $msg = "$total_issues issue(s) found.";
+            if ($fix) {
+                $msg .= " Fixed $fixed_posts post(s).";
+            }
+            WP_CLI::success($msg);
+        }
+    }
+
+    private function check_links_rendered(
+        ?string $filter_locale,
+        array $all_known_slugs,
+        array $slug_paths,
+        array $known_authorities,
+    ): void {
+        // Build list of URLs to fetch, grouped by locale
+        $urls = []; // [ [url, locale, label], ... ]
+        foreach (POLYGLOT_LOCALES as $authority => $cfg) {
+            $locale = $cfg['locale'];
+            if ($filter_locale && $filter_locale !== $locale) {
+                continue;
+            }
+            $base = polyglot_authority_to_url($authority);
+
+            // Homepage
+            $urls[] = [$base.'/', $locale, $base.'/'];
+
+            // All known slugs for this locale
+            foreach (array_keys($all_known_slugs[$locale] ?? []) as $slug) {
+                $path = $slug_paths[$locale][$slug] ?? $slug;
+                $urls[] = [$base.'/'.$path, $locale, $base.'/'.$path];
+            }
+
+            // Sitemaps
+            $urls[] = [$base.'/wp-sitemap-posts-page-1.xml', $locale, null];
+            $urls[] = [$base.'/wp-sitemap-posts-product-1.xml', $locale, null];
+        }
+
+        $progress = \WP_CLI\Utils\make_progress_bar('Scanning rendered HTML', count($urls));
+
+        // Collect all issues with page-count tracking for classification
+        // $issues[$locale][$dedup_key] = ['href' => ..., 'src' => ..., 'pages' => [...], 'source_type' => ...]
+        $issues = [];
+
+        foreach ($urls as [$url, $locale, $label]) {
+            $progress->tick();
+
+            $response = wp_remote_get($url, [
+                'timeout' => 15,
+                'sslverify' => false,
+                'redirection' => 0,
+            ]);
+
+            if (is_wp_error($response)) {
+                WP_CLI::warning("Failed to fetch $url: ".$response->get_error_message());
+
+                continue;
+            }
+
+            $status = wp_remote_retrieve_response_code($response);
+            if (200 !== $status) {
+                // Silently skip sitemaps that 404
+                if (null === $label && 404 === $status) {
+                    continue;
+                }
+                WP_CLI::warning("HTTP $status for $url — skipping.");
+
+                continue;
+            }
+
+            $body = wp_remote_retrieve_body($response);
+            $is_xml = null === $label; // sitemap
+            $source_type = $is_xml ? 'sitemap' : 'page';
+
+            $hrefs = [];
+            if ($is_xml) {
+                // Extract <loc> and <xhtml:link href="..."> from sitemap XML
+                if (preg_match_all('#<loc>\s*([^<]+?)\s*</loc>#i', $body, $m)) {
+                    foreach ($m[1] as $h) {
+                        $hrefs[] = ['<loc>', $h];
+                    }
+                }
+                if (preg_match_all('#<xhtml:link[^>]+href=["\']([^"\']+)["\']#i', $body, $m)) {
+                    foreach ($m[1] as $h) {
+                        $hrefs[] = ['hreflang href', $h];
+                    }
+                }
+            } else {
+                // Extract href="..." from HTML
+                if (preg_match_all('/href=["\']([^"\']+)["\']/i', $body, $m)) {
+                    foreach ($m[1] as $h) {
+                        $hrefs[] = ['href', $h];
+                    }
+                }
+            }
+
+            // Reset per-page dedup
+            $page_seen = [];
+
+            foreach ($hrefs as [$src_label, $href]) {
+                // Skip non-relevant hrefs
+                if (preg_match('#^(mailto:|tel:|javascript:|\#)#i', $href)) {
+                    continue;
+                }
+
+                $parsed = parse_url($href);
+                $path = $parsed['path'] ?? '';
+                $host = $parsed['host'] ?? null;
+                $port = $parsed['port'] ?? null;
+                $authority = $host !== null ? $host.($port !== null ? ":$port" : '') : null;
+
+                // For relative URLs, authority is null — treat as same-locale
+                if ($authority && ! isset($known_authorities[$authority])) {
+                    continue; // external
+                }
+
+                // Skip WP internal paths
+                if (preg_match('#/wp-(?:content|admin|json|login)/#', $path)) {
+                    continue;
+                }
+
+                // Only check trailing slash issues
+                if ('/' === $path || ! str_ends_with($path, '/')) {
+                    continue;
+                }
+
+                $slug = trim($path, '/');
+                if (! $slug) {
+                    continue;
+                }
+
+                // Determine which locale this href belongs to
+                $href_locale = $authority ? ($known_authorities[$authority] ?? $locale) : $locale;
+
+                if (! isset($all_known_slugs[$href_locale][$slug])) {
+                    continue;
+                }
+
+                // Check if custom_permalink has trailing slash (respect it)
+                $raw_path = $slug_paths[$href_locale][$slug] ?? null;
+                if ($raw_path && str_ends_with($raw_path, '/')) {
+                    continue;
+                }
+
+                // Dedup on path (ignore fragment variants like /slug/#a vs /slug/#b)
+                $dedup_key = ($authority ?? '').$path;
+
+                // Skip if already seen on this same page
+                if (isset($page_seen[$dedup_key])) {
+                    continue;
+                }
+                $page_seen[$dedup_key] = true;
+
+                if (! isset($issues[$locale][$dedup_key])) {
+                    $issues[$locale][$dedup_key] = [
+                        'href' => $href,
+                        'src' => $src_label,
+                        'pages' => [],
+                        'source_type' => $source_type,
+                    ];
+                }
+                $issues[$locale][$dedup_key]['pages'][] = $label ?? $url;
+            }
+        }
+
+        $progress->finish();
+
+        // Print grouped output by locale
+        $total_issues = 0;
+        foreach ($issues as $locale => $locale_issues) {
+            $template_issues = [];
+            $sitemap_issues = [];
+            $page_specific = []; // source_url => [issues]
+
+            foreach ($locale_issues as $dedup_key => $info) {
+                ++$total_issues;
+                $display = 'href' === $info['src']
+                    ? "href=\"{$info['href']}\""
+                    : "{$info['src']} {$info['href']}";
+
+                if ('sitemap' === $info['source_type']) {
+                    $sitemap_source = $info['pages'][0] ?? 'sitemap';
+                    $sitemap_issues[$sitemap_source][] = "[TRAILING_SLASH] $display";
+                } elseif (count($info['pages']) > 1) {
+                    $template_issues[] = "[TRAILING_SLASH] $display";
+                } else {
+                    $page_url = $info['pages'][0];
+                    $page_specific[$page_url][] = "[TRAILING_SLASH] $display";
+                }
+            }
+
+            if (empty($template_issues) && empty($sitemap_issues) && empty($page_specific)) {
+                continue;
+            }
+
+            WP_CLI::line("\n— $locale —");
+
+            if (! empty($template_issues)) {
+                WP_CLI::line('  template (menu/footer — appears on every page):');
+                foreach ($template_issues as $issue) {
+                    WP_CLI::line("    $issue");
+                }
+            }
+
+            foreach ($sitemap_issues as $source => $sitemap_list) {
+                WP_CLI::line("  $source");
+                foreach ($sitemap_list as $issue) {
+                    WP_CLI::line("    $issue");
+                }
+            }
+
+            foreach ($page_specific as $page_url => $page_list) {
+                WP_CLI::line("  $page_url");
+                foreach ($page_list as $issue) {
+                    WP_CLI::line("    $issue");
+                }
+            }
+        }
+
+        if (0 === $total_issues) {
+            WP_CLI::success('No trailing slash issues found in rendered HTML.');
+        } else {
+            WP_CLI::warning("$total_issues issue(s) found across ".count($issues)." locale(s).");
+        }
+    }
 }
 
 WP_CLI::add_command('polyglot', 'Polyglot_CLI');

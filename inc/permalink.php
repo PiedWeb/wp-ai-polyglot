@@ -92,7 +92,7 @@ function polyglot_is_front_page(int $post_id): bool
     $master_front_id = (int) get_option('page_on_front');
     add_filter('pre_option_page_on_front', 'polyglot_swap_static_page');
 
-    if (!$master_front_id) {
+    if (! $master_front_id) {
         return false;
     }
 
@@ -115,6 +115,12 @@ function polyglot_is_front_page(int $post_id): bool
  */
 function polyglot_resolve_by_slug(string $slug, string $post_type, string $locale, bool $is_master): ?int
 {
+    $cache_key = "slug|{$slug}|{$post_type}|{$locale}|".($is_master ? '1' : '0');
+    $cached = wp_cache_get($cache_key, 'polyglot');
+    if (false !== $cached) {
+        return $cached ?: null;
+    }
+
     global $wpdb;
 
     if ($is_master) {
@@ -131,24 +137,24 @@ function polyglot_resolve_by_slug(string $slug, string $post_type, string $local
             $slug,
             $post_type
         ));
-
-        return $id ?: null;
+    } else {
+        $id = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT p.ID FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} loc ON loc.post_id = p.ID
+                AND loc.meta_key = '_locale' AND loc.meta_value = %s
+            LEFT JOIN {$wpdb->postmeta} cp ON cp.post_id = p.ID AND cp.meta_key = 'custom_permalink'
+            WHERE (TRIM(TRAILING '/' FROM cp.meta_value) = %s OR (cp.meta_value IS NULL AND p.post_name = %s))
+              AND p.post_type = %s
+              AND p.post_status = 'publish'
+            LIMIT 1",
+            $locale,
+            $slug,
+            $slug,
+            $post_type
+        ));
     }
 
-    $id = (int) $wpdb->get_var($wpdb->prepare(
-        "SELECT p.ID FROM {$wpdb->posts} p
-        INNER JOIN {$wpdb->postmeta} loc ON loc.post_id = p.ID
-            AND loc.meta_key = '_locale' AND loc.meta_value = %s
-        LEFT JOIN {$wpdb->postmeta} cp ON cp.post_id = p.ID AND cp.meta_key = 'custom_permalink'
-        WHERE (TRIM(TRAILING '/' FROM cp.meta_value) = %s OR (cp.meta_value IS NULL AND p.post_name = %s))
-          AND p.post_type = %s
-          AND p.post_status = 'publish'
-        LIMIT 1",
-        $locale,
-        $slug,
-        $slug,
-        $post_type
-    ));
+    wp_cache_set($cache_key, $id ?: 0, 'polyglot', 3600);
 
     return $id ?: null;
 }
@@ -232,9 +238,10 @@ add_filter('option_woocommerce_permalinks', function ($value) {
 });
 
 /**
- * Flat product permalinks on ALL domains: generate /{slug}/ URLs.
+ * Flat product permalinks on ALL domains: generate /{slug} URLs (no trailing slash).
  *
- * Uses custom_permalink meta if set, otherwise falls back to post_name.
+ * Uses custom_permalink meta if set (ltrim only — user-defined trailing slash preserved),
+ * otherwise falls back to post_name.
  * On shadow locales with explicit product_base translations, defer to WooCommerce.
  */
 add_filter('post_type_link', function ($link, $post) {
@@ -250,10 +257,10 @@ add_filter('post_type_link', function ($link, $post) {
 
     $cp = get_post_meta($post->ID, 'custom_permalink', true);
     if ($cp) {
-        return home_url('/'.trim($cp, '/').'/');
+        return home_url('/'.ltrim($cp, '/'));
     }
 
-    return home_url('/'.$post->post_name.'/');
+    return home_url('/'.$post->post_name);
 }, 10, 2);
 
 /**
@@ -267,13 +274,13 @@ add_filter('page_link', function ($link, $post_id) {
 
     $cp = get_post_meta($post_id, 'custom_permalink', true);
     if ($cp) {
-        return home_url('/'.trim($cp, '/').'/');
+        return home_url('/'.ltrim($cp, '/'));
     }
 
     // Flatten hierarchical URLs for child pages (polyglot resolves all pages by flat slug)
     $post = get_post($post_id);
     if ($post && $post->post_parent) {
-        return home_url('/'.$post->post_name.'/');
+        return home_url('/'.$post->post_name);
     }
 
     return $link;
@@ -300,44 +307,146 @@ add_action('template_redirect', function () {
         return;
     }
 
-    $cp = get_post_meta($post->ID, 'custom_permalink', true);
-    $request = trim(parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
+    $canonical = get_permalink($post->ID);
+    $request_path = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
+    $canonical_path = parse_url($canonical, \PHP_URL_PATH);
 
-    if ('page' === $post->post_type && $cp && trim($cp, '/') !== $request) {
-        wp_redirect(home_url('/'.trim($cp, '/').'/'), 301);
+    if (in_array($post->post_type, ['page', 'product'], true) && $request_path !== $canonical_path) {
+        wp_redirect($canonical, 301);
         exit;
-    }
-
-    if ('product' === $post->post_type) {
-        $expected = $cp ? trim($cp, '/') : $post->post_name;
-        if ($expected !== $request) {
-            wp_redirect(home_url('/'.$expected.'/'), 301);
-            exit;
-        }
     }
 }, 5);
 
 /**
+ * Cross-locale slug redirect: when a slug from another locale is requested on a shadow domain,
+ * find the master post and 301-redirect to the correct shadow URL.
+ *
+ * Checks the master locale first, then all other shadow locales as fallback.
+ * Handles both bare slugs (/poutre-portable) and prefixed product URLs (/hangboard/origin/).
+ */
+add_action('template_redirect', function () {
+    if (! is_404() || is_admin() || polyglot_is_master()) {
+        return;
+    }
+
+    $request = trim(parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
+    if (! $request) {
+        return;
+    }
+
+    $locale = polyglot_get_current_locale();
+    $slugs_to_try = [$request];
+
+    // Also try stripping the locale's product base prefix (e.g. hangboard/origin → origin)
+    $wc_slugs = polyglot_get_wc_slugs($locale);
+    if (! empty($wc_slugs['product_base'])) {
+        $prefix = trim($wc_slugs['product_base'], '/').'/';
+        if (str_starts_with($request, $prefix)) {
+            $slugs_to_try[] = substr($request, strlen($prefix));
+        }
+    }
+
+    // Also try stripping ALL locale product base prefixes
+    $all_slugs = get_option(POLYGLOT_WC_SLUGS_OPTION, []);
+    foreach ($all_slugs as $slugs) {
+        if (! empty($slugs['product_base'])) {
+            $prefix = trim($slugs['product_base'], '/').'/';
+            if (str_starts_with($request, $prefix)) {
+                $slugs_to_try[] = substr($request, strlen($prefix));
+            }
+        }
+    }
+    $slugs_to_try = array_unique($slugs_to_try);
+
+    foreach ($slugs_to_try as $slug) {
+        foreach (['page', 'product'] as $post_type) {
+            // Try master locale first
+            $master_id = polyglot_resolve_by_slug($slug, $post_type, polyglot_get_master_locale(), true);
+
+            // Fallback: try all other shadow locales to find the master_id
+            if (! $master_id) {
+                $master_id = polyglot_find_master_from_shadow_slug($slug, $post_type);
+            }
+
+            if (! $master_id) {
+                continue;
+            }
+
+            $shadow_id = polyglot_wc_page_id($master_id);
+            if ($shadow_id && $shadow_id !== $master_id) {
+                wp_redirect(get_permalink($shadow_id), 301);
+                exit;
+            }
+        }
+    }
+}, 1);
+
+/**
+ * Find a master post ID by looking up a slug across all shadow locales.
+ */
+function polyglot_find_master_from_shadow_slug(string $slug, string $post_type): ?int
+{
+    global $wpdb;
+
+    $master_id = $wpdb->get_var($wpdb->prepare(
+        "SELECT mid.meta_value FROM {$wpdb->posts} p
+         INNER JOIN {$wpdb->postmeta} mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
+         LEFT JOIN {$wpdb->postmeta} cp ON p.ID = cp.post_id AND cp.meta_key = 'custom_permalink'
+         WHERE (TRIM(TRAILING '/' FROM cp.meta_value) = %s OR (cp.meta_value IS NULL AND p.post_name = %s))
+           AND p.post_type = %s
+           AND p.post_status = 'publish'
+         LIMIT 1",
+        $slug,
+        $slug,
+        $post_type
+    ));
+
+    return $master_id ? (int) $master_id : null;
+}
+
+/**
  * Prevent WordPress redirect_canonical() from redirecting polyglot-resolved flat URLs
- * to hierarchical ones (e.g. /faq/ → /accueil/faq/).
+ * to hierarchical ones (e.g. /faq/ → /accueil/faq/) or adding a trailing slash.
+ *
+ * Handles two cases:
+ * 1. is_singular() — post already resolved by our request filter: compare against get_permalink().
+ * 2. Not yet singular — WP may try to redirect /slug → /slug/ because permalink_structure ends
+ *    with '/'. If the slug resolves to a polyglot post, block the redirect.
  */
 add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
-    if (!is_singular()) {
-        return $redirect_url;
+    $requested_path = parse_url($requested_url, \PHP_URL_PATH);
+
+    if (is_singular()) {
+        $post = get_queried_object();
+        if (! $post || ! in_array($post->post_type, polyglot_get_post_types(), true)) {
+            return $redirect_url;
+        }
+
+        $canonical      = get_permalink($post->ID);
+        $canonical_path = parse_url($canonical, \PHP_URL_PATH);
+
+        // Exact match — no redirect needed
+        if ($requested_path === $canonical_path) {
+            return false;
+        }
+
+        // Redirect to polyglot canonical (handles hierarchical rewrites)
+        return $canonical;
     }
 
-    $post = get_queried_object();
-    if (!$post || !in_array($post->post_type, polyglot_get_post_types(), true)) {
-        return $redirect_url;
-    }
+    // Non-singular: block WP from adding a trailing slash to a polyglot slug.
+    // Happens when permalink_structure ends with '/' and WP doesn't recognise the flat URL.
+    $redirect_path = parse_url($redirect_url, \PHP_URL_PATH);
+    if ($redirect_path === rtrim($requested_path, '/').'/') {
+        $slug      = trim($requested_path, '/');
+        $locale    = polyglot_get_current_locale();
+        $is_master = polyglot_is_master();
 
-    // If the requested path matches the polyglot-generated permalink, no redirect needed
-    $canonical = get_permalink($post->ID);
-    $requested_path = trim(parse_url($requested_url, PHP_URL_PATH), '/');
-    $canonical_path = trim(parse_url($canonical, PHP_URL_PATH), '/');
-
-    if ($requested_path === $canonical_path) {
-        return false;
+        foreach (polyglot_get_post_types() as $post_type) {
+            if (polyglot_resolve_by_slug($slug, $post_type, $locale, $is_master)) {
+                return false; // Known polyglot slug — block the trailing-slash redirect
+            }
+        }
     }
 
     return $redirect_url;

@@ -48,9 +48,11 @@ if (! class_exists('WP_CLI')) {
         }
         public static function success($msg)
         {
+            echo $msg;
         }
         public static function warning($msg)
         {
+            echo $msg;
         }
         public static function log($msg)
         {
@@ -61,6 +63,7 @@ if (! class_exists('WP_CLI')) {
         }
     }
 }
+require_once __DIR__ . '/stubs/wp-cli-utils.php';
 
 tests_add_filter('muplugins_loaded', function () {
     require dirname(__DIR__) . '/wp-ai-polyglot.php';

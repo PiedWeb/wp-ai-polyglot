@@ -221,3 +221,165 @@ function polyglot_block_wc_locale_switch($do_switch)
 
     return $polyglot_email_locale_active ? false : $do_switch;
 }
+
+// ============================================================
+// WOOCOMMERCE — Email additional_content & footer translations
+// ============================================================
+
+/**
+ * Resolve the locale for the current email context.
+ * Uses the switched locale (for order emails) or the domain locale (for account emails).
+ */
+function polyglot_get_email_locale(): string
+{
+    global $polyglot_email_locale_active;
+
+    if ($polyglot_email_locale_active) {
+        return get_locale();
+    }
+
+    return polyglot_get_current_locale();
+}
+
+// --- Email additional_content translations ---
+
+$_polyglot_email_content_types = [
+    'customer_processing_order',
+    'customer_completed_order',
+    'customer_on_hold_order',
+    'customer_refunded_order',
+    'customer_invoice',
+    'customer_note',
+    'customer_new_account',
+    'customer_reset_password',
+];
+
+foreach ($_polyglot_email_content_types as $_type) {
+    add_filter("woocommerce_email_additional_content_{$_type}", 'polyglot_translate_email_additional_content', 10, 3);
+}
+unset($_polyglot_email_content_types, $_type);
+
+function polyglot_translate_email_additional_content($content, $object, $email)
+{
+    $locale = polyglot_get_email_locale();
+    if ($locale === polyglot_get_master_locale()) {
+        return $content;
+    }
+
+    static $map = null;
+    if ($map === null) {
+        $map = polyglot_email_content_translations();
+    }
+
+    $email_id = $email->id;
+    if (! isset($map[$email_id][$locale])) {
+        return $content;
+    }
+
+    $text = $map[$email_id][$locale];
+
+    // Replace {site_url} placeholder with the shadow domain hostname
+    if (str_contains($text, '{site_url}')) {
+        $authority = polyglot_locale_to_authority($locale);
+        $text = str_replace('{site_url}', $authority ?: wp_parse_url(home_url(), PHP_URL_HOST), $text);
+    }
+
+    return $text;
+}
+
+function polyglot_email_content_translations(): array
+{
+    $use_site_url = [
+        'en_IE' => 'Thanks for shopping with {site_url}!',
+        'es_ES' => '¡Gracias por comprar en {site_url}!',
+        'it_IT' => 'Grazie per aver acquistato su {site_url}!',
+        'de_DE' => 'Vielen Dank für Ihren Einkauf bei {site_url}!',
+        'pt_PT' => 'Obrigado por comprar em {site_url}!',
+        'da_DK' => 'Tak fordi du handler hos {site_url}!',
+        'pl_PL' => 'Dziękujemy za zakupy w {site_url}!',
+    ];
+
+    $thanks_purchase = [
+        'en_IE' => 'Thanks for your purchase.',
+        'es_ES' => 'Gracias por tu compra.',
+        'it_IT' => 'Grazie per il tuo acquisto.',
+        'de_DE' => 'Vielen Dank für Ihren Einkauf.',
+        'pt_PT' => 'Obrigado pela sua compra.',
+        'da_DK' => 'Tak for dit køb.',
+        'pl_PL' => 'Dziękujemy za zakup.',
+    ];
+
+    $see_you_soon = [
+        'en_IE' => 'We look forward to seeing you again in our shop.',
+        'es_ES' => 'Esperamos verte de nuevo pronto en nuestra tienda.',
+        'it_IT' => 'Speriamo di rivederti presto nel nostro negozio.',
+        'de_DE' => 'Wir freuen uns auf Ihren nächsten Besuch in unserem Shop.',
+        'pt_PT' => 'Esperamos vê-lo novamente em breve na nossa loja.',
+        'da_DK' => 'Vi glæder os til at se dig igen i vores butik.',
+        'pl_PL' => 'Mamy nadzieję, że wkrótce odwiedzisz nasz sklep ponownie.',
+    ];
+
+    $thank_attention = [
+        'en_IE' => 'Thank you for your attention.',
+        'es_ES' => 'Gracias por tu atención.',
+        'it_IT' => 'Grazie per la tua attenzione.',
+        'de_DE' => 'Vielen Dank für Ihre Aufmerksamkeit.',
+        'pt_PT' => 'Obrigado pela sua atenção.',
+        'da_DK' => 'Tak for din opmærksomhed.',
+        'pl_PL' => 'Dziękujemy za uwagę.',
+    ];
+
+    $process_shortly = [
+        'en_IE' => 'We expect to process your order shortly.',
+        'es_ES' => 'Esperamos procesar tu pedido en breve.',
+        'it_IT' => 'Prevediamo di elaborare il tuo ordine a breve.',
+        'de_DE' => 'Wir werden Ihre Bestellung in Kürze bearbeiten.',
+        'pt_PT' => 'Esperamos processar a sua encomenda em breve.',
+        'da_DK' => 'Vi forventer at behandle din ordre snart.',
+        'pl_PL' => 'Oczekujemy, że wkrótce zrealizujemy Twoje zamówienie.',
+    ];
+
+    return [
+        'customer_processing_order' => $use_site_url,
+        'customer_completed_order' => $thanks_purchase,
+        'customer_on_hold_order' => $process_shortly,
+        'customer_refunded_order' => $see_you_soon,
+        'customer_invoice' => $use_site_url,
+        'customer_note' => $thank_attention,
+        'customer_new_account' => $see_you_soon,
+        'customer_reset_password' => $thank_attention,
+    ];
+}
+
+// --- Email footer: replace domain link for shadow locales ---
+
+add_filter('woocommerce_email_footer_text', 'polyglot_translate_email_footer', 10, 2);
+
+function polyglot_translate_email_footer($text, $email = null)
+{
+    $locale = polyglot_get_email_locale();
+    if ($locale === polyglot_get_master_locale()) {
+        return $text;
+    }
+
+    $authority = polyglot_locale_to_authority($locale);
+    if (! $authority) {
+        return $text;
+    }
+
+    $shadow_url = polyglot_authority_to_url($authority);
+    $shadow_host = wp_parse_url($shadow_url, PHP_URL_HOST) ?: $authority;
+
+    // Replace all hrefs pointing to master domain
+    $master_authority = polyglot_get_master_authority();
+    $master_url = polyglot_authority_to_url($master_authority);
+    $text = str_replace($master_url, $shadow_url, $text);
+
+    // Replace display hostname (handles both "woodrock.fr" and "www.woodrock.fr" patterns)
+    $master_host = wp_parse_url($master_url, PHP_URL_HOST) ?: $master_authority;
+    if ($master_host !== $shadow_host) {
+        $text = str_replace($master_host, $shadow_host, $text);
+    }
+
+    return $text;
+}

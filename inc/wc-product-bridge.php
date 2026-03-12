@@ -10,6 +10,10 @@ add_filter('woocommerce_product_is_in_stock', 'polyglot_virtual_in_stock', 10, 2
 
 function polyglot_get_master($product)
 {
+    if (polyglot_is_master()) {
+        return null;
+    }
+
     static $cache = [];
 
     $product_id = $product->get_id();

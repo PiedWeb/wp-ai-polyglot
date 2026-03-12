@@ -80,6 +80,17 @@ function polyglot_locale_to_label(string $locale): string
     return $locale;
 }
 
+function polyglot_locale_to_authority(string $locale): string
+{
+    foreach (POLYGLOT_LOCALES as $authority => $cfg) {
+        if ($cfg['locale'] === $locale) {
+            return $authority;
+        }
+    }
+
+    return '';
+}
+
 function polyglot_get_master_locale(): string
 {
     foreach (POLYGLOT_LOCALES as $cfg) {

@@ -28,6 +28,13 @@ function polyglot_get_locale_paths(): array
         return $cache[$context];
     }
 
+    if ('none' !== $context) {
+        $wp_cached = wp_cache_get("hreflang|{$context}", 'polyglot');
+        if (false !== $wp_cached) {
+            return $cache[$context] = $wp_cached;
+        }
+    }
+
     $paths = [];
 
     // --- HOMEPAGE ---
@@ -36,7 +43,15 @@ function polyglot_get_locale_paths(): array
             $paths[$authority] = '/';
         }
 
+        wp_cache_set("hreflang|{$context}", $paths, 'polyglot', 3600);
+
         return $cache[$context] = $paths;
+    }
+
+    // Pre-build locale-to-authority map
+    $locale_to_authority = [];
+    foreach (POLYGLOT_LOCALES as $authority => $cfg) {
+        $locale_to_authority[$cfg['locale']] = $authority;
     }
 
     // --- SINGLE POSTS / PAGES / PRODUCTS ---
@@ -59,14 +74,13 @@ function polyglot_get_locale_paths(): array
         ));
 
         foreach ($shadows as $shadow) {
-            foreach (POLYGLOT_LOCALES as $authority => $cfg) {
-                if ($cfg['locale'] === $shadow->locale) {
-                    $paths[$authority] = parse_url(get_permalink((int) $shadow->post_id), \PHP_URL_PATH);
-
-                    break;
-                }
+            $authority = $locale_to_authority[$shadow->locale] ?? null;
+            if ($authority) {
+                $paths[$authority] = parse_url(get_permalink((int) $shadow->post_id), \PHP_URL_PATH);
             }
         }
+
+        wp_cache_set("hreflang|{$context}", $paths, 'polyglot', 3600);
 
         return $cache[$context] = $paths;
     }
@@ -96,20 +110,21 @@ function polyglot_get_locale_paths(): array
         ));
 
         foreach ($shadow_terms as $st) {
-            foreach (POLYGLOT_LOCALES as $authority => $cfg) {
-                if ($cfg['locale'] === $st->locale) {
-                    $link = get_term_link((int) $st->term_id);
-                    if (! is_wp_error($link)) {
-                        $paths[$authority] = parse_url($link, \PHP_URL_PATH);
-                    }
-
-                    break;
+            $authority = $locale_to_authority[$st->locale] ?? null;
+            if ($authority) {
+                $link = get_term_link((int) $st->term_id);
+                if (! is_wp_error($link)) {
+                    $paths[$authority] = parse_url($link, \PHP_URL_PATH);
                 }
             }
         }
 
+        wp_cache_set("hreflang|{$context}", $paths, 'polyglot', 3600);
+
         return $cache[$context] = $paths;
     }
+
+    wp_cache_set("hreflang|{$context}", [], 'polyglot', 3600);
 
     return $cache[$context] = [];
 }
@@ -273,6 +288,42 @@ function polyglot_sitemap_hreflang_ob_callback(string $output): string
         $shadow_map[(int) $s->master_id][$s->locale] = (int) $s->post_id;
     }
 
+    // Batch-load custom_permalink + post_name for all involved post IDs
+    $all_post_ids = $all_master_ids;
+    foreach ($shadow_map as $shadow_locales) {
+        foreach ($shadow_locales as $sid) {
+            $all_post_ids[] = $sid;
+        }
+    }
+    $all_post_ids = array_unique($all_post_ids);
+
+    $cp_placeholders = implode(',', array_fill(0, count($all_post_ids), '%d'));
+    $cp_rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT post_id, meta_value FROM $wpdb->postmeta
+         WHERE meta_key = 'custom_permalink' AND post_id IN ($cp_placeholders)",
+        ...$all_post_ids
+    ));
+    $cp_map = [];
+    foreach ($cp_rows as $row) {
+        $cp_map[(int) $row->post_id] = trim($row->meta_value, '/');
+    }
+
+    // Also batch-load post_name as fallback
+    $pn_rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT ID, post_name FROM $wpdb->posts WHERE ID IN ($cp_placeholders)",
+        ...$all_post_ids
+    ));
+    $pn_map = [];
+    foreach ($pn_rows as $row) {
+        $pn_map[(int) $row->ID] = $row->post_name;
+    }
+
+    // Pre-build locale-to-authority map
+    $locale_to_authority = [];
+    foreach (POLYGLOT_LOCALES as $authority => $cfg) {
+        $locale_to_authority[$cfg['locale']] = $authority;
+    }
+
     // Build hreflang entries per URL
     $hreflang_map = []; // url => [ [hreflang, href], ... ]
     $master_authority = polyglot_get_master_authority();
@@ -285,27 +336,30 @@ function polyglot_sitemap_hreflang_ob_callback(string $output): string
 
         $links = [];
 
-        // Master link
-        $master_permalink = get_permalink($real_master_id);
-        $master_path = parse_url($master_permalink, \PHP_URL_PATH);
-        $master_cfg = POLYGLOT_LOCALES[$master_authority];
-        $links[] = [
-            'hreflang' => $master_cfg['hreflang'],
-            'href' => polyglot_authority_to_url($master_authority).$master_path,
-        ];
+        // Master link — use batch-loaded slug instead of get_permalink()
+        $master_slug = $cp_map[$real_master_id] ?? $pn_map[$real_master_id] ?? null;
+        if ($master_slug) {
+            $master_path = '/'.$master_slug;
+            $master_cfg = POLYGLOT_LOCALES[$master_authority];
+            $links[] = [
+                'hreflang' => $master_cfg['hreflang'],
+                'href' => polyglot_authority_to_url($master_authority).$master_path,
+            ];
+        }
+
         // Shadow links
         if (isset($shadow_map[$real_master_id])) {
             foreach ($shadow_map[$real_master_id] as $locale => $shadow_id) {
-                foreach (POLYGLOT_LOCALES as $authority => $cfg) {
-                    if ($cfg['locale'] === $locale) {
-                        $shadow_path = parse_url(get_permalink($shadow_id), \PHP_URL_PATH);
-                        $links[] = [
-                            'hreflang' => $cfg['hreflang'],
-                            'href' => polyglot_authority_to_url($authority).$shadow_path,
-                        ];
-
-                        break;
-                    }
+                $authority = $locale_to_authority[$locale] ?? null;
+                if (! $authority) {
+                    continue;
+                }
+                $shadow_slug = $cp_map[$shadow_id] ?? $pn_map[$shadow_id] ?? null;
+                if ($shadow_slug) {
+                    $links[] = [
+                        'hreflang' => POLYGLOT_LOCALES[$authority]['hreflang'],
+                        'href' => polyglot_authority_to_url($authority).'/'.$shadow_slug,
+                    ];
                 }
             }
         }

@@ -377,7 +377,7 @@ class PermalinkResolutionTest extends WP_UnitTestCase
 
         $link = get_permalink($this->child_shadow_en);
 
-        $this->assertStringEndsWith('/my-blog/', $link);
+        $this->assertStringEndsWith('/my-blog', $link);
     }
 
     // ================================================================
@@ -450,6 +450,86 @@ class PermalinkResolutionTest extends WP_UnitTestCase
 
         // Front page should be "/" not "/accueil/"
         $this->assertSame('', $path);
+    }
+
+    /**
+     * When WP tries to add a trailing slash (/blog → /blog/) via redirect_canonical,
+     * the filter should block it for known polyglot slugs.
+     */
+    public function testRedirectCanonicalBlocksTrailingSlashOnMasterPage(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        // Simulate non-singular context (WP couldn't resolve the flat slug via rewrite rules)
+        $this->go_to('/');
+        // Force non-singular by going to a generic URL
+        global $wp_query;
+        $wp_query->is_singular = false;
+        $wp_query->is_page = false;
+
+        $redirect = apply_filters(
+            'redirect_canonical',
+            'http://master.test/blog/',       // WP wants to redirect here (adding slash)
+            'http://master.test/blog'          // Original request (no slash)
+        );
+
+        // Should return false — block the redirect because 'blog' is a known polyglot slug
+        $this->assertFalse($redirect);
+    }
+
+    public function testRedirectCanonicalBlocksTrailingSlashOnShadowPage(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'en.test';
+
+        $this->go_to('/');
+        global $wp_query;
+        $wp_query->is_singular = false;
+        $wp_query->is_page = false;
+
+        $redirect = apply_filters(
+            'redirect_canonical',
+            'http://en.test/blog/',
+            'http://en.test/blog'
+        );
+
+        $this->assertFalse($redirect);
+    }
+
+    public function testRedirectCanonicalBlocksTrailingSlashOnProduct(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        $this->go_to('/');
+        global $wp_query;
+        $wp_query->is_singular = false;
+        $wp_query->is_page = false;
+
+        $redirect = apply_filters(
+            'redirect_canonical',
+            'http://master.test/origin/',
+            'http://master.test/origin'
+        );
+
+        $this->assertFalse($redirect);
+    }
+
+    public function testRedirectCanonicalAllowsTrailingSlashOnUnknownSlug(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'master.test';
+
+        $this->go_to('/');
+        global $wp_query;
+        $wp_query->is_singular = false;
+        $wp_query->is_page = false;
+
+        $redirect = apply_filters(
+            'redirect_canonical',
+            'http://master.test/unknown-slug/',
+            'http://master.test/unknown-slug'
+        );
+
+        // Unknown slug — let WP redirect as it wants
+        $this->assertSame('http://master.test/unknown-slug/', $redirect);
     }
 
     public function testShadowFrontPagePermalinkIsRoot(): void

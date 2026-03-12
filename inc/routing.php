@@ -128,6 +128,12 @@ function polyglot_wc_page_id(int $page_id): int
         return $cache[$key];
     }
 
+    $wp_cache_key = "wcpage|{$page_id}|{$locale}";
+    $wp_cached = wp_cache_get($wp_cache_key, 'polyglot');
+    if (false !== $wp_cached) {
+        return $cache[$key] = (int) $wp_cached;
+    }
+
     global $wpdb;
     $shadow_id = $wpdb->get_var($wpdb->prepare(
         "SELECT pm1.post_id FROM $wpdb->postmeta pm1
@@ -138,7 +144,10 @@ function polyglot_wc_page_id(int $page_id): int
         $locale
     ));
 
-    return $cache[$key] = $shadow_id ? (int) $shadow_id : $page_id;
+    $result = $shadow_id ? (int) $shadow_id : $page_id;
+    wp_cache_set($wp_cache_key, $result, 'polyglot', 3600);
+
+    return $cache[$key] = $result;
 }
 
 // ============================================================

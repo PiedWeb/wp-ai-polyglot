@@ -58,6 +58,12 @@ function polyglot_locale_rating_counts($post_id)
         return $cache[$key];
     }
 
+    $wp_cache_key = "ratings|{$post_id}|{$locale}";
+    $wp_cached = wp_cache_get($wp_cache_key, 'polyglot');
+    if (false !== $wp_cached) {
+        return $cache[$key] = $wp_cached;
+    }
+
     global $wpdb;
 
     $rows = $wpdb->get_results($wpdb->prepare(
@@ -84,6 +90,8 @@ function polyglot_locale_rating_counts($post_id)
     foreach ($rows as $row) {
         $counts[(int) $row->rating] = (int) $row->cnt;
     }
+
+    wp_cache_set($wp_cache_key, $counts, 'polyglot', 1800);
 
     return $cache[$key] = $counts;
 }

@@ -76,3 +76,35 @@ require_once __DIR__.'/inc/wc-i18n.php';
 if (defined('WP_CLI') && WP_CLI) {
     require_once __DIR__.'/inc/cli.php';
 }
+
+// ============================================================
+// CACHE INVALIDATION — Flush polyglot object cache on changes
+// ============================================================
+
+add_action('save_post', function (int $post_id): void {
+    if (! in_array(get_post_type($post_id), polyglot_get_post_types(), true)) {
+        return;
+    }
+
+    if (function_exists('wp_cache_flush_group')) {
+        wp_cache_flush_group('polyglot');
+    } else {
+        wp_cache_delete("hreflang|post_{$post_id}", 'polyglot');
+        $master_id = get_post_meta($post_id, '_master_id', true);
+        if ($master_id) {
+            wp_cache_delete("hreflang|post_{$master_id}", 'polyglot');
+        }
+    }
+});
+
+add_action('comment_post', function (): void {
+    if (function_exists('wp_cache_flush_group')) {
+        wp_cache_flush_group('polyglot');
+    }
+});
+
+add_action('wp_set_comment_status', function (): void {
+    if (function_exists('wp_cache_flush_group')) {
+        wp_cache_flush_group('polyglot');
+    }
+});

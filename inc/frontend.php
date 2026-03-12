@@ -29,7 +29,6 @@ function polyglot_translate_cookie_bar_html(string $html): string
 
     $map = polyglot_cookie_translations();
     $entry = polyglot_get_current_entry();
-    $html .= '<!-- polyglot cookie debug: hreflang='.($entry['hreflang'] ?? 'NULL').' map_count='.count($map).' -->';
     if (empty($map)) {
         return $html;
     }

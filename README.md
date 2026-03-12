@@ -210,6 +210,13 @@ wp polyglot translate-comment 42 --target=en_GB --payload='{"translated_content"
 wp polyglot translate_slugs --status
 wp polyglot translate_slugs --target=en_GB --payload='{"product_base":"product","category_base":"product-category","tag_base":"product-tag"}'
 
+# Check internal links for mislocalized slugs, trailing slashes, localhost URLs
+wp polyglot check-links                        # scan post_content (all locales)
+wp polyglot check-links --locale=en_GB --fix   # auto-fix one locale
+
+# Audit rendered HTML (templates, menus, sitemaps) for trailing slashes
+wp polyglot check-links --rendered             # report-only, no --fix
+
 # Export/import flat files (mutually exclusive — concurrent runs are blocked)
 wp polyglot export
 wp polyglot import --dry-run
@@ -262,6 +269,8 @@ composer test:filter test_is_master_on_master_domain
 | `ExportImportTest`       | TSV + HTML flat-file export/import round-trip                 |
 | `SyncLockTest`           | MySQL advisory lock preventing concurrent import/export       |
 | `BlocksBridgeTest`       | Gutenberg block product ID rewriting                          |
+| `CheckLinksTest`         | Link scanning: wrong slugs, trailing slashes, localhost, fix  |
+| `CheckLinksRenderedTest` | Rendered HTML scanning: dedup, sitemaps, hreflang, fragments  |
 
 Inventory bridge (stock virtualization, stock reduction) is tested via WP-CLI integration since it requires WooCommerce at runtime.
 
