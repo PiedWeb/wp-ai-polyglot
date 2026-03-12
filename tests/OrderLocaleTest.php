@@ -41,12 +41,11 @@ class OrderLocaleTest extends WP_UnitTestCase
 
         polyglot_email_switch_locale($order_id);
 
-        global $polyglot_email_locale_active;
-        $this->assertTrue($polyglot_email_locale_active);
+        $this->assertTrue(polyglot_email_locale_active());
 
         // Clean up
         polyglot_email_restore_locale($order_id);
-        $this->assertFalse($polyglot_email_locale_active);
+        $this->assertFalse(polyglot_email_locale_active());
     }
 
     public function testEmailSwitchLocaleNoopWithoutMeta(): void
@@ -56,18 +55,15 @@ class OrderLocaleTest extends WP_UnitTestCase
 
         polyglot_email_switch_locale($order_id);
 
-        global $polyglot_email_locale_active;
-        $this->assertFalse($polyglot_email_locale_active);
+        $this->assertFalse(polyglot_email_locale_active());
     }
 
     public function testBlockWcLocaleSwitchWhenActive(): void
     {
-        global $polyglot_email_locale_active;
-
-        $polyglot_email_locale_active = true;
+        polyglot_email_locale_active(true);
         $this->assertFalse(polyglot_block_wc_locale_switch(true));
 
-        $polyglot_email_locale_active = false;
+        polyglot_email_locale_active(false);
         $this->assertTrue(polyglot_block_wc_locale_switch(true));
     }
 }

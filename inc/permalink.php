@@ -337,16 +337,7 @@ add_action('template_redirect', function () {
     $locale = polyglot_get_current_locale();
     $slugs_to_try = [$request];
 
-    // Also try stripping the locale's product base prefix (e.g. hangboard/origin → origin)
-    $wc_slugs = polyglot_get_wc_slugs($locale);
-    if (! empty($wc_slugs['product_base'])) {
-        $prefix = trim($wc_slugs['product_base'], '/').'/';
-        if (str_starts_with($request, $prefix)) {
-            $slugs_to_try[] = substr($request, strlen($prefix));
-        }
-    }
-
-    // Also try stripping ALL locale product base prefixes
+    // Try stripping any locale's product base prefix (e.g. hangboard/origin → origin)
     $all_slugs = get_option(POLYGLOT_WC_SLUGS_OPTION, []);
     foreach ($all_slugs as $slugs) {
         if (! empty($slugs['product_base'])) {

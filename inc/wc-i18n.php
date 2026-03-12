@@ -143,9 +143,21 @@ function polyglot_save_order_locale($order_id)
 // WOOCOMMERCE — Email i18n (switch locale for order emails)
 // ============================================================
 
-$polyglot_email_locale_active = false;
+/**
+ * Track whether an email locale switch is active (replaces a global flag).
+ * Call with a bool to set, without arguments to read.
+ */
+function polyglot_email_locale_active(?bool $set = null): bool
+{
+    static $active = false;
+    if (null !== $set) {
+        $active = $set;
+    }
 
-$polyglot_wc_email_hooks = [
+    return $active;
+}
+
+$_polyglot_wc_email_hooks = [
     'woocommerce_order_status_pending_to_processing_notification',
     'woocommerce_order_status_pending_to_completed_notification',
     'woocommerce_order_status_pending_to_on-hold_notification',
@@ -156,26 +168,27 @@ $polyglot_wc_email_hooks = [
     'woocommerce_order_status_refunded_notification',
 ];
 
-foreach ($polyglot_wc_email_hooks as $_hook) {
+foreach ($_polyglot_wc_email_hooks as $_hook) {
     add_action($_hook, 'polyglot_email_switch_locale', 5, 1);
     add_action($_hook, 'polyglot_email_restore_locale', 999, 1);
 }
+unset($_polyglot_wc_email_hooks, $_hook);
 
-add_action('woocommerce_before_resend_order_emails', 'polyglot_email_switch_locale_for_resend', 5, 1);
-add_action('woocommerce_after_resend_order_email', 'polyglot_email_restore_locale_after_resend', 999, 2);
+// Resend hooks: same functions — polyglot_email_switch_locale accepts int|object
+add_action('woocommerce_before_resend_order_emails', 'polyglot_email_switch_locale', 5, 1);
+add_action('woocommerce_after_resend_order_email', 'polyglot_email_restore_locale', 999, 1);
 
 function polyglot_email_switch_locale($order_id)
 {
-    global $polyglot_email_locale_active;
+    if (is_object($order_id)) {
+        $order_id = $order_id->get_id();
+    }
 
     $order_locale = get_post_meta($order_id, '_order_locale', true);
-    if (! $order_locale) {
-        // Try HPOS
-        if (function_exists('wc_get_order')) {
-            $order = wc_get_order($order_id);
-            if ($order) {
-                $order_locale = $order->get_meta('_order_locale');
-            }
+    if (! $order_locale && function_exists('wc_get_order')) {
+        $order = wc_get_order($order_id);
+        if ($order) {
+            $order_locale = $order->get_meta('_order_locale');
         }
     }
 
@@ -183,32 +196,18 @@ function polyglot_email_switch_locale($order_id)
         return;
     }
 
-    $polyglot_email_locale_active = true;
+    polyglot_email_locale_active(true);
     switch_to_locale($order_locale);
 }
 
-function polyglot_email_restore_locale($order_id)
+function polyglot_email_restore_locale($order_id = null)
 {
-    global $polyglot_email_locale_active;
-
-    if (! $polyglot_email_locale_active) {
+    if (! polyglot_email_locale_active()) {
         return;
     }
 
     restore_previous_locale();
-    $polyglot_email_locale_active = false;
-}
-
-function polyglot_email_switch_locale_for_resend($order)
-{
-    $order_id = is_object($order) ? $order->get_id() : $order;
-    polyglot_email_switch_locale($order_id);
-}
-
-function polyglot_email_restore_locale_after_resend($order, $email_type)
-{
-    $order_id = is_object($order) ? $order->get_id() : $order;
-    polyglot_email_restore_locale($order_id);
+    polyglot_email_locale_active(false);
 }
 
 // Prevent WC from overriding our locale switch
@@ -217,9 +216,7 @@ add_filter('woocommerce_email_restore_locale', 'polyglot_block_wc_locale_switch'
 
 function polyglot_block_wc_locale_switch($do_switch)
 {
-    global $polyglot_email_locale_active;
-
-    return $polyglot_email_locale_active ? false : $do_switch;
+    return polyglot_email_locale_active() ? false : $do_switch;
 }
 
 // ============================================================
@@ -232,13 +229,7 @@ function polyglot_block_wc_locale_switch($do_switch)
  */
 function polyglot_get_email_locale(): string
 {
-    global $polyglot_email_locale_active;
-
-    if ($polyglot_email_locale_active) {
-        return get_locale();
-    }
-
-    return polyglot_get_current_locale();
+    return polyglot_email_locale_active() ? get_locale() : polyglot_get_current_locale();
 }
 
 // --- Email additional_content translations ---

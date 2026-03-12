@@ -1219,45 +1219,32 @@ class Polyglot_CLI
             return;
         }
 
-        // 3. Query posts with content (shadows + masters)
-        if ($filter_locale && $filter_locale !== $master_locale) {
-            // Single shadow locale
-            $query_params = $post_types;
-            $query_params[] = $filter_locale;
-            $posts_to_scan = $wpdb->get_results($wpdb->prepare(
+        // 3. Query posts with content — build shadow + master queries, combine as needed
+        $queries = [];
+
+        $include_shadows = ! $filter_locale || $filter_locale !== $master_locale;
+        $include_master = ! $filter_locale || $filter_locale === $master_locale;
+
+        if ($include_shadows) {
+            $params = $post_types;
+            $locale_filter = '';
+            if ($filter_locale) {
+                $locale_filter = ' AND loc.meta_value = %s';
+                $params[] = $filter_locale;
+            }
+            $queries[] = $wpdb->prepare(
                 "SELECT p.ID, p.post_content, p.post_title, loc.meta_value AS locale
                  FROM $wpdb->posts p
                  JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
                  JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
                  WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
-                 AND p.post_content != '' AND loc.meta_value = %s
-                 ORDER BY p.ID",
-                ...$query_params
-            ));
-        } elseif ($filter_locale === $master_locale) {
-            // Master locale only
-            $posts_to_scan = $wpdb->get_results($wpdb->prepare(
-                "SELECT p.ID, p.post_content, p.post_title, %s AS locale
-                 FROM $wpdb->posts p
-                 WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
-                 AND p.post_content != ''
-                 AND p.ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')
-                 ORDER BY p.ID",
-                $master_locale,
-                ...$post_types
-            ));
-        } else {
-            // All: shadows + masters
-            $shadow_query = $wpdb->prepare(
-                "SELECT p.ID, p.post_content, p.post_title, loc.meta_value AS locale
-                 FROM $wpdb->posts p
-                 JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
-                 WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
-                 AND p.post_content != ''
-                 AND p.ID IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')",
-                ...$post_types
+                 AND p.post_content != ''{$locale_filter}",
+                ...$params
             );
-            $master_query = $wpdb->prepare(
+        }
+
+        if ($include_master) {
+            $queries[] = $wpdb->prepare(
                 "SELECT p.ID, p.post_content, p.post_title, %s AS locale
                  FROM $wpdb->posts p
                  WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
@@ -1266,8 +1253,12 @@ class Polyglot_CLI
                 $master_locale,
                 ...$post_types
             );
-            $posts_to_scan = $wpdb->get_results("($shadow_query) UNION ALL ($master_query) ORDER BY locale, ID");
         }
+
+        $sql = count($queries) > 1
+            ? '('.implode(') UNION ALL (', $queries).') ORDER BY locale, ID'
+            : $queries[0].' ORDER BY ID';
+        $posts_to_scan = $wpdb->get_results($sql);
 
         // 4. Scan each post
         $total_issues = 0;

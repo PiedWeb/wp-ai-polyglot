@@ -115,6 +115,8 @@ add_filter('woocommerce_get_checkout_page_id', 'polyglot_wc_page_id');
 
 function polyglot_wc_page_id(int $page_id): int
 {
+    // Two-layer cache: static for repeated calls within the same request,
+    // wp_cache for persistence across requests (object cache backends).
     static $cache = [];
 
     if (polyglot_is_master()) {

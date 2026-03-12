@@ -39,15 +39,39 @@ function polyglot_get_current_locale(): string
     return $entry ? $entry['locale'] : polyglot_get_master_locale();
 }
 
-function polyglot_get_master_authority(): string
+/**
+ * Cached derived maps from POLYGLOT_LOCALES (locale→authority, master authority/locale).
+ * Built once per request; avoids repeated iteration over the constant.
+ */
+function polyglot_locale_map(): array
 {
+    static $map = null;
+    if (null !== $map) {
+        return $map;
+    }
+
+    $map = ['locale_to_authority' => [], 'master_authority' => '', 'master_locale' => ''];
     foreach (POLYGLOT_LOCALES as $authority => $cfg) {
+        $map['locale_to_authority'][$cfg['locale']] = $authority;
         if (! empty($cfg['master'])) {
-            return $authority;
+            $map['master_authority'] = $authority;
+            $map['master_locale'] = $cfg['locale'];
         }
     }
 
-    return array_key_first(POLYGLOT_LOCALES);
+    // Fallback: first entry is master
+    if ('' === $map['master_authority']) {
+        $first_key = array_key_first(POLYGLOT_LOCALES);
+        $map['master_authority'] = $first_key;
+        $map['master_locale'] = POLYGLOT_LOCALES[$first_key]['locale'];
+    }
+
+    return $map;
+}
+
+function polyglot_get_master_authority(): string
+{
+    return polyglot_locale_map()['master_authority'];
 }
 
 function polyglot_authority_to_url(string $authority): string
@@ -71,36 +95,19 @@ function polyglot_locale_to_country(string $locale): string
 
 function polyglot_locale_to_label(string $locale): string
 {
-    foreach (POLYGLOT_LOCALES as $cfg) {
-        if ($cfg['locale'] === $locale) {
-            return $cfg['label'];
-        }
-    }
+    $authority = polyglot_locale_to_authority($locale);
 
-    return $locale;
+    return $authority ? (POLYGLOT_LOCALES[$authority]['label'] ?? $locale) : $locale;
 }
 
 function polyglot_locale_to_authority(string $locale): string
 {
-    foreach (POLYGLOT_LOCALES as $authority => $cfg) {
-        if ($cfg['locale'] === $locale) {
-            return $authority;
-        }
-    }
-
-    return '';
+    return polyglot_locale_map()['locale_to_authority'][$locale] ?? '';
 }
 
 function polyglot_get_master_locale(): string
 {
-    foreach (POLYGLOT_LOCALES as $cfg) {
-        if (! empty($cfg['master'])) {
-            return $cfg['locale'];
-        }
-    }
-
-    // Fallback: first entry is master
-    return array_values(POLYGLOT_LOCALES)[0]['locale'];
+    return polyglot_locale_map()['master_locale'];
 }
 
 function polyglot_get_master_label(): string
