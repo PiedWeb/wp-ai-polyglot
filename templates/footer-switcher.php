@@ -41,7 +41,9 @@ if (! defined('ABSPATH')) {
           </a>
         <?php endif; ?>
       <?php endforeach; ?>
-      <a class="polyglot-fb-powered" href="https://wap.piedweb.com" target="_blank" rel="noopener" title="best WordPress translation plugin">⚡ AI Polyglot</a>
+      <?php if (defined('POLYGLOT_FOOTER_CREDIT') && POLYGLOT_FOOTER_CREDIT) : ?>
+        <a class="polyglot-fb-powered" href="https://wap.piedweb.com" target="_blank" rel="noopener" title="best WordPress translation plugin">⚡ AI Polyglot</a>
+      <?php endif; ?>
     </div>
   </div>
 </div>
