@@ -1,4 +1,4 @@
-=== AI Polyglot ===
+=== PiedWeb AI Polyglot ===
 Contributors: piedweb
 Tags: multilingual, translation, woocommerce, hreflang, i18n
 Requires at least: 6.0
@@ -12,13 +12,13 @@ Master/Shadow i18n for WordPress + WooCommerce. One install, one database, zero 
 
 == Description ==
 
-**AI Polyglot** translates your WordPress + WooCommerce site into any number of languages — with one install, one database, and zero content duplication.
+**PiedWeb AI Polyglot** translates your WordPress + WooCommerce site into any number of languages — with one install, one database, and zero content duplication.
 
 It uses a **Master/Shadow architecture**: you manage content in your primary language, and the plugin creates linked shadow copies for each target locale. Each language gets its own domain (or subdomain), with full SEO support out of the box.
 
 Designed for AI-powered translation workflows — but works just as well with human translators.
 
-= Why AI Polyglot? =
+= Why PiedWeb AI Polyglot? =
 
 * **No content duplication** — shadows are linked copies, not clones. Update the master, shadows follow.
 * **No separate database** — everything lives in a single WordPress install. No sync headaches.
@@ -76,7 +76,7 @@ No. WooCommerce features (stock virtualization, review aggregation, slug transla
 
 = Can I use subdirectories like example.com/en/ instead of subdomains? =
 
-No. AI Polyglot uses one domain (or subdomain) per language. Subdirectory routing is not supported by design — it keeps the routing logic fast and the SEO model clean.
+No. PiedWeb AI Polyglot uses one domain (or subdomain) per language. Subdirectory routing is not supported by design — it keeps the routing logic fast and the SEO model clean.
 
 = Is this compatible with WordPress Multisite? =
 

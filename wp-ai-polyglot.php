@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: AI Polyglot
+ * Plugin Name: PiedWeb AI Polyglot
  * Plugin URI:  https://wap.piedweb.com
  * Description: Master/Shadow i18n architecture. One master language, N shadow languages via domain map.
  * Version:     2.0.0
@@ -8,7 +8,7 @@
  * Author URI:  https://en.piedweb.com
  * License:     GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: ai-polyglot
+ * Text Domain: piedweb-ai-polyglot
  * Requires at least: 6.0
  * Requires PHP: 8.0
  */
@@ -36,7 +36,7 @@ if (! defined('POLYGLOT_TRANSLATIONS_DIR')) {
 if (is_multisite()) {
     add_action('admin_notices', function (): void {
         echo '<div class="notice notice-error"><p>';
-        echo esc_html__('AI Polyglot is not compatible with WordPress Multisite.', 'ai-polyglot');
+        echo esc_html__('PiedWeb AI Polyglot is not compatible with WordPress Multisite.', 'piedweb-ai-polyglot');
         echo '</p></div>';
     });
 
