@@ -1,0 +1,31 @@
+# Directories
+/.git
+/.github
+/.wordpress-org
+/bin
+/node_modules
+/tests
+/vendor
+
+# Files
+/.distignore
+/.editorconfig
+/.gitattributes
+/.gitignore
+/.php-cs-fixer.cache
+/.php-cs-fixer.dist.php
+/.phpunit.result.cache
+/composer.json
+/composer.lock
+/phpunit.xml
+/phpunit.xml.dist
+/README.md
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+*.sql
+*.swp
+*.tar
+*.zip

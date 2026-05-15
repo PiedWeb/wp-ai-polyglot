@@ -52,6 +52,10 @@ define('POLYGLOT_WC_SLUGS_OPTION', 'polyglot_wc_slugs');
 // ACTIVATION / DEACTIVATION
 // ============================================================
 
+add_action('init', function (): void {
+    load_plugin_textdomain('wp-ai-polyglot', false, dirname(plugin_basename(__FILE__)).'/languages');
+});
+
 register_activation_hook(__FILE__, function (): void {
     flush_rewrite_rules();
 });
