@@ -25,6 +25,7 @@ Designed for AI-powered translation workflows — but works just as well with hu
 - **WooCommerce i18n** — shipping labels, checkout legal texts, cart product names, and permalink slugs are all translated per locale.
 - **Human lock** — manually edited translations are protected from automated overwrite (unless you `--force`).
 - **Language suggestion banner** — auto-detects the visitor's browser language and suggests switching locale, with dismiss + localStorage persistence. Disable via config.
+- **Draft link handling** — internal links pointing to drafts (or any non-published target) are auto-hidden for public visitors and re-activate at render time once the target is published. Editors keep working links.
 - **Language switcher** — drop-in function for your theme with WooCommerce cart session transfer across domains.
 - **Admin UI** — locale filter dropdown, language badge column, shadow warning banner, and translations metabox on masters.
 - **Flat-file export/import** — bulk export all translations to TSV + HTML files, edit offline, re-import. Concurrency lock prevents simultaneous runs.
@@ -74,6 +75,22 @@ The banner is enabled by default. Setting `POLYGLOT_BAR` to `false` prevents bot
 | `assets/polyglot-bar.js` | Browser language detection, localStorage, show/dismiss |
 
 ---
+
+## Draft Link Handling
+
+When a published article links to a page or product that is still in `draft` (or `pending`, `future`, `private`), the public version of the article would normally expose a broken link. WP AI Polyglot resolves this at render time:
+
+- The `the_content` filter parses every internal `<a>` tag, resolves the target via locale-aware `custom_permalink` lookup, and checks the post status.
+- If the target is **published** → link kept as-is.
+- If the target is **not published** and the visitor is **not an editor** → the `<a>` is replaced with `<span data-draft="{post title}" data-status="{status}">{original text}</span>`. The text content is preserved; only the hyperlink disappears.
+- If the visitor **can edit posts** (admin / editor) → the link is kept active so editors can navigate to the draft.
+- When the draft is later published, the next render automatically restores the link — no content rewrite needed.
+
+External links, `mailto:`, `tel:`, and anchor-only (`#section`) URLs are never touched. Cross-domain shadow links (e.g. an EN article linking to an FR shadow draft) are resolved against the correct locale.
+
+The `data-draft` / `data-status` attributes make it easy to debug missing links via the browser inspector. By default they are not styled — add CSS if you want to visually mark them in the editor view.
+
+> ⚠️ Cache invalidation on publish is **not** automated. If you use a full-page cache (WP Super Cache, Varnish), pages referencing a freshly-published target will keep the hidden version until the cache expires or is purged.
 
 ## Configuration
 
@@ -271,6 +288,7 @@ composer test:filter test_is_master_on_master_domain
 | `BlocksBridgeTest`       | Gutenberg block product ID rewriting                          |
 | `CheckLinksTest`         | Link scanning: wrong slugs, trailing slashes, localhost, fix  |
 | `CheckLinksRenderedTest` | Rendered HTML scanning: dedup, sitemaps, hreflang, fragments  |
+| `DraftLinkHandlerTest`   | Draft link resolution + `the_content` span replacement        |
 
 Inventory bridge (stock virtualization, stock reduction) is tested via WP-CLI integration since it requires WooCommerce at runtime.
 
