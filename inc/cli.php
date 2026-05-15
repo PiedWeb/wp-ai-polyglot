@@ -364,7 +364,12 @@ class Polyglot_CLI
 
                     // Long content → HTML files
                     $fr_content = $post->post_content;
-                    $folder = "$dir/$post_type-$master_id";
+                    $slug = $post->post_name;
+                    $folder = "$dir/$post_type-$master_id-$slug";
+                    $old_folder = "$dir/$post_type-$master_id";
+                    if (is_dir($old_folder) && ! is_dir($folder)) {
+                        rename($old_folder, $folder);
+                    }
 
                     if ('' !== trim($fr_content)) {
                         if (! is_dir($folder)) {
@@ -646,7 +651,7 @@ class Polyglot_CLI
                             continue;
                         }
 
-                        $html_file = "$dir/$post_type-$master_id/$locale.html";
+                        $html_file = $this->flat_folder($dir, $post_type, (int) $master_id) . "/$locale.html";
                         $content = file_exists($html_file) ? file_get_contents($html_file) : null;
 
                         if ($dry_run) {
@@ -699,7 +704,7 @@ class Polyglot_CLI
                     }
 
                     // Load HTML content from file if it exists
-                    $html_file = "$dir/$post_type-$master_id/$locale.html";
+                    $html_file = $this->flat_folder($dir, $post_type, (int) $master_id) . "/$locale.html";
                     $content = file_exists($html_file) ? file_get_contents($html_file) : null;
 
                     $action = $existing_id ? 'update' : 'create';
@@ -868,6 +873,16 @@ class Polyglot_CLI
         }
 
         WP_CLI::success("Shadow comment $shadow_comment_id created/updated for '$target_locale' (master comment: $comment_id).");
+    }
+
+    private function flat_folder(string $dir, string $post_type, int $master_id): string
+    {
+        $matches = glob("$dir/$post_type-$master_id-*") ?: [];
+        if ($matches !== []) {
+            return $matches[0];
+        }
+
+        return "$dir/$post_type-$master_id";
     }
 
     private function acquire_sync_lock(string $command): void

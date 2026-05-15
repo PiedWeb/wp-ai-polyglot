@@ -40,7 +40,7 @@ class ExportImportTest extends WP_UnitTestCase
         $this->run_export();
 
         $this->assertFileExists($this->export_dir . '/translations.tsv');
-        $this->assertFileExists($this->export_dir . '/page-' . $this->master_id . '/fr_FR.html');
+        $this->assertFileExists($this->export_dir . '/page-' . $this->master_id . '-a-propos/fr_FR.html');
 
         $tsv = file_get_contents($this->export_dir . '/translations.tsv');
         $this->assertStringContainsString('À propos', $tsv);
@@ -67,7 +67,7 @@ class ExportImportTest extends WP_UnitTestCase
         $this->run_export();
         $this->inject_translation_in_tsv('en_IE', 'About Us', 'about-us');
 
-        $html_dir = $this->export_dir . '/page-' . $this->master_id;
+        $html_dir = $this->export_dir . '/page-' . $this->master_id . '-a-propos';
         file_put_contents($html_dir . '/en_IE.html', '<p>Our story</p>');
 
         $this->run_import();
@@ -152,14 +152,14 @@ class ExportImportTest extends WP_UnitTestCase
 
         $this->run_export();
         $this->inject_translation_in_tsv('en_IE', 'About Us', 'about-us');
-        $html_dir = $this->export_dir . '/page-' . $this->master_id;
+        $html_dir = $this->export_dir . '/page-' . $this->master_id . '-a-propos';
         file_put_contents($html_dir . '/en_IE.html', $html);
         $this->run_import();
 
         $this->recursive_rmdir($this->export_dir);
         $this->run_export();
 
-        $exported = file_get_contents($this->export_dir . '/page-' . $this->master_id . '/en_IE.html');
+        $exported = file_get_contents($this->export_dir . '/page-' . $this->master_id . '-a-propos/en_IE.html');
         $this->assertSame($html, $exported);
     }
 
@@ -180,6 +180,38 @@ class ExportImportTest extends WP_UnitTestCase
         $this->assertStringContainsString('Chaussures', $tsv);
         $this->assertStringContainsString('Shoes', $tsv);
         $this->assertStringContainsString('term:product_cat', $tsv);
+    }
+
+    public function test_export_renames_old_format_folder(): void
+    {
+        // Simulate a pre-existing old-format dir (no slug)
+        $old_dir = $this->export_dir . '/page-' . $this->master_id;
+        mkdir($old_dir, 0755, true);
+        file_put_contents($old_dir . '/fr_FR.html', '<p>old content</p>');
+
+        $this->run_export();
+
+        $new_dir = $this->export_dir . '/page-' . $this->master_id . '-a-propos';
+        $this->assertDirectoryExists($new_dir, 'Export should rename old-format dir to new slug-based dir');
+        $this->assertDirectoryDoesNotExist($old_dir, 'Old-format dir should no longer exist after rename');
+    }
+
+    public function test_import_falls_back_to_old_format_folder(): void
+    {
+        $this->run_export();
+        $this->inject_translation_in_tsv('en_IE', 'About Us', 'about-us');
+
+        // Move the new-format dir back to old format to simulate pre-migration state
+        $new_dir = $this->export_dir . '/page-' . $this->master_id . '-a-propos';
+        $old_dir = $this->export_dir . '/page-' . $this->master_id;
+        rename($new_dir, $old_dir);
+        file_put_contents($old_dir . '/en_IE.html', '<p>Old story</p>');
+
+        $this->run_import();
+
+        $shadow_id = $this->find_shadow($this->master_id, 'en_IE');
+        $this->assertNotNull($shadow_id, 'Shadow should be created even with old-format dir');
+        $this->assertSame('<p>Old story</p>', get_post($shadow_id)->post_content);
     }
 
     // === Helpers ===
