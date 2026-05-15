@@ -103,10 +103,10 @@ Yes. Any translation edited through wp-admin (or marked with `_translation_mode 
 1. Locale filter dropdown and language badge column on the posts admin screen.
 2. Custom permalink metabox in the editor — each locale's URL is editable.
 3. Front-end language suggestion banner detecting browser locale.
-4. WP-CLI output for `wp polyglot untranslated` and `wp polyglot translate`.
-5. Flat-file export folder structure for offline editing.
 
 == Credits ==
+
+Brought to you by Robin ([Pied Web](https://en.piedweb.com)), inspired by [Pushword CMS](https://pushword.piedweb.com), sponsored by [Woodrock Climbing](https://woodrockclimbing.com).
 
 Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/lipis/flag-icons) by Panayiotis Lipiridis, licensed under the MIT License.
 

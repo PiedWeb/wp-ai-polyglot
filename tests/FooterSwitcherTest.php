@@ -82,7 +82,7 @@ class FooterSwitcherTest extends WP_UnitTestCase
         $this->assertEmpty($output);
     }
 
-    public function testFooterBarContainsAttribution(): void
+    public function testFooterBarHidesAttributionByDefault(): void
     {
         $this->simulate_front_page();
 
@@ -90,8 +90,24 @@ class FooterSwitcherTest extends WP_UnitTestCase
         polyglot_footer_switcher_bar();
         $output = ob_get_clean();
 
+        $this->assertStringNotContainsString('wap.piedweb.com', $output);
+        $this->assertStringNotContainsString('<a class="polyglot-fb-powered"', $output);
+    }
+
+    public function testFooterBarShowsAttributionWhenOptedIn(): void
+    {
+        if (! defined('POLYGLOT_FOOTER_CREDIT')) {
+            define('POLYGLOT_FOOTER_CREDIT', true);
+        }
+
+        $this->simulate_front_page();
+
+        ob_start();
+        polyglot_footer_switcher_bar();
+        $output = ob_get_clean();
+
         $this->assertStringContainsString('wap.piedweb.com', $output);
-        $this->assertStringContainsString('WP AI Polyglot', $output);
+        $this->assertStringContainsString('PiedWeb AI Polyglot', $output);
     }
 
     public function testFooterBarUsesDropdownWithLinks(): void
