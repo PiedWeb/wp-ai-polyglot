@@ -72,6 +72,7 @@ require_once __DIR__.'/inc/wc-review-bridge.php';
 require_once __DIR__.'/inc/seo.php';
 require_once __DIR__.'/inc/admin.php';
 require_once __DIR__.'/inc/frontend.php';
+require_once __DIR__.'/inc/draft-link-handler.php';
 require_once __DIR__.'/inc/wc-i18n.php';
 if (defined('WP_CLI') && WP_CLI) {
     require_once __DIR__.'/inc/cli.php';
