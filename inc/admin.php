@@ -19,11 +19,11 @@ add_action('admin_init', function (): void {
     ]);
     add_settings_field(
         'polyglot_uninstall_delete_shadows',
-        __('Polyglot: delete shadows on uninstall', 'wp-ai-polyglot'),
+        __('Polyglot: delete shadows on uninstall', 'ai-polyglot'),
         function (): void {
             $checked = get_option('polyglot_uninstall_delete_shadows', false);
             echo '<label><input type="checkbox" name="polyglot_uninstall_delete_shadows" value="1" '.checked($checked, true, false).' /> ';
-            echo esc_html__('Delete all shadow posts, terms, and translated comments when this plugin is deleted.', 'wp-ai-polyglot');
+            echo esc_html__('Delete all shadow posts, terms, and translated comments when this plugin is deleted.', 'ai-polyglot');
             echo '</label>';
         },
         'general',
@@ -37,12 +37,12 @@ add_action('admin_init', function (): void {
     ]);
     add_settings_field(
         'polyglot_footer_switcher',
-        __('Polyglot: footer language switcher', 'wp-ai-polyglot'),
+        __('Polyglot: footer language switcher', 'ai-polyglot'),
         function (): void {
             $checked = get_option('polyglot_footer_switcher', true);
             echo '<input type="hidden" name="polyglot_footer_switcher" value="0" />';
             echo '<label><input type="checkbox" name="polyglot_footer_switcher" value="1" '.checked($checked, true, false).' /> ';
-            echo esc_html__('Display a floating language-switcher bar in the site footer.', 'wp-ai-polyglot');
+            echo esc_html__('Display a floating language-switcher bar in the site footer.', 'ai-polyglot');
             echo '</label>';
         },
         'general',
@@ -74,8 +74,8 @@ function polyglot_admin_locale_dropdown($post_type)
 
     echo '<select name="polyglot_locale">';
     /* translators: %s: master language code (e.g. FR) */
-    echo '<option value=""'.selected($current, '', false).'>'.sprintf(esc_html__('Master (%s)', 'wp-ai-polyglot'), esc_html($master_hreflang)).'</option>';
-    echo '<option value="all"'.selected($current, 'all', false).'>'.esc_html__('All languages', 'wp-ai-polyglot').'</option>';
+    echo '<option value=""'.selected($current, '', false).'>'.sprintf(esc_html__('Master (%s)', 'ai-polyglot'), esc_html($master_hreflang)).'</option>';
+    echo '<option value="all"'.selected($current, 'all', false).'>'.esc_html__('All languages', 'ai-polyglot').'</option>';
 
     foreach (POLYGLOT_LOCALES as $cfg) {
         if (! empty($cfg['master'])) {
@@ -103,7 +103,7 @@ function polyglot_add_langue_column($columns)
     foreach ($columns as $key => $label) {
         $new[$key] = $label;
         if ('title' === $key) {
-            $new['polyglot_langue'] = __('Language', 'wp-ai-polyglot');
+            $new['polyglot_langue'] = __('Language', 'ai-polyglot');
         }
     }
 
@@ -134,7 +134,7 @@ function polyglot_render_langue_column($column, $post_id)
             .esc_html($hreflang)
             .'</span>';
         if ('manual' === $mode) {
-            echo ' <span class="polyglot-badge polyglot-manual" title="'.esc_attr__('Manual translation', 'wp-ai-polyglot').'">✎</span>';
+            echo ' <span class="polyglot-badge polyglot-manual" title="'.esc_attr__('Manual translation', 'ai-polyglot').'">✎</span>';
         }
     } else {
         // Master
@@ -192,13 +192,13 @@ function polyglot_admin_shadow_banner()
     $label = polyglot_locale_to_label($locale);
     $mode = get_post_meta($post->ID, '_translation_mode', true);
     $master_link = get_edit_post_link($master_id);
-    $mode_text = 'manual' === $mode ? esc_html__('Manual translation', 'wp-ai-polyglot') : esc_html__('Automatic translation', 'wp-ai-polyglot');
+    $mode_text = 'manual' === $mode ? esc_html__('Manual translation', 'ai-polyglot') : esc_html__('Automatic translation', 'ai-polyglot');
 
     echo '<div class="notice notice-warning"><p>';
     echo '<strong>SHADOW ['.esc_html($label).']</strong> — ';
     echo esc_html($mode_text).'. ';
     /* translators: %1$s: edit link URL, %2$s: master post ID */
-    echo wp_kses_post(sprintf(__('Master: <a href="%1$s">ID %2$s &rarr;</a>', 'wp-ai-polyglot'), esc_url($master_link), esc_html($master_id)));
+    echo wp_kses_post(sprintf(__('Master: <a href="%1$s">ID %2$s &rarr;</a>', 'ai-polyglot'), esc_url($master_link), esc_html($master_id)));
     echo '</p></div>';
 }
 
@@ -227,7 +227,7 @@ function polyglot_register_translation_metabox()
 
     add_meta_box(
         'polyglot_translations',
-        __('Translations', 'wp-ai-polyglot'),
+        __('Translations', 'ai-polyglot'),
         'polyglot_render_translation_metabox',
         $post_type,
         'side',
@@ -266,9 +266,9 @@ function polyglot_render_translation_metabox($post)
             $edit_link = get_edit_post_link($sid);
             echo '<li style="padding:3px 0">';
             echo '<span style="color:#46b450">✓</span> ';
-            echo esc_html($label).' — <a href="'.esc_url($edit_link).'">'.esc_html__('Edit', 'wp-ai-polyglot').'</a>';
+            echo esc_html($label).' — <a href="'.esc_url($edit_link).'">'.esc_html__('Edit', 'ai-polyglot').'</a>';
             if ('manual' === $mode) {
-                echo ' <span style="color:#f0ad4e" title="'.esc_attr__('Manual translation', 'wp-ai-polyglot').'">✎</span>';
+                echo ' <span style="color:#f0ad4e" title="'.esc_attr__('Manual translation', 'ai-polyglot').'">✎</span>';
             }
             echo '</li>';
         } else {
@@ -280,7 +280,7 @@ function polyglot_render_translation_metabox($post)
     }
     echo '</ul>';
     /* translators: %1$d: number of existing translations, %2$d: total number of shadow locales */
-    echo '<p style="margin:8px 0 0;color:#666"><strong>'.esc_html($existing_count).'/'.esc_html($total).'</strong> '.esc_html__('translations', 'wp-ai-polyglot').'</p>';
+    echo '<p style="margin:8px 0 0;color:#666"><strong>'.esc_html($existing_count).'/'.esc_html($total).'</strong> '.esc_html__('translations', 'ai-polyglot').'</p>';
 }
 
 // ============================================================
@@ -294,7 +294,7 @@ function polyglot_register_permalink_metabox(): void
     foreach (polyglot_get_post_types() as $post_type) {
         add_meta_box(
             'polyglot_custom_permalink',
-            __('Permalien Polyglot', 'wp-ai-polyglot'),
+            __('Permalien Polyglot', 'ai-polyglot'),
             'polyglot_render_permalink_metabox',
             $post_type,
             'side',
@@ -319,7 +319,7 @@ function polyglot_render_permalink_metabox(WP_Post $post): void
         class="widefat"
     />
     <p class="description" style="margin-top:6px">
-        <?php esc_html_e('URL personnalisée de cette page. Exemples : blog, promo/black-friday', 'wp-ai-polyglot'); ?>
+        <?php esc_html_e('URL personnalisée de cette page. Exemples : blog, promo/black-friday', 'ai-polyglot'); ?>
     </p>
     <?php
 }
@@ -400,7 +400,7 @@ add_filter('manage_users_custom_column', 'polyglot_render_user_locale_column', 1
 
 function polyglot_add_user_locale_column($columns)
 {
-    $columns['polyglot_locale'] = __('Registration locale', 'wp-ai-polyglot');
+    $columns['polyglot_locale'] = __('Registration locale', 'ai-polyglot');
 
     return $columns;
 }

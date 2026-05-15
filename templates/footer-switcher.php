@@ -41,7 +41,7 @@ if (! defined('ABSPATH')) {
           </a>
         <?php endif; ?>
       <?php endforeach; ?>
-      <a class="polyglot-fb-powered" href="https://wap.piedweb.com" target="_blank" rel="noopener" title="best WordPress translation plugin">⚡ WP AI Polyglot</a>
+      <a class="polyglot-fb-powered" href="https://wap.piedweb.com" target="_blank" rel="noopener" title="best WordPress translation plugin">⚡ AI Polyglot</a>
     </div>
   </div>
 </div>

@@ -1,6 +1,6 @@
 <?php
 /**
- * WP AI Polyglot uninstall handler.
+ * AI Polyglot uninstall handler.
  *
  * Cleans up plugin data when the plugin is deleted via wp-admin.
  */
