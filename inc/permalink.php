@@ -170,24 +170,49 @@ add_filter('request', function ($query_vars) {
         return $query_vars;
     }
 
+    $locale = polyglot_get_current_locale();
+    $is_master = polyglot_is_master();
+
     $slug = $query_vars['pagename'] ?? $query_vars['name'] ?? null;
+
+    // When no slug was extracted from rewrite rules (e.g. WC endpoint on a child page
+    // where get_page_by_path() fails), parse the URL path directly.
+    if (! $slug && ! isset($query_vars['page_id']) && ! isset($query_vars['p']) && function_exists('WC')) {
+        $request = trim(parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
+        if ($request) {
+            $endpoints = array_keys(WC()->query->get_query_vars());
+            foreach ($endpoints as $ep) {
+                if (preg_match('#^(.+?)/'.preg_quote($ep, '#').'(?:/(.*))?$#', $request, $m)) {
+                    $post_id = polyglot_resolve_by_slug($m[1], 'page', $locale, $is_master);
+                    if ($post_id) {
+                        return ['page_id' => $post_id, $ep => $m[2] ?? ''];
+                    }
+                }
+            }
+        }
+    }
+
     if (! $slug || isset($query_vars['page_id']) || isset($query_vars['p'])) {
         return $query_vars;
     }
 
-    $locale = polyglot_get_current_locale();
-    $is_master = polyglot_is_master();
-
     // Try page resolution first
     $post_id = polyglot_resolve_by_slug($slug, 'page', $locale, $is_master);
     if ($post_id) {
-        return ['page_id' => $post_id];
+        unset($query_vars['pagename'], $query_vars['name']);
+        $query_vars['page_id'] = $post_id;
+
+        return $query_vars;
     }
 
     // Try product resolution (flat URLs on all domains)
     $post_id = polyglot_resolve_by_slug($slug, 'product', $locale, $is_master);
     if ($post_id) {
-        return ['p' => $post_id, 'post_type' => 'product'];
+        unset($query_vars['pagename'], $query_vars['name']);
+        $query_vars['p'] = $post_id;
+        $query_vars['post_type'] = 'product';
+
+        return $query_vars;
     }
 
     return $query_vars;
@@ -312,6 +337,11 @@ add_action('template_redirect', function () {
     $canonical_path = parse_url($canonical, \PHP_URL_PATH);
 
     if (in_array($post->post_type, ['page', 'product'], true) && $request_path !== $canonical_path) {
+        // Don't redirect when a WooCommerce endpoint is active (order-received, order-pay, etc.)
+        if (function_exists('is_wc_endpoint_url') && is_wc_endpoint_url()) {
+            return;
+        }
+
         wp_redirect($canonical, 301);
         exit;
     }
