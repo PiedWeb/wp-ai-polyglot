@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 // ============================================================
 // WOOCOMMERCE FRONTEND TRANSLATIONS — Shipping, checkout, cart
 // ============================================================
@@ -50,7 +54,8 @@ function polyglot_translate_checkout_privacy($value)
         return $value;
     }
 
-    return sprintf(__('Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our %s.', 'woocommerce'), '[privacy_policy]');
+    /* translators: %s: placeholder replaced by [privacy_policy] shortcode link. */
+    return sprintf(__('Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our %s.', 'woocommerce'), '[privacy_policy]'); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentionally reusing WooCommerce's translation.
 }
 
 function polyglot_translate_checkout_terms($value)
@@ -59,7 +64,8 @@ function polyglot_translate_checkout_terms($value)
         return $value;
     }
 
-    return sprintf(__('I have read and agree to the website %s', 'woocommerce'), '[terms]');
+    /* translators: %s: placeholder replaced by [terms] shortcode link. */
+    return sprintf(__('I have read and agree to the website %s', 'woocommerce'), '[terms]'); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentionally reusing WooCommerce's translation.
 }
 
 // --- Cart item names: show shadow product title for master products ---

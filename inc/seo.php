@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 // ============================================================
 // SEO — Automatic hreflang tags (all locales)
 // ============================================================
@@ -62,7 +66,7 @@ function polyglot_get_locale_paths(): array
 
         // Master path
         $master_authority = polyglot_get_master_authority();
-        $paths[$master_authority] = parse_url(get_permalink($real_master_id), \PHP_URL_PATH);
+        $paths[$master_authority] = wp_parse_url(get_permalink($real_master_id), \PHP_URL_PATH);
 
         // All shadows for this master
         $shadows = $wpdb->get_results($wpdb->prepare(
@@ -76,7 +80,7 @@ function polyglot_get_locale_paths(): array
         foreach ($shadows as $shadow) {
             $authority = $locale_to_authority[$shadow->locale] ?? null;
             if ($authority) {
-                $paths[$authority] = parse_url(get_permalink((int) $shadow->post_id), \PHP_URL_PATH);
+                $paths[$authority] = wp_parse_url(get_permalink((int) $shadow->post_id), \PHP_URL_PATH);
             }
         }
 
@@ -97,7 +101,7 @@ function polyglot_get_locale_paths(): array
         $master_authority = polyglot_get_master_authority();
         $master_link = get_term_link($real_master_term_id);
         if (! is_wp_error($master_link)) {
-            $paths[$master_authority] = parse_url($master_link, \PHP_URL_PATH);
+            $paths[$master_authority] = wp_parse_url($master_link, \PHP_URL_PATH);
         }
 
         // All shadow terms
@@ -114,7 +118,7 @@ function polyglot_get_locale_paths(): array
             if ($authority) {
                 $link = get_term_link((int) $st->term_id);
                 if (! is_wp_error($link)) {
-                    $paths[$authority] = parse_url($link, \PHP_URL_PATH);
+                    $paths[$authority] = wp_parse_url($link, \PHP_URL_PATH);
                 }
             }
         }

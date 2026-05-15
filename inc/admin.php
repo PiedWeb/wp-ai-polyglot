@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 // ============================================================
 // ADMIN — Uninstall option (full cleanup toggle)
 // ============================================================
@@ -154,7 +158,7 @@ function polyglot_render_langue_column($column, $post_id)
         echo '<span class="polyglot-badge polyglot-master">'
             .esc_html($master_hreflang)
             .'</span> '
-            .'<span class="polyglot-count">'.$shadow_count.'/'.$total.'</span>';
+            .'<span class="polyglot-count">'.esc_html($shadow_count).'/'.esc_html($total).'</span>';
     }
 }
 
@@ -188,13 +192,13 @@ function polyglot_admin_shadow_banner()
     $label = polyglot_locale_to_label($locale);
     $mode = get_post_meta($post->ID, '_translation_mode', true);
     $master_link = get_edit_post_link($master_id);
-    $mode_text = 'manual' === $mode ? __('Manual translation', 'wp-ai-polyglot') : __('Automatic translation', 'wp-ai-polyglot');
+    $mode_text = 'manual' === $mode ? esc_html__('Manual translation', 'wp-ai-polyglot') : esc_html__('Automatic translation', 'wp-ai-polyglot');
 
     echo '<div class="notice notice-warning"><p>';
     echo '<strong>SHADOW ['.esc_html($label).']</strong> — ';
     echo esc_html($mode_text).'. ';
     /* translators: %1$s: edit link URL, %2$s: master post ID */
-    echo sprintf(__('Master: <a href="%1$s">ID %2$s &rarr;</a>', 'wp-ai-polyglot'), esc_url($master_link), esc_html($master_id));
+    echo wp_kses_post(sprintf(__('Master: <a href="%1$s">ID %2$s &rarr;</a>', 'wp-ai-polyglot'), esc_url($master_link), esc_html($master_id)));
     echo '</p></div>';
 }
 
@@ -276,7 +280,7 @@ function polyglot_render_translation_metabox($post)
     }
     echo '</ul>';
     /* translators: %1$d: number of existing translations, %2$d: total number of shadow locales */
-    echo '<p style="margin:8px 0 0;color:#666"><strong>'.$existing_count.'/'.$total.'</strong> '.esc_html__('translations', 'wp-ai-polyglot').'</p>';
+    echo '<p style="margin:8px 0 0;color:#666"><strong>'.esc_html($existing_count).'/'.esc_html($total).'</strong> '.esc_html__('translations', 'wp-ai-polyglot').'</p>';
 }
 
 // ============================================================
@@ -460,7 +464,7 @@ function polyglot_render_order_locale_column($column, $post_id)
     }
 
     $locale = get_post_meta($post_id, '_order_locale', true);
-    echo polyglot_format_locale_badge($locale);
+    echo polyglot_format_locale_badge($locale); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- returns sanitized HTML built from trusted locale labels
 }
 
 function polyglot_render_order_locale_column_hpos($column, $order)
@@ -474,7 +478,7 @@ function polyglot_render_order_locale_column_hpos($column, $order)
         $locale = $order->get_meta('_order_locale');
     }
 
-    echo polyglot_format_locale_badge($locale);
+    echo polyglot_format_locale_badge($locale); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- returns sanitized HTML built from trusted locale labels
 }
 
 function polyglot_format_locale_badge(string $locale): string

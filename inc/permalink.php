@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 // ============================================================
 // WC PERMALINK SLUGS — Locale-aware product/category/tag bases
 // ============================================================
@@ -178,7 +182,7 @@ add_filter('request', function ($query_vars) {
     // When no slug was extracted from rewrite rules (e.g. WC endpoint on a child page
     // where get_page_by_path() fails), parse the URL path directly.
     if (! $slug && ! isset($query_vars['page_id']) && ! isset($query_vars['p']) && function_exists('WC')) {
-        $request = trim(parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
+        $request = trim(wp_parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
         if ($request) {
             $endpoints = array_keys(WC()->query->get_query_vars());
             foreach ($endpoints as $ep) {
@@ -333,8 +337,8 @@ add_action('template_redirect', function () {
     }
 
     $canonical = get_permalink($post->ID);
-    $request_path = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
-    $canonical_path = parse_url($canonical, \PHP_URL_PATH);
+    $request_path = wp_parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
+    $canonical_path = wp_parse_url($canonical, \PHP_URL_PATH);
 
     if (in_array($post->post_type, ['page', 'product'], true) && $request_path !== $canonical_path) {
         // Don't redirect when a WooCommerce endpoint is active (order-received, order-pay, etc.)
@@ -359,7 +363,7 @@ add_action('template_redirect', function () {
         return;
     }
 
-    $request = trim(parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
+    $request = trim(wp_parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
     if (! $request) {
         return;
     }
@@ -435,7 +439,7 @@ function polyglot_find_master_from_shadow_slug(string $slug, string $post_type):
  *    with '/'. If the slug resolves to a polyglot post, block the redirect.
  */
 add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
-    $requested_path = parse_url($requested_url, \PHP_URL_PATH);
+    $requested_path = wp_parse_url($requested_url, \PHP_URL_PATH);
 
     if (is_singular()) {
         $post = get_queried_object();
@@ -444,7 +448,7 @@ add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
         }
 
         $canonical      = get_permalink($post->ID);
-        $canonical_path = parse_url($canonical, \PHP_URL_PATH);
+        $canonical_path = wp_parse_url($canonical, \PHP_URL_PATH);
 
         // Exact match — no redirect needed
         if ($requested_path === $canonical_path) {
@@ -457,7 +461,7 @@ add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
 
     // Non-singular: block WP from adding a trailing slash to a polyglot slug.
     // Happens when permalink_structure ends with '/' and WP doesn't recognise the flat URL.
-    $redirect_path = parse_url($redirect_url, \PHP_URL_PATH);
+    $redirect_path = wp_parse_url($redirect_url, \PHP_URL_PATH);
     if ($redirect_path === rtrim($requested_path, '/').'/') {
         $slug      = trim($requested_path, '/');
         $locale    = polyglot_get_current_locale();

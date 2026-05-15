@@ -2,7 +2,7 @@
 Contributors: piedweb
 Tags: multilingual, translation, woocommerce, hreflang, i18n
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 8.0
 Stable tag: 2.0.0
 License: GPLv2 or later

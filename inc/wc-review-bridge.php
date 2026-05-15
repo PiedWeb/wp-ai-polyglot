@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 // ============================================================
 // REVIEW BRIDGE — Shadow delegates reviews to Master
 // ============================================================
@@ -159,10 +163,12 @@ function polyglot_virtual_review_comments_clauses($clauses, $query)
     $locale = polyglot_get_current_locale();
 
     // Rewrite WHERE to target master product
+    // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- $clauses['where'] is WordPress's own comment-query SQL fragment; we patch it via preg_replace and re-prepare.
     $clauses['where'] = $wpdb->prepare(
         preg_replace('/comment_post_ID\s*=\s*\d+/', 'comment_post_ID = %d', $clauses['where']),
         $target_post_id
     );
+    // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 
     // Join commentmeta for locale filtering
     $clauses['join'] .= " LEFT JOIN {$wpdb->commentmeta} AS pcm_source ON ({$wpdb->comments}.comment_ID = pcm_source.comment_id AND pcm_source.meta_key = '_source_locale')";

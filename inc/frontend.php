@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 // ============================================================
 // COOKIE BANNER — Translate Cookie Law Info on shadow domains
 // ============================================================
@@ -65,6 +69,7 @@ function polyglot_cookie_modal_ob_end(): void
     }
 
     $html = ob_get_clean();
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is WP's already-escaped output buffer.
     echo str_replace(array_keys($map), array_values($map), $html);
 }
 

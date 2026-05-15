@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 class Polyglot_CLI
 {
     /**
@@ -291,6 +295,7 @@ class Polyglot_CLI
 
             // Ensure output dir exists
             if (! is_dir($dir)) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
                 mkdir($dir, 0755, true);
             }
 
@@ -368,11 +373,13 @@ class Polyglot_CLI
                     $folder = "$dir/$post_type-$master_id-$slug";
                     $old_folder = "$dir/$post_type-$master_id";
                     if (is_dir($old_folder) && ! is_dir($folder)) {
+                        // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
                         rename($old_folder, $folder);
                     }
 
                     if ('' !== trim($fr_content)) {
                         if (! is_dir($folder)) {
+                            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
                             mkdir($folder, 0755, true);
                         }
                         file_put_contents("$folder/$master_locale.html", $fr_content);
@@ -446,11 +453,13 @@ class Polyglot_CLI
 
             // Write TSV
             $tsv_path = "$dir/translations.tsv";
+            // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
             $fp = fopen($tsv_path, 'w');
             foreach ($tsv_rows as $row) {
                 fputcsv($fp, $row, "\t");
             }
             fclose($fp);
+            // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
             $post_count = count(array_unique(array_column(array_slice($tsv_rows, 1), 1)));
             $this->release_sync_lock();
@@ -492,6 +501,7 @@ class Polyglot_CLI
                 WP_CLI::error("File not found: $tsv_path");
             }
 
+            // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
             $fp = fopen($tsv_path, 'r');
             $header = fgetcsv($fp, 0, "\t");
             // header: type, master_id, field, <master_locale>, locale1, locale2, ...
@@ -523,6 +533,7 @@ class Polyglot_CLI
                 }
             }
             fclose($fp);
+            // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
             $stats = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
 
@@ -1009,7 +1020,7 @@ class Polyglot_CLI
             ...$post_types
         );
 
-        $rows = $wpdb->get_results($query);
+        $rows = $wpdb->get_results($query); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query is built from $wpdb->prepare()
         $map = [];
         foreach ($rows as $row) {
             $map[(int) $row->master_id][$row->locale] = (int) $row->shadow_id;
@@ -1273,7 +1284,7 @@ class Polyglot_CLI
         $sql = count($queries) > 1
             ? '('.implode(') UNION ALL (', $queries).') ORDER BY locale, ID'
             : $queries[0].' ORDER BY ID';
-        $posts_to_scan = $wpdb->get_results($sql);
+        $posts_to_scan = $wpdb->get_results($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql is composed of prepared statements from $wpdb->prepare()
 
         // 4. Scan each post
         $total_issues = 0;
@@ -1325,7 +1336,7 @@ class Polyglot_CLI
                 $original_url = $url;
 
                 // Parse the URL
-                $parsed = parse_url($url);
+                $parsed = wp_parse_url($url);
                 $path = $parsed['path'] ?? '';
                 $host = $parsed['host'] ?? null;
                 $port = $parsed['port'] ?? null;
@@ -1550,7 +1561,7 @@ class Polyglot_CLI
                     continue;
                 }
 
-                $parsed = parse_url($href);
+                $parsed = wp_parse_url($href);
                 $path = $parsed['path'] ?? '';
                 $host = $parsed['host'] ?? null;
                 $port = $parsed['port'] ?? null;

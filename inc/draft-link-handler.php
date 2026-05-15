@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 // ============================================================
 // DRAFT LINK HANDLER
 // ============================================================
@@ -78,7 +82,7 @@ function polyglot_resolve_url_any_status(string $url): ?int
         ? [$path, $slug, $slug]
         : [$locale, $path, $slug, $slug];
 
-    $row = $wpdb->get_row($wpdb->prepare($sql, ...$args));
+    $row = $wpdb->get_row($wpdb->prepare($sql, ...$args)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- $sql is composed from trusted internal SQL fragments and passed through $wpdb->prepare()
     wp_cache_set($key, $row ? (int) $row->ID : 0, 'polyglot', 300);
 
     return $row ? (int) $row->ID : null;
