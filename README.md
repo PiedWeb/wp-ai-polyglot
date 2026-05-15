@@ -294,4 +294,4 @@ Inventory bridge (stock virtualization, stock reduction) is tested via WP-CLI in
 
 ---
 
-Brought to you by Robin ([Pied Web](https://en.piedweb.com)), sponsored by [Woodrock Climbing](https://woodrockclimbing.com).
+Brought to you by Robin ([Pied Web](https://en.piedweb.com)), inspired by [Pushword CMS](https://pushword.piedweb.com), sponsored by [Woodrock Climbing](https://woodrockclimbing.com).
