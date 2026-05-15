@@ -41,6 +41,7 @@ All WooCommerce features (stock, reviews, cart, slugs) activate only when WooCom
 ## Todo
 
 - [ ] Marketing - compare features (table) to 10 Best WordPress Translation Plugins (write compared versions !) - WPML vs Polylang vs TranslatePress vs Loco ...
+
 ---
 
 ## Language Suggestion Banner
@@ -68,11 +69,11 @@ The banner is enabled by default. Setting `POLYGLOT_BAR` to `false` prevents bot
 
 **Files:**
 
-| File | Role |
-| --- | --- |
-| `templates/suggestion-banner.php` | HTML template |
-| `assets/polyglot-bar.css` | Positioning, admin-bar offset, mobile breakpoint |
-| `assets/polyglot-bar.js` | Browser language detection, localStorage, show/dismiss |
+| File                              | Role                                                   |
+| --------------------------------- | ------------------------------------------------------ |
+| `templates/suggestion-banner.php` | HTML template                                          |
+| `assets/polyglot-bar.css`         | Positioning, admin-bar offset, mobile breakpoint       |
+| `assets/polyglot-bar.js`          | Browser language detection, localStorage, show/dismiss |
 
 ---
 
@@ -291,6 +292,20 @@ composer test:filter test_is_master_on_master_domain
 | `DraftLinkHandlerTest`   | Draft link resolution + `the_content` span replacement        |
 
 Inventory bridge (stock virtualization, stock reduction) is tested via WP-CLI integration since it requires WooCommerce at runtime.
+
+## Build & submit
+
+```
+cd /tmp && rm -rf piedweb-ai-polyglot && \
+rsync -a \
+  --exclude='.git' --exclude='.github' --exclude='.wordpress-org' \
+  --exclude='bin' --exclude='node_modules' --exclude='tests' --exclude='vendor' \
+  --exclude='.distignore' --exclude='.gitignore' --exclude='.php-cs-fixer*' \
+  --exclude='.phpunit.result.cache' --exclude='composer.json' --exclude='composer.lock' \
+  --exclude='phpunit.xml*' --exclude='README.md' \
+  /home/robin/localhost/woodrock/wp-content/plugins/wp-ai-polyglot/ /tmp/piedweb-ai-polyglot/ && \
+cd /tmp && zip -r piedweb-ai-polyglot.zip piedweb-ai-polyglot
+```
 
 ---
 
