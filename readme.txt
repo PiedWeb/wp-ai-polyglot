@@ -106,6 +106,10 @@ Yes. Any translation edited through wp-admin (or marked with `_translation_mode 
 4. WP-CLI output for `wp polyglot untranslated` and `wp polyglot translate`.
 5. Flat-file export folder structure for offline editing.
 
+== Credits ==
+
+Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/lipis/flag-icons) by Panayiotis Lipiridis, licensed under the MIT License.
+
 == Changelog ==
 
 = 2.0.0 =
