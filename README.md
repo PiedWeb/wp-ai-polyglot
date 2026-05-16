@@ -1,10 +1,12 @@
 # WP AI Polyglot
 
-**Translate your WordPress + WooCommerce site into any number of languages — with one install, one database, zero duplication.**
+**The multilingual infrastructure for WordPress + WooCommerce — one install, one database, zero duplication. Bring your own translator (AI or human).**
 
-WP AI Polyglot uses a Master/Shadow architecture: you manage content in your primary language, and the plugin creates linked shadow copies for each target locale. Each language gets its own domain (or subdomain), with full SEO support out of the box.
+WP AI Polyglot does not translate text itself. It provides everything around translation: domain routing, hreflang SEO, virtualized stock and reviews, an admin UI, and a WP-CLI pipeline that exposes master content as JSON so you can pipe it into any LLM or translation API and push the result back.
 
-Designed for AI-powered translation workflows — but works just as well with human translators.
+It uses a Master/Shadow architecture: you manage content in your primary language, and the plugin creates linked shadow copies for each target locale. Each language gets its own domain (or subdomain), with full SEO support out of the box.
+
+Designed to fit AI-powered translation workflows — but works just as well with human translators or a flat-file editing loop.
 
 ### Why WP AI Polyglot?
 

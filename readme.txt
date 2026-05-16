@@ -8,15 +8,15 @@ Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Master/Shadow i18n for WordPress + WooCommerce. One install, one database, zero content duplication. AI-ready via WP-CLI.
+Multilingual infrastructure for WordPress + WooCommerce. One install, one database, zero duplication. Bring your own translator (AI or human).
 
 == Description ==
 
-**PiedWeb AI Polyglot** translates your WordPress + WooCommerce site into any number of languages — with one install, one database, and zero content duplication.
+**PiedWeb AI Polyglot** is the multilingual infrastructure for your WordPress + WooCommerce site — routing, SEO, admin UI, virtualized stock and reviews — without duplicating content. It does **not** translate text itself: you bring your own translation provider (an LLM, a translation API, or a human translator), and the plugin handles everything else.
 
-It uses a **Master/Shadow architecture**: you manage content in your primary language, and the plugin creates linked shadow copies for each target locale. Each language gets its own domain (or subdomain), with full SEO support out of the box.
+It uses a **Master/Shadow architecture**: you manage content in your primary language, and the plugin creates linked shadow copies for each target locale. Each language gets its own domain (or subdomain), with full SEO support out of the box. WP-CLI commands expose the master content as JSON so you can pipe it into any LLM or translation API and push the result back.
 
-Designed for AI-powered translation workflows — but works just as well with human translators.
+Designed to fit AI-powered translation workflows — but works just as well with human translators or a flat-file editing loop.
 
 = Why PiedWeb AI Polyglot? =
 
