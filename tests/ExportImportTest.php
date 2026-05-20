@@ -13,7 +13,7 @@ class ExportImportTest extends WP_UnitTestCase
     {
         parent::set_up();
 
-        $this->export_dir = rtrim(ABSPATH . POLYGLOT_TRANSLATIONS_DIR, '/');
+        $this->export_dir = polyglot_translations_dir();
         $this->cli = new Polyglot_CLI();
 
         // Create a master page (using pages since WC is not loaded)

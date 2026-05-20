@@ -85,7 +85,7 @@ function polyglot_admin_filter_shadows($query)
         return;
     }
 
-    $filter = sanitize_text_field($_GET['polyglot_locale'] ?? '');
+    $filter = sanitize_text_field(wp_unslash($_GET['polyglot_locale'] ?? ''));
     $meta_query = $query->get('meta_query') ?: [];
 
     if ('all' === $filter) {
@@ -189,7 +189,7 @@ function polyglot_restore_session_from_url(): void
         return;
     }
 
-    $parts = explode('|', sanitize_text_field($_GET['wc_session']));
+    $parts = explode('|', sanitize_text_field(wp_unslash($_GET['wc_session'])));
     if (3 !== count($parts)) {
         return;
     }

@@ -8,9 +8,33 @@ if (! defined('ABSPATH')) {
 // HELPERS
 // ============================================================
 
+/**
+ * Absolute path to the flat-file export/import directory.
+ *
+ * Defaults to a "polyglot-flat" folder inside the uploads directory so the
+ * plugin never writes inside its own folder (which is wiped on upgrade) or in
+ * a web-accessible location it doesn't control. Override with the
+ * POLYGLOT_TRANSLATIONS_DIR constant: absolute paths are used verbatim,
+ * relative paths are resolved against the uploads base directory.
+ */
+function polyglot_translations_dir(): string
+{
+    $uploads = wp_upload_dir();
+    $base = trailingslashit($uploads['basedir']);
+
+    if (defined('POLYGLOT_TRANSLATIONS_DIR')) {
+        $dir = POLYGLOT_TRANSLATIONS_DIR;
+        $is_absolute = '' !== $dir && ('/' === $dir[0] || preg_match('#^[A-Za-z]:[\\\\/]#', $dir));
+
+        return rtrim($is_absolute ? $dir : $base.$dir, '/\\');
+    }
+
+    return rtrim($base.'polyglot-flat', '/\\');
+}
+
 function polyglot_get_current_authority(): string
 {
-    $authority = apply_filters('polyglot_current_authority', $_SERVER['HTTP_HOST'] ?? '');
+    $authority = apply_filters('polyglot_current_authority', sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'] ?? '')));
 
     // CLI / cron: no HTTP_HOST → default to master authority
     if (empty($authority) || ! isset(POLYGLOT_LOCALES[$authority])) {

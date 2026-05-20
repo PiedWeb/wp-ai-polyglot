@@ -62,7 +62,7 @@ function polyglot_admin_locale_dropdown($post_type)
         return;
     }
 
-    $current = sanitize_text_field($_GET['polyglot_locale'] ?? '');
+    $current = sanitize_text_field(wp_unslash($_GET['polyglot_locale'] ?? ''));
     $master_hreflang = '';
     foreach (POLYGLOT_LOCALES as $cfg) {
         if (! empty($cfg['master'])) {
@@ -333,7 +333,7 @@ function polyglot_save_permalink_metabox(int $post_id, WP_Post $post): void
     }
 
     if (! isset($_POST['polyglot_permalink_nonce'])
-        || ! wp_verify_nonce($_POST['polyglot_permalink_nonce'], 'polyglot_permalink_'.$post_id)
+        || ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['polyglot_permalink_nonce'])), 'polyglot_permalink_'.$post_id)
     ) {
         return;
     }
@@ -346,7 +346,7 @@ function polyglot_save_permalink_metabox(int $post_id, WP_Post $post): void
         return;
     }
 
-    $value = sanitize_text_field(trim($_POST['polyglot_custom_permalink'] ?? '', '/'));
+    $value = sanitize_text_field(trim(wp_unslash($_POST['polyglot_custom_permalink'] ?? ''), '/'));
 
     if ($value) {
         update_post_meta($post_id, 'custom_permalink', $value);
@@ -356,39 +356,49 @@ function polyglot_save_permalink_metabox(int $post_id, WP_Post $post): void
 }
 
 // ============================================================
-// ADMIN UI — CSS for badges
+// ADMIN UI — Enqueue badge CSS + shadow-inventory script
 // ============================================================
 
-add_action('admin_head', 'polyglot_admin_css');
+add_action('admin_enqueue_scripts', 'polyglot_enqueue_admin_assets');
 
-function polyglot_admin_css()
+function polyglot_enqueue_admin_assets(): void
 {
     $screen = get_current_screen();
     if (! $screen) {
         return;
     }
-    $allowed = ['edit', 'post', 'users', 'woocommerce_page_wc-orders'];
-    if (! in_array($screen->base, $allowed, true)) {
-        return;
+
+    $css_screens = ['edit', 'post', 'users', 'woocommerce_page_wc-orders'];
+    if (in_array($screen->base, $css_screens, true)) {
+        wp_enqueue_style(
+            'polyglot-admin',
+            plugins_url('assets/admin.css', POLYGLOT_PLUGIN_FILE),
+            [],
+            POLYGLOT_VERSION
+        );
     }
-    ?>
-    <style>
-    .column-polyglot_langue { width: 100px; }
-    .column-polyglot_locale { width: 80px; }
-    .polyglot-badge {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 11px;
-        font-weight: 600;
-        line-height: 1.4;
+
+    // Shadow product inventory lock (replaces inline footer script).
+    if ('post' === $screen->base && 'product' === $screen->post_type) {
+        global $post;
+        $master_id = $post ? (int) get_post_meta($post->ID, '_master_id', true) : 0;
+        if ($master_id) {
+            wp_enqueue_script(
+                'polyglot-admin-inventory',
+                plugins_url('assets/admin-inventory.js', POLYGLOT_PLUGIN_FILE),
+                ['jquery'],
+                POLYGLOT_VERSION,
+                true
+            );
+            wp_localize_script('polyglot-admin-inventory', 'polyglotInventory', [
+                'masterId'  => $master_id,
+                'masterUrl' => get_edit_post_link($master_id, 'raw'),
+                'locale'    => get_post_meta($post->ID, '_locale', true),
+                'label'     => __('Stock is managed by the master product', 'piedweb-ai-polyglot'),
+                'editLabel' => __('Edit master', 'piedweb-ai-polyglot'),
+            ]);
+        }
     }
-    .polyglot-master { background: #0073aa; color: #fff; }
-    .polyglot-shadow { background: #f0f0f0; color: #555; }
-    .polyglot-manual { background: #f0ad4e; color: #fff; font-size: 10px; }
-    .polyglot-count { color: #888; font-size: 12px; }
-    </style>
-    <?php
 }
 
 // ============================================================
@@ -497,42 +507,6 @@ function polyglot_format_locale_badge(string $locale): string
     }
 
     return '<span class="polyglot-badge polyglot-shadow">'.esc_html($hreflang ?: $locale).'</span>';
-}
-
-// ============================================================
-// ADMIN UI — Disable stock fields on Shadow products
-// ============================================================
-
-add_action('admin_footer', 'polyglot_lock_shadow_inventory');
-
-function polyglot_lock_shadow_inventory()
-{
-    global $post;
-    if (! $post || 'product' !== get_post_type($post)) {
-        return;
-    }
-
-    $master_id = get_post_meta($post->ID, '_master_id', true);
-    if (! $master_id) {
-        return;
-    }
-
-    $locale = get_post_meta($post->ID, '_locale', true);
-    ?>
-    <script>
-    jQuery(document).ready(function($) {
-        $('#_manage_stock, #_stock, #_stock_status').prop('disabled', true);
-        var masterUrl = '<?php echo esc_url(get_edit_post_link($master_id)); ?>';
-        $('.inventory_options').prepend(
-            '<div class="notice notice-warning inline"><p>' +
-            '<strong>SHADOW [<?php echo esc_js($locale); ?>]</strong> — ' +
-            'Stock is managed by master product (ID <?php echo (int) $master_id; ?>). ' +
-            '<a href="' + masterUrl + '">Edit master &rarr;</a>' +
-            '</p></div>'
-        );
-    });
-    </script>
-    <?php
 }
 
 // ============================================================

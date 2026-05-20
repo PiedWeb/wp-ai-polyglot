@@ -270,7 +270,7 @@ class Polyglot_CLI
         $this->acquire_sync_lock('export');
 
         try {
-            $dir = rtrim(ABSPATH.POLYGLOT_TRANSLATIONS_DIR, '/');
+            $dir = polyglot_translations_dir();
             $filter_type = $assoc_args['type'] ?? null;
             $filter_locale = $assoc_args['target'] ?? null;
             global $wpdb;
@@ -491,7 +491,7 @@ class Polyglot_CLI
         $this->acquire_sync_lock('import');
 
         try {
-            $dir = rtrim(ABSPATH.POLYGLOT_TRANSLATIONS_DIR, '/');
+            $dir = polyglot_translations_dir();
             $dry_run = ! empty($assoc_args['dry-run']);
             $force = ! empty($assoc_args['force']);
             global $wpdb;

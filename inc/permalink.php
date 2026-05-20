@@ -182,7 +182,7 @@ add_filter('request', function ($query_vars) {
     // When no slug was extracted from rewrite rules (e.g. WC endpoint on a child page
     // where get_page_by_path() fails), parse the URL path directly.
     if (! $slug && ! isset($query_vars['page_id']) && ! isset($query_vars['p']) && function_exists('WC')) {
-        $request = trim(wp_parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
+        $request = trim(wp_parse_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'] ?? '')), \PHP_URL_PATH), '/');
         if ($request) {
             $endpoints = array_keys(WC()->query->get_query_vars());
             foreach ($endpoints as $ep) {
@@ -337,7 +337,7 @@ add_action('template_redirect', function () {
     }
 
     $canonical = get_permalink($post->ID);
-    $request_path = wp_parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
+    $request_path = wp_parse_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'] ?? '')), \PHP_URL_PATH);
     $canonical_path = wp_parse_url($canonical, \PHP_URL_PATH);
 
     if (in_array($post->post_type, ['page', 'product'], true) && $request_path !== $canonical_path) {
@@ -363,7 +363,7 @@ add_action('template_redirect', function () {
         return;
     }
 
-    $request = trim(wp_parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH), '/');
+    $request = trim(wp_parse_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'] ?? '')), \PHP_URL_PATH), '/');
     if (! $request) {
         return;
     }

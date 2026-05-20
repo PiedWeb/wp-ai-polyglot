@@ -54,8 +54,19 @@ function polyglot_translate_checkout_privacy($value)
         return $value;
     }
 
-    /* translators: %s: placeholder replaced by [privacy_policy] shortcode link. */
-    return sprintf(__('Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our %s.', 'woocommerce'), '[privacy_policy]'); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentionally reusing WooCommerce's translation.
+    $map = [
+        'en_IE' => 'Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our %s.',
+        'es_ES' => 'Tus datos personales se utilizarán para procesar tu pedido, mejorar tu experiencia en esta web y para otros fines descritos en nuestra %s.',
+        'it_IT' => 'I tuoi dati personali verranno utilizzati per elaborare il tuo ordine, supportare la tua esperienza su questo sito web e per altri scopi descritti nella nostra %s.',
+        'de_DE' => 'Deine personenbezogenen Daten werden verwendet, um deine Bestellung abzuwickeln, deine Erfahrung auf dieser Website zu unterstützen und für weitere in unserer %s beschriebene Zwecke.',
+        'pt_PT' => 'Os seus dados pessoais serão utilizados para processar a sua encomenda, melhorar a sua experiência neste site e para outros fins descritos na nossa %s.',
+        'da_DK' => 'Dine personlige data vil blive brugt til at behandle din ordre, understøtte din oplevelse på dette website og til andre formål beskrevet i vores %s.',
+        'pl_PL' => 'Twoje dane osobowe będą wykorzystywane do przetwarzania zamówienia, obsługi Twojej wizyty na tej stronie oraz w innych celach opisanych w naszej %s.',
+    ];
+
+    $locale = polyglot_get_current_locale();
+
+    return isset($map[$locale]) ? sprintf($map[$locale], '[privacy_policy]') : $value;
 }
 
 function polyglot_translate_checkout_terms($value)
@@ -64,8 +75,19 @@ function polyglot_translate_checkout_terms($value)
         return $value;
     }
 
-    /* translators: %s: placeholder replaced by [terms] shortcode link. */
-    return sprintf(__('I have read and agree to the website %s', 'woocommerce'), '[terms]'); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- intentionally reusing WooCommerce's translation.
+    $map = [
+        'en_IE' => 'I have read and agree to the website %s',
+        'es_ES' => 'He leído y acepto los %s de la web',
+        'it_IT' => 'Ho letto e accetto i %s del sito web',
+        'de_DE' => 'Ich habe die %s der Website gelesen und stimme ihnen zu',
+        'pt_PT' => 'Li e concordo com os %s do site',
+        'da_DK' => 'Jeg har læst og accepterer webstedets %s',
+        'pl_PL' => 'Przeczytałem(-am) i zgadzam się z %s witryny',
+    ];
+
+    $locale = polyglot_get_current_locale();
+
+    return isset($map[$locale]) ? sprintf($map[$locale], '[terms]') : $value;
 }
 
 // --- Cart item names: show shadow product title for master products ---

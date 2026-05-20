@@ -197,28 +197,56 @@ function polyglot_language_switcher(): void
 // FOOTER LANGUAGE SWITCHER — Visual dropdown in site footer
 // ============================================================
 
+add_action('wp_enqueue_scripts', 'polyglot_enqueue_footer_switcher_assets');
 add_action('wp_footer', 'polyglot_footer_switcher_bar', 50);
+
+function polyglot_footer_switcher_enabled(): bool
+{
+    if (is_admin()) {
+        return false;
+    }
+    if (defined('POLYGLOT_FOOTER') && ! POLYGLOT_FOOTER) {
+        return false;
+    }
+    if (! get_option('polyglot_footer_switcher', true)) {
+        return false;
+    }
+    if (count(POLYGLOT_LOCALES) < 2) {
+        return false;
+    }
+
+    return (bool) polyglot_get_current_entry();
+}
+
+function polyglot_enqueue_footer_switcher_assets(): void
+{
+    if (! polyglot_footer_switcher_enabled()) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'polyglot-footer-switcher',
+        plugins_url('assets/footer-switcher.css', POLYGLOT_PLUGIN_FILE),
+        [],
+        POLYGLOT_VERSION
+    );
+    wp_enqueue_script(
+        'polyglot-footer-switcher',
+        plugins_url('assets/footer-switcher.js', POLYGLOT_PLUGIN_FILE),
+        [],
+        POLYGLOT_VERSION,
+        true
+    );
+}
 
 function polyglot_footer_switcher_bar(): void
 {
-    if (is_admin()) {
-        return;
-    }
-    if (defined('POLYGLOT_FOOTER') && ! POLYGLOT_FOOTER) {
-        return;
-    }
-    if (! get_option('polyglot_footer_switcher', true)) {
-        return;
-    }
-    if (count(POLYGLOT_LOCALES) < 2) {
+    if (! polyglot_footer_switcher_enabled()) {
         return;
     }
 
     $current_authority = polyglot_get_current_authority();
     $current_entry = polyglot_get_current_entry();
-    if (! $current_entry) {
-        return;
-    }
 
     $active_country = polyglot_locale_to_country($current_entry['locale']);
     $active_label = $current_entry['label'];

@@ -1,0 +1,14 @@
+.column-polyglot_langue { width: 100px; }
+.column-polyglot_locale { width: 80px; }
+.polyglot-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.polyglot-master { background: #0073aa; color: #fff; }
+.polyglot-shadow { background: #f0f0f0; color: #555; }
+.polyglot-manual { background: #f0ad4e; color: #fff; font-size: 10px; }
+.polyglot-count { color: #888; font-size: 12px; }

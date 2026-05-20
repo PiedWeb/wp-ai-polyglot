@@ -29,9 +29,11 @@ if (! defined('POLYGLOT_LOCALES')) {
     return;
 }
 
-if (! defined('POLYGLOT_TRANSLATIONS_DIR')) {
-    define('POLYGLOT_TRANSLATIONS_DIR', 'polyglot-flat');
-}
+// Flat-file export/import storage. By default this lives under the uploads
+// directory (writable, outside the plugin folder, multisite-safe). Override
+// with the POLYGLOT_TRANSLATIONS_DIR constant: an absolute path is used as-is,
+// a relative path is resolved against the uploads base directory.
+// Resolution happens lazily via polyglot_translations_dir() in inc/helpers.php.
 
 if (is_multisite()) {
     add_action('admin_notices', function (): void {

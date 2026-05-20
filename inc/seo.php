@@ -221,6 +221,16 @@ function polyglot_sitemap_hreflang_ob_start()
     }
 
     ob_start('polyglot_sitemap_hreflang_ob_callback');
+
+    // Explicitly close the buffer at shutdown so it never leaks past this request.
+    add_action('shutdown', 'polyglot_sitemap_hreflang_ob_end', 0);
+}
+
+function polyglot_sitemap_hreflang_ob_end()
+{
+    if (ob_get_level() > 0) {
+        ob_end_flush();
+    }
 }
 
 add_filter('wp_sitemaps_posts_entry', 'polyglot_sitemap_track_entry', 10, 3);
