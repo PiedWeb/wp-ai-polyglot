@@ -2,9 +2,10 @@
 /**
  * PHPUnit bootstrap for WP AI Polyglot.
  *
- * Loads WordPress test suite and the plugin.
- * WooCommerce is NOT loaded — it hangs during PHPUnit bootstrap.
- * Inventory bridge tests use wp-cli integration tests instead.
+ * Loads WordPress test suite and the plugin, WITHOUT WooCommerce — keeps the
+ * default suite fast. The WooCommerce-loaded suite (product bridge: stock,
+ * price, image virtualization, stock-reduction interception) has its own
+ * bootstrap and config: tests/bootstrap-wc.php + phpunit-wc.xml (composer test:wc).
  */
 
 $_tests_dir = getenv('WP_TESTS_DIR') ?: '/tmp/wordpress-tests-lib';

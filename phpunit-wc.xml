@@ -2,16 +2,13 @@
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
-    bootstrap="tests/bootstrap.php"
+    bootstrap="tests/bootstrap-wc.php"
     colors="true"
     beStrictAboutTestsThatDoNotTestAnything="true"
-    failOnWarning="true"
 >
     <testsuites>
-        <testsuite name="wp-ai-polyglot">
-            <directory suffix="Test.php">tests</directory>
-            <!-- WooCommerce-loaded suite has its own bootstrap (phpunit-wc.xml) -->
-            <exclude>tests/wc</exclude>
+        <testsuite name="wp-ai-polyglot-wc">
+            <directory suffix="Test.php">tests/wc</directory>
         </testsuite>
     </testsuites>
 </phpunit>

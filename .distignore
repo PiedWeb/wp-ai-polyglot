@@ -19,6 +19,7 @@
 /composer.lock
 /phpunit.xml
 /phpunit.xml.dist
+/phpunit-wc.xml
 /README.md
 
 # OS / editor

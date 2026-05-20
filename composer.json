@@ -23,7 +23,8 @@
     },
     "scripts": {
         "test": "phpunit",
-        "test:filter": "phpunit --filter"
+        "test:filter": "phpunit --filter",
+        "test:wc": "phpunit -c phpunit-wc.xml"
     },
     "config": {
         "allow-plugins": {}
