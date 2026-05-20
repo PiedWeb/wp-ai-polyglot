@@ -226,7 +226,7 @@ function polyglot_sitemap_hreflang_ob_start()
     add_action('shutdown', 'polyglot_sitemap_hreflang_ob_end', 0);
 }
 
-function polyglot_sitemap_hreflang_ob_end()
+function polyglot_sitemap_hreflang_ob_end(): void
 {
     if (ob_get_level() > 0) {
         ob_end_flush();

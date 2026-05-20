@@ -19,17 +19,18 @@ if (! defined('ABSPATH')) {
  */
 function polyglot_translations_dir(): string
 {
-    $uploads = wp_upload_dir();
-    $base = trailingslashit($uploads['basedir']);
-
-    if (defined('POLYGLOT_TRANSLATIONS_DIR')) {
-        $dir = POLYGLOT_TRANSLATIONS_DIR;
-        $is_absolute = '' !== $dir && ('/' === $dir[0] || preg_match('#^[A-Za-z]:[\\\\/]#', $dir));
-
-        return rtrim($is_absolute ? $dir : $base.$dir, '/\\');
+    if (! defined('POLYGLOT_TRANSLATIONS_DIR')) {
+        return rtrim(trailingslashit(wp_upload_dir()['basedir']) . 'polyglot-flat', '/\\');
     }
 
-    return rtrim($base.'polyglot-flat', '/\\');
+    $dir = POLYGLOT_TRANSLATIONS_DIR;
+    $is_absolute = '' !== $dir && ('/' === $dir[0] || preg_match('#^[A-Za-z]:[\\\\/]#', $dir));
+
+    if ($is_absolute) {
+        return rtrim($dir, '/\\');
+    }
+
+    return rtrim(trailingslashit(wp_upload_dir()['basedir']) . $dir, '/\\');
 }
 
 function polyglot_get_current_authority(): string

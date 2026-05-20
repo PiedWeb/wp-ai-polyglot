@@ -48,13 +48,9 @@ function polyglot_translate_shipping_labels($rates)
 add_filter('option_woocommerce_checkout_privacy_policy_text', 'polyglot_translate_checkout_privacy');
 add_filter('option_woocommerce_checkout_terms_and_conditions_checkbox_text', 'polyglot_translate_checkout_terms');
 
-function polyglot_translate_checkout_privacy($value)
+function polyglot_translate_checkout_privacy($value): string
 {
-    if (is_admin() || polyglot_is_master()) {
-        return $value;
-    }
-
-    $map = [
+    return polyglot_apply_checkout_translation($value, [
         'en_IE' => 'Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our %s.',
         'es_ES' => 'Tus datos personales se utilizarán para procesar tu pedido, mejorar tu experiencia en esta web y para otros fines descritos en nuestra %s.',
         'it_IT' => 'I tuoi dati personali verranno utilizzati per elaborare il tuo ordine, supportare la tua esperienza su questo sito web e per altri scopi descritti nella nostra %s.',
@@ -62,20 +58,12 @@ function polyglot_translate_checkout_privacy($value)
         'pt_PT' => 'Os seus dados pessoais serão utilizados para processar a sua encomenda, melhorar a sua experiência neste site e para outros fins descritos na nossa %s.',
         'da_DK' => 'Dine personlige data vil blive brugt til at behandle din ordre, understøtte din oplevelse på dette website og til andre formål beskrevet i vores %s.',
         'pl_PL' => 'Twoje dane osobowe będą wykorzystywane do przetwarzania zamówienia, obsługi Twojej wizyty na tej stronie oraz w innych celach opisanych w naszej %s.',
-    ];
-
-    $locale = polyglot_get_current_locale();
-
-    return isset($map[$locale]) ? sprintf($map[$locale], '[privacy_policy]') : $value;
+    ], '[privacy_policy]');
 }
 
-function polyglot_translate_checkout_terms($value)
+function polyglot_translate_checkout_terms($value): string
 {
-    if (is_admin() || polyglot_is_master()) {
-        return $value;
-    }
-
-    $map = [
+    return polyglot_apply_checkout_translation($value, [
         'en_IE' => 'I have read and agree to the website %s',
         'es_ES' => 'He leído y acepto los %s de la web',
         'it_IT' => 'Ho letto e accetto i %s del sito web',
@@ -83,11 +71,18 @@ function polyglot_translate_checkout_terms($value)
         'pt_PT' => 'Li e concordo com os %s do site',
         'da_DK' => 'Jeg har læst og accepterer webstedets %s',
         'pl_PL' => 'Przeczytałem(-am) i zgadzam się z %s witryny',
-    ];
+    ], '[terms]');
+}
+
+function polyglot_apply_checkout_translation(string $value, array $map, string $placeholder): string
+{
+    if (is_admin() || polyglot_is_master()) {
+        return $value;
+    }
 
     $locale = polyglot_get_current_locale();
 
-    return isset($map[$locale]) ? sprintf($map[$locale], '[terms]') : $value;
+    return isset($map[$locale]) ? sprintf($map[$locale], $placeholder) : $value;
 }
 
 // --- Cart item names: show shadow product title for master products ---

@@ -1503,10 +1503,12 @@ class Polyglot_CLI
         foreach ($urls as [$url, $locale, $label]) {
             $progress->tick();
 
-            // Only skip TLS verification for local hosts (self-signed dev certs);
-            // verify normally for real domains.
+            // Only skip TLS verification for local hosts (self-signed dev certs).
             $host = (string) wp_parse_url($url, PHP_URL_HOST);
-            $is_local = str_contains($host, 'localhost') || str_contains($host, '127.0.0.1') || str_ends_with($host, '.test') || str_ends_with($host, '.local');
+            $is_local = str_contains($host, 'localhost')
+                || str_contains($host, '127.0.0.1')
+                || str_ends_with($host, '.test')
+                || str_ends_with($host, '.local');
 
             $response = wp_remote_get($url, [
                 'timeout' => 15,
