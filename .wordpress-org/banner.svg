@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="772" height="250" viewBox="0 0 772 250">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0369a1"/>
+      <stop offset="1" stop-color="#075985"/>
+    </linearGradient>
+    <clipPath id="globe"><circle cx="648" cy="125" r="92"/></clipPath>
+  </defs>
+
+  <rect width="772" height="250" fill="url(#bg)"/>
+
+  <!-- decorative globe, right side -->
+  <g stroke="#ffffff" fill="none" stroke-linecap="round">
+    <g opacity="0.30" stroke-width="4">
+      <circle cx="648" cy="125" r="92"/>
+      <g clip-path="url(#globe)">
+        <line x1="556" y1="125" x2="740" y2="125"/>
+        <line x1="556" y1="80"  x2="740" y2="80"/>
+        <line x1="556" y1="170" x2="740" y2="170"/>
+        <ellipse cx="648" cy="125" rx="37" ry="92"/>
+        <line x1="648" y1="33" x2="648" y2="217"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- swap badge -->
+  <circle cx="712" cy="183" r="38" fill="#92400e"/>
+  <g stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 696 176 H 728"/>
+    <path d="M 728 176 L 721 170 M 728 176 L 721 182"/>
+    <path d="M 730 191 H 698"/>
+    <path d="M 698 191 L 705 185 M 698 191 L 705 197"/>
+  </g>
+
+  <!-- text block -->
+  <g font-family="Noto Sans, DejaVu Sans, sans-serif">
+    <text x="56" y="106" font-size="44" font-weight="700" fill="#ffffff">PiedWeb AI Polyglot</text>
+    <text x="58" y="146" font-size="19" font-weight="400" fill="#E0F2FE">Multilingual infrastructure for WordPress + WooCommerce</text>
+    <text x="58" y="184" font-size="17" font-weight="600" fill="#FCD34D">No duplication &#183; one database &#183; bring your own translator</text>
+  </g>
+</svg>

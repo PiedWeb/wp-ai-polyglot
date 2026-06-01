@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0369a1"/>
+      <stop offset="1" stop-color="#075985"/>
+    </linearGradient>
+    <clipPath id="globe"><circle cx="116" cy="118" r="74"/></clipPath>
+  </defs>
+
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+
+  <!-- globe -->
+  <g stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round">
+    <circle cx="116" cy="118" r="74"/>
+    <g clip-path="url(#globe)" opacity="0.92">
+      <line x1="40" y1="118" x2="192" y2="118"/>
+      <line x1="40" y1="82"  x2="192" y2="82"/>
+      <line x1="40" y1="154" x2="192" y2="154"/>
+      <ellipse cx="116" cy="118" rx="30" ry="74"/>
+      <line x1="116" y1="42" x2="116" y2="194"/>
+    </g>
+  </g>
+
+  <!-- translation / swap badge -->
+  <circle cx="196" cy="194" r="42" fill="#92400e" stroke="#ffffff" stroke-width="6"/>
+  <g stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 178 186 H 211"/>
+    <path d="M 211 186 L 203 179 M 211 186 L 203 193"/>
+    <path d="M 214 202 H 181"/>
+    <path d="M 181 202 L 189 195 M 181 202 L 189 209"/>
+  </g>
+</svg>
