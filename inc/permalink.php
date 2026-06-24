@@ -273,8 +273,14 @@ add_filter('option_woocommerce_permalinks', function ($value) {
  * otherwise falls back to post_name.
  * On shadow locales with explicit product_base translations, defer to WooCommerce.
  */
-add_filter('post_type_link', function ($link, $post) {
+add_filter('post_type_link', function ($link, $post, $leavename = false, $sample = false) {
     if ('product' !== $post->post_type) {
+        return $link;
+    }
+
+    // Drafts/pending/future posts have no public flat URL yet — keep core's
+    // preview-safe ?post_type=product&p=ID form so the Preview button works.
+    if (! $sample && in_array($post->post_status, ['draft', 'pending', 'auto-draft', 'future'], true)) {
         return $link;
     }
 
@@ -290,15 +296,21 @@ add_filter('post_type_link', function ($link, $post) {
     }
 
     return home_url('/'.$post->post_name);
-}, 10, 2);
+}, 10, 4);
 
 /**
  * Flat page URLs: use custom_permalink meta when set (all domains).
  */
-add_filter('page_link', function ($link, $post_id) {
+add_filter('page_link', function ($link, $post_id, $sample = false) {
     // Don't override the static front page or its shadows — homepage is always /
     if ('page' === get_option('show_on_front') && polyglot_is_front_page((int) $post_id)) {
         return home_url('/');
+    }
+
+    // Drafts/pending/future posts have no public flat URL yet — keep core's
+    // preview-safe ?page_id=ID form so the Preview button works.
+    if (! $sample && in_array(get_post_status($post_id), ['draft', 'pending', 'auto-draft', 'future'], true)) {
+        return $link;
     }
 
     $cp = get_post_meta($post_id, 'custom_permalink', true);
