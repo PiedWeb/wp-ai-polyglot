@@ -152,6 +152,19 @@ function polyglot_get_post_types(): array
     return apply_filters('polyglot_post_types', ['product', 'page', 'post']);
 }
 
+/**
+ * Post statuses whose content is mirrored to polyglot-flat/.
+ *
+ * Drafts are included so editing an unpublished master/shadow in wp-admin keeps
+ * its flat file current (auto-export on save, see inc/autoexport.php). The
+ * non-content statuses 'auto-draft', 'trash' and 'inherit' (revisions /
+ * attachments) are intentionally excluded.
+ */
+function polyglot_exportable_statuses(): array
+{
+    return apply_filters('polyglot_exportable_statuses', ['publish', 'draft', 'pending', 'private', 'future']);
+}
+
 // ============================================================
 // SHADOW LOOKUP HELPER
 // ============================================================

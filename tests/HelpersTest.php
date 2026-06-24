@@ -68,4 +68,31 @@ class HelpersTest extends WP_UnitTestCase
         $this->assertSame('es', $entry['hreflang']);
         $this->assertSame('EUR', $entry['currency']);
     }
+
+    public function test_exportable_statuses_includes_publish_and_draft(): void
+    {
+        $statuses = polyglot_exportable_statuses();
+
+        $this->assertContains('publish', $statuses);
+        $this->assertContains('draft', $statuses);
+    }
+
+    public function test_exportable_statuses_excludes_non_content_statuses(): void
+    {
+        $statuses = polyglot_exportable_statuses();
+
+        $this->assertNotContains('auto-draft', $statuses);
+        $this->assertNotContains('trash', $statuses);
+        $this->assertNotContains('inherit', $statuses);
+    }
+
+    public function test_exportable_statuses_is_filterable(): void
+    {
+        $filter = static fn (): array => ['publish'];
+        add_filter('polyglot_exportable_statuses', $filter);
+
+        $this->assertSame(['publish'], polyglot_exportable_statuses());
+
+        remove_filter('polyglot_exportable_statuses', $filter);
+    }
 }

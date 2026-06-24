@@ -93,7 +93,8 @@ class Polyglot_CLI
             'post_title' => $ai_data['translated_title'],
             'post_content' => $ai_data['translated_description'] ?? '',
             'post_excerpt' => $ai_data['translated_short_desc'] ?? '',
-            'post_status' => 'publish',
+            // Mirror the master's status (draft master → draft shadow).
+            'post_status' => $master_post ? $master_post->post_status : 'publish',
             'post_type' => $ai_data['post_type'] ?? 'product',
             'post_name' => sanitize_title($ai_data['translated_title']),
             'menu_order' => $master_post ? $master_post->menu_order : 0,
@@ -343,211 +344,324 @@ class Polyglot_CLI
      *
      * [--target=<locale>]
      * : Limit to one shadow locale (default: all).
+     *
+     * [--worker]
+     * : Internal. Run as a single-flight background drain worker (used by the
+     *   auto-export-on-save hook, inc/autoexport.php). Bails out silently if
+     *   another import/export is already running.
      */
     public function export($args, $assoc_args)
     {
+        if (! empty($assoc_args['worker'])) {
+            $this->export_worker_drain($assoc_args);
+
+            return;
+        }
+
         $this->acquire_sync_lock('export');
 
         try {
-            $dir = polyglot_translations_dir();
-            $filter_type = $assoc_args['type'] ?? null;
-            $filter_locale = $assoc_args['target'] ?? null;
-            global $wpdb;
-
-            // Collect shadow locales
-            $shadow_locales = [];
-            foreach (POLYGLOT_LOCALES as $cfg) {
-                if (! empty($cfg['master'])) {
-                    continue;
-                }
-                if ($filter_locale && $cfg['locale'] !== $filter_locale) {
-                    continue;
-                }
-                $shadow_locales[] = $cfg['locale'];
-            }
-            if (empty($shadow_locales)) {
-                WP_CLI::error('No shadow locales matched.');
-            }
-
-            // Post types to export
-            $post_types = $filter_type ? [$filter_type] : polyglot_get_post_types();
-
-            // Ensure output dir exists
-            if (! is_dir($dir)) {
-                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-                mkdir($dir, 0755, true);
-            }
-
-            // --- POSTS ---
-            $tsv_rows = [];
-            $master_locale = polyglot_get_master_locale();
-            $tsv_rows[] = array_merge(['type', 'master_id', 'field', $master_locale], $shadow_locales);
-
-            // Batch-load all shadow mappings
-            $shadow_map = $this->build_shadow_map($post_types);
-
-            // Prime caches for all shadow posts
-            $all_shadow_ids = [];
-            foreach ($shadow_map as $per_locale) {
-                foreach ($per_locale as $sid) {
-                    $all_shadow_ids[] = $sid;
-                }
-            }
-            if ($all_shadow_ids) {
-                _prime_post_caches($all_shadow_ids);
-            }
-
-            foreach ($post_types as $post_type) {
-                $masters = $wpdb->get_col($wpdb->prepare(
-                    "SELECT ID FROM $wpdb->posts
-                 WHERE post_type = %s AND post_status = 'publish'
-                 AND ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')
-                 ORDER BY ID",
-                    $post_type
-                ));
-
-                $is_product = ('product' === $post_type);
-
-                foreach ($masters as $master_id) {
-                    $post = get_post($master_id);
-                    if (! $post) {
-                        continue;
-                    }
-
-                    // Gather shadow data per locale (from preloaded map)
-                    $shadows = [];
-                    foreach ($shadow_locales as $locale) {
-                        $sid = $shadow_map[(int) $master_id][$locale] ?? null;
-                        $shadows[$locale] = $sid ? get_post($sid) : null;
-                    }
-
-                    // Short fields → TSV
-                    $short_fields = ['title', 'slug'];
-                    if ($is_product) {
-                        $short_fields[] = 'short_desc';
-                    }
-
-                    foreach ($short_fields as $field) {
-                        $fr_val = match ($field) {
-                            'title' => $post->post_title,
-                            'slug' => get_post_meta($post->ID, 'custom_permalink', true) ?: $post->post_name,
-                            'short_desc' => $post->post_excerpt,
-                        };
-
-                        $row = [$post_type, $master_id, $field, $fr_val];
-                        foreach ($shadow_locales as $locale) {
-                            $s = $shadows[$locale];
-                            $row[] = $s ? match ($field) {
-                                'title' => $s->post_title,
-                                'slug' => get_post_meta($s->ID, 'custom_permalink', true) ?: $s->post_name,
-                                'short_desc' => $s->post_excerpt,
-                            } : '';
-                        }
-                        $tsv_rows[] = $row;
-                    }
-
-                    // Long content → HTML files
-                    $fr_content = $post->post_content;
-                    $slug = $post->post_name;
-                    $folder = "$dir/$post_type-$master_id-$slug";
-                    $old_folder = "$dir/$post_type-$master_id";
-                    if (is_dir($old_folder) && ! is_dir($folder)) {
-                        // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-                        rename($old_folder, $folder);
-                    }
-
-                    if ('' !== trim($fr_content)) {
-                        if (! is_dir($folder)) {
-                            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-                            mkdir($folder, 0755, true);
-                        }
-                        file_put_contents("$folder/$master_locale.html", $fr_content);
-
-                        foreach ($shadow_locales as $locale) {
-                            $s = $shadows[$locale];
-                            if ($s && '' !== trim($s->post_content)) {
-                                file_put_contents("$folder/$locale.html", $s->post_content);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // --- TERMS ---
-            $term_shadow_map = $this->build_term_shadow_map();
-
-            // Prime caches for all shadow terms
-            $all_shadow_term_ids = [];
-            foreach ($term_shadow_map as $per_locale) {
-                foreach ($per_locale as $tid) {
-                    $all_shadow_term_ids[] = $tid;
-                }
-            }
-            if ($all_shadow_term_ids) {
-                _prime_term_caches($all_shadow_term_ids);
-            }
-
-            $taxonomies = ['product_cat', 'product_tag', 'category', 'post_tag'];
-            foreach ($taxonomies as $taxonomy) {
-                $terms = get_terms([
-                    'taxonomy' => $taxonomy,
-                    'hide_empty' => false,
-                    'meta_query' => [
-                        'relation' => 'OR',
-                        [
-                            'key' => '_master_term_id',
-                            'compare' => 'NOT EXISTS',
-                        ],
-                    ],
-                ]);
-
-                if (is_wp_error($terms)) {
-                    continue;
-                }
-
-                foreach ($terms as $term) {
-                    // Skip if this term IS a shadow
-                    $is_shadow = get_term_meta($term->term_id, '_master_term_id', true);
-                    if ($is_shadow) {
-                        continue;
-                    }
-
-                    foreach (['name', 'slug'] as $field) {
-                        $fr_val = ('name' === $field) ? $term->name : $term->slug;
-                        $row = ["term:$taxonomy", $term->term_id, $field, $fr_val];
-
-                        foreach ($shadow_locales as $locale) {
-                            $shadow_tid = $term_shadow_map[$term->term_id][$locale] ?? null;
-                            if ($shadow_tid) {
-                                $st = get_term($shadow_tid);
-                                $row[] = ('name' === $field) ? $st->name : $st->slug;
-                            } else {
-                                $row[] = '';
-                            }
-                        }
-                        $tsv_rows[] = $row;
-                    }
-                }
-            }
-
-            // Write TSV
-            $tsv_path = "$dir/translations.tsv";
-            // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-            $fp = fopen($tsv_path, 'w');
-            foreach ($tsv_rows as $row) {
-                fputcsv($fp, $row, "\t");
-            }
-            fclose($fp);
-            // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-
-            $post_count = count(array_unique(array_column(array_slice($tsv_rows, 1), 1)));
+            $res = $this->run_export_core($assoc_args);
             $this->release_sync_lock();
-            WP_CLI::success("Exported to $dir/ — $post_count entities, ".(count($tsv_rows) - 1).' TSV rows.');
+            $purged = $res['purged'] ? ", {$res['purged']} orphan folder(s) purged" : '';
+            WP_CLI::success("Exported to {$res['dir']}/ — {$res['entities']} entities, {$res['rows']} TSV rows{$purged}.");
         } catch (Throwable $e) {
             $this->release_sync_lock();
 
             throw $e;
         }
+
+        $this->maybe_drain_pending_export();
+    }
+
+    /**
+     * Run an export queued by a wp-admin save that landed while this command
+     * held the sync lock. import / manual export don't drain the auto-export
+     * queue themselves, so without this a pending edit would wait for the next
+     * save. Local only and a no-op unless a save actually armed the flag.
+     */
+    private function maybe_drain_pending_export(): void
+    {
+        if (! function_exists('polyglot_autoexport_enabled') || ! polyglot_autoexport_enabled()) {
+            return;
+        }
+        if (! get_transient('polyglot_export_pending')) {
+            return;
+        }
+
+        WP_CLI::log('Draining auto-export queued by an edit during this command…');
+        // Full export (no type/locale filter): the pending flag doesn't record
+        // which post changed, so re-export everything to be safe.
+        $this->export_worker_drain([]);
+    }
+
+    /**
+     * Background drain worker for auto-export on save (see inc/autoexport.php).
+     *
+     * Single-flight: grabs the MySQL sync lock non-blocking and bails out if
+     * any other import/export/worker already holds it — that one drains the
+     * queue. Coalescing: a save landing mid-export re-arms the
+     * 'polyglot_export_pending' flag, so one trailing export runs afterwards.
+     * Net result: never two exports at once, and no save is ever lost.
+     */
+    private function export_worker_drain($assoc_args): void
+    {
+        if (! $this->try_acquire_sync_lock('export --worker')) {
+            return;
+        }
+
+        try {
+            do {
+                delete_transient('polyglot_export_pending');
+                $this->run_export_core($assoc_args);
+                // Drop the warm object cache: a save that landed mid-export
+                // changed the DB in another process, so a trailing pass must
+                // re-read fresh rows (get_post() would otherwise return the
+                // content cached during the pass above).
+                wp_cache_flush();
+            } while (get_transient('polyglot_export_pending'));
+        } catch (Throwable $e) {
+            // Background worker — no caller to report to; the lock is released below.
+        } finally {
+            $this->release_sync_lock();
+        }
+    }
+
+    /**
+     * Core export routine. Callers own the sync lock; this never touches it.
+     *
+     * @return array{dir: string, entities: int, rows: int, purged: int}
+     */
+    private function run_export_core($assoc_args): array
+    {
+        $dir = polyglot_translations_dir();
+        $filter_type = $assoc_args['type'] ?? null;
+        $filter_locale = $assoc_args['target'] ?? null;
+        global $wpdb;
+
+        // Collect shadow locales
+        $shadow_locales = [];
+        foreach (POLYGLOT_LOCALES as $cfg) {
+            if (! empty($cfg['master'])) {
+                continue;
+            }
+            if ($filter_locale && $cfg['locale'] !== $filter_locale) {
+                continue;
+            }
+            $shadow_locales[] = $cfg['locale'];
+        }
+        if (empty($shadow_locales)) {
+            throw new \RuntimeException('No shadow locales matched.');
+        }
+
+        // Post types to export
+        $post_types = $filter_type ? [$filter_type] : polyglot_get_post_types();
+
+        // Ensure output dir exists
+        if (! is_dir($dir)) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
+            mkdir($dir, 0755, true);
+        }
+
+        // --- POSTS ---
+        $tsv_rows = [];
+        $master_locale = polyglot_get_master_locale();
+        $tsv_rows[] = array_merge(['type', 'master_id', 'field', $master_locale], $shadow_locales);
+
+        // Batch-load all shadow mappings
+        $shadow_map = $this->build_shadow_map($post_types);
+
+        // Prime caches for all shadow posts
+        $all_shadow_ids = [];
+        foreach ($shadow_map as $per_locale) {
+            foreach ($per_locale as $sid) {
+                $all_shadow_ids[] = $sid;
+            }
+        }
+        if ($all_shadow_ids) {
+            _prime_post_caches($all_shadow_ids);
+        }
+
+        $statuses = polyglot_exportable_statuses();
+        $placeholders = implode(',', array_fill(0, count($statuses), '%s'));
+
+        // Folder basenames (re)written this run, used to purge orphans below.
+        $kept_folders = [];
+
+        foreach ($post_types as $post_type) {
+            $masters = $wpdb->get_col($wpdb->prepare(
+                "SELECT ID FROM $wpdb->posts
+                 WHERE post_type = %s AND post_status IN ($placeholders)
+                 AND ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')
+                 ORDER BY ID",
+                $post_type,
+                ...$statuses
+            ));
+
+            $is_product = ('product' === $post_type);
+
+            foreach ($masters as $master_id) {
+                $post = get_post($master_id);
+                if (! $post) {
+                    continue;
+                }
+
+                // Gather shadow data per locale (from preloaded map)
+                $shadows = [];
+                foreach ($shadow_locales as $locale) {
+                    $sid = $shadow_map[(int) $master_id][$locale] ?? null;
+                    $shadows[$locale] = $sid ? get_post($sid) : null;
+                }
+
+                // Short fields → TSV
+                $short_fields = ['title', 'slug'];
+                if ($is_product) {
+                    $short_fields[] = 'short_desc';
+                }
+
+                foreach ($short_fields as $field) {
+                    $fr_val = match ($field) {
+                        'title' => $post->post_title,
+                        'slug' => get_post_meta($post->ID, 'custom_permalink', true) ?: $post->post_name,
+                        'short_desc' => $post->post_excerpt,
+                    };
+
+                    $row = [$post_type, $master_id, $field, $fr_val];
+                    foreach ($shadow_locales as $locale) {
+                        $s = $shadows[$locale];
+                        $row[] = $s ? match ($field) {
+                            'title' => $s->post_title,
+                            'slug' => get_post_meta($s->ID, 'custom_permalink', true) ?: $s->post_name,
+                            'short_desc' => $s->post_excerpt,
+                        } : '';
+                    }
+                    $tsv_rows[] = $row;
+                }
+
+                // Long content → HTML files
+                $fr_content = $post->post_content;
+                $slug = $post->post_name;
+                $folder = "$dir/$post_type-$master_id-$slug";
+                $old_folder = "$dir/$post_type-$master_id";
+                if (is_dir($old_folder) && ! is_dir($folder)) {
+                    // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
+                    rename($old_folder, $folder);
+                }
+
+                if ('' !== trim($fr_content)) {
+                    if (! is_dir($folder)) {
+                        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
+                        mkdir($folder, 0755, true);
+                    }
+                    file_put_contents("$folder/$master_locale.html", $fr_content);
+
+                    foreach ($shadow_locales as $locale) {
+                        $s = $shadows[$locale];
+                        if ($s && '' !== trim($s->post_content)) {
+                            file_put_contents("$folder/$locale.html", $s->post_content);
+                        }
+                    }
+
+                    $kept_folders[basename($folder)] = true;
+                }
+            }
+        }
+
+        // Purge orphan flat folders. A master that was deleted, trashed,
+        // emptied, or had its slug changed leaves its old folder behind: the
+        // TSV is rewritten wholesale each run, but the HTML folders are not.
+        // Remove any folder for an exported post type that wasn't (re)written
+        // above. Scoped to $post_types so a --type=product run never touches
+        // page/post folders. Folder existence is master-keyed (locale-
+        // independent), so a --target run is safe here too.
+        $purged = 0;
+        foreach ($post_types as $post_type) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_glob -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
+            foreach (glob("$dir/$post_type-*", GLOB_ONLYDIR) ?: [] as $path) {
+                $base = basename($path);
+                // Only "{type}-{id}" or "{type}-{id}-{slug}"; never a sibling
+                // post type whose name happens to share this prefix.
+                if (! preg_match('#^'.preg_quote($post_type, '#').'-\d+(?:-|$)#', $base)) {
+                    continue;
+                }
+                if (isset($kept_folders[$base])) {
+                    continue;
+                }
+                $this->rmdir_recursive($path);
+                ++$purged;
+            }
+        }
+
+        // --- TERMS ---
+        $term_shadow_map = $this->build_term_shadow_map();
+
+        // Prime caches for all shadow terms
+        $all_shadow_term_ids = [];
+        foreach ($term_shadow_map as $per_locale) {
+            foreach ($per_locale as $tid) {
+                $all_shadow_term_ids[] = $tid;
+            }
+        }
+        if ($all_shadow_term_ids) {
+            _prime_term_caches($all_shadow_term_ids);
+        }
+
+        $taxonomies = ['product_cat', 'product_tag', 'category', 'post_tag'];
+        foreach ($taxonomies as $taxonomy) {
+            $terms = get_terms([
+                'taxonomy' => $taxonomy,
+                'hide_empty' => false,
+                'meta_query' => [
+                    'relation' => 'OR',
+                    [
+                        'key' => '_master_term_id',
+                        'compare' => 'NOT EXISTS',
+                    ],
+                ],
+            ]);
+
+            if (is_wp_error($terms)) {
+                continue;
+            }
+
+            foreach ($terms as $term) {
+                // Skip if this term IS a shadow
+                $is_shadow = get_term_meta($term->term_id, '_master_term_id', true);
+                if ($is_shadow) {
+                    continue;
+                }
+
+                foreach (['name', 'slug'] as $field) {
+                    $fr_val = ('name' === $field) ? $term->name : $term->slug;
+                    $row = ["term:$taxonomy", $term->term_id, $field, $fr_val];
+
+                    foreach ($shadow_locales as $locale) {
+                        $shadow_tid = $term_shadow_map[$term->term_id][$locale] ?? null;
+                        if ($shadow_tid) {
+                            $st = get_term($shadow_tid);
+                            $row[] = ('name' === $field) ? $st->name : $st->slug;
+                        } else {
+                            $row[] = '';
+                        }
+                    }
+                    $tsv_rows[] = $row;
+                }
+            }
+        }
+
+        // Write TSV
+        $tsv_path = "$dir/translations.tsv";
+        // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
+        $fp = fopen($tsv_path, 'w');
+        foreach ($tsv_rows as $row) {
+            fputcsv($fp, $row, "\t");
+        }
+        fclose($fp);
+        // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+
+        $post_count = count(array_unique(array_column(array_slice($tsv_rows, 1), 1)));
+
+        return ['dir' => $dir, 'entities' => $post_count, 'rows' => count($tsv_rows) - 1, 'purged' => $purged];
     }
 
     /**
@@ -812,7 +926,9 @@ class Polyglot_CLI
                         'post_title' => $title,
                         'post_name' => $fields['slug'] ?? sanitize_title($title),
                         'post_excerpt' => $fields['short_desc'] ?? '',
-                        'post_status' => 'publish',
+                        // Mirror the master's status: a draft master's translations
+                        // stay drafts, a published master's shadows go live.
+                        'post_status' => $master_post ? $master_post->post_status : 'publish',
                         'post_type' => $post_type,
                         'menu_order' => $master_post ? $master_post->menu_order : 0,
                     ];
@@ -864,6 +980,8 @@ class Polyglot_CLI
 
             throw $e;
         }
+
+        $this->maybe_drain_pending_export();
     }
 
     /**
@@ -975,20 +1093,55 @@ class Polyglot_CLI
         return "$dir/$post_type-$master_id";
     }
 
+    /**
+     * Recursively delete a flat folder and its contents. Flat folders hold a
+     * single level of `<locale>.html` files; recursion is defensive only.
+     */
+    private function rmdir_recursive(string $path): void
+    {
+        if (! is_dir($path)) {
+            return;
+        }
+        foreach (scandir($path) ?: [] as $entry) {
+            if ('.' === $entry || '..' === $entry) {
+                continue;
+            }
+            $child = "$path/$entry";
+            if (is_dir($child) && ! is_link($child)) {
+                $this->rmdir_recursive($child);
+            } else {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
+                unlink($child);
+            }
+        }
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
+        rmdir($path);
+    }
+
     private function acquire_sync_lock(string $command): void
+    {
+        if ($this->try_acquire_sync_lock($command)) {
+            return;
+        }
+
+        $info = get_transient('polyglot_sync_lock_info');
+        $detail = $info
+            ? sprintf(' (running: %s, PID %d, started %s)', $info['command'], $info['pid'], $info['started'])
+            : '';
+        WP_CLI::error("Another polyglot import/export is already running{$detail}. Please wait and retry.");
+    }
+
+    /**
+     * Grab the sync lock without erroring on failure. Returns whether it was
+     * acquired; the background worker uses this to bail out silently.
+     */
+    private function try_acquire_sync_lock(string $command): bool
     {
         global $wpdb;
 
-        $result = $wpdb->get_var(
-            $wpdb->prepare('SELECT GET_LOCK(%s, %d)', 'polyglot_sync', 0)
-        );
-
-        if ('1' !== (string) $result) {
-            $info = get_transient('polyglot_sync_lock_info');
-            $detail = $info
-                ? sprintf(' (running: %s, PID %d, started %s)', $info['command'], $info['pid'], $info['started'])
-                : '';
-            WP_CLI::error("Another polyglot import/export is already running{$detail}. Please wait and retry.");
+        $got = (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, %d)', 'polyglot_sync', 0));
+        if ('1' !== $got) {
+            return false;
         }
 
         set_transient('polyglot_sync_lock_info', [
@@ -996,6 +1149,8 @@ class Polyglot_CLI
             'pid' => getmypid(),
             'started' => gmdate('Y-m-d H:i:s'),
         ], 3600);
+
+        return true;
     }
 
     private function release_sync_lock(): void

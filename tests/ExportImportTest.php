@@ -47,6 +47,46 @@ class ExportImportTest extends WP_UnitTestCase
         $this->assertStringContainsString("page\t{$this->master_id}\ttitle", $tsv);
     }
 
+    public function test_export_includes_draft_master(): void
+    {
+        // Drafts are mirrored so editing an unpublished master keeps its flat
+        // file current (polyglot_exportable_statuses includes 'draft').
+        $draft_id = self::factory()->post->create([
+            'post_type'    => 'page',
+            'post_title'   => 'Brouillon',
+            'post_name'    => 'brouillon',
+            'post_content' => '<p>WIP</p>',
+            'post_status'  => 'draft',
+        ]);
+
+        $this->run_export();
+
+        $this->assertFileExists($this->export_dir . '/page-' . $draft_id . '-brouillon/fr_FR.html');
+        $this->assertStringContainsString(
+            "page\t{$draft_id}\ttitle",
+            file_get_contents($this->export_dir . '/translations.tsv')
+        );
+    }
+
+    public function test_export_excludes_auto_draft_master(): void
+    {
+        // auto-draft is a non-content placeholder status and must never ship.
+        $auto_id = self::factory()->post->create([
+            'post_type'    => 'page',
+            'post_title'   => 'Auto',
+            'post_name'    => 'auto',
+            'post_content' => '<p>placeholder</p>',
+            'post_status'  => 'auto-draft',
+        ]);
+
+        $this->run_export();
+
+        $this->assertStringNotContainsString(
+            "page\t{$auto_id}\ttitle",
+            file_get_contents($this->export_dir . '/translations.tsv')
+        );
+    }
+
     public function test_export_tsv_header_contains_locales(): void
     {
         $this->run_export();
@@ -163,6 +203,43 @@ class ExportImportTest extends WP_UnitTestCase
         $this->assertSame($html, $exported);
     }
 
+    public function test_import_mirrors_draft_status_to_shadow(): void
+    {
+        // Master is a draft; its translations must not go live on import.
+        wp_update_post(['ID' => $this->master_id, 'post_status' => 'draft']);
+
+        $this->run_export();
+        $this->inject_translation_in_tsv('en_IE', 'About Us', 'about-us');
+        $html_dir = $this->export_dir . '/page-' . $this->master_id . '-a-propos';
+        file_put_contents($html_dir . '/en_IE.html', '<p>Our story</p>');
+
+        $this->run_import();
+
+        $shadow_id = $this->find_shadow($this->master_id, 'en_IE');
+        $this->assertNotNull($shadow_id, 'Shadow should be created for a draft master');
+        $this->assertSame('draft', get_post($shadow_id)->post_status, 'Shadow of a draft master must stay draft');
+    }
+
+    public function test_import_updates_shadow_status_to_match_master(): void
+    {
+        // 1. Published master → shadow goes live on import.
+        $this->run_export();
+        $this->inject_translation_in_tsv('en_IE', 'About Us', 'about-us');
+        $this->run_import();
+
+        $shadow_id = $this->find_shadow($this->master_id, 'en_IE');
+        $this->assertSame('publish', get_post($shadow_id)->post_status);
+
+        // 2. Master flips to draft → re-import must track it (un-publish the shadow).
+        wp_update_post(['ID' => $this->master_id, 'post_status' => 'draft']);
+        $this->recursive_rmdir($this->export_dir);
+        $this->run_export();
+        $this->inject_translation_in_tsv('en_IE', 'About Us', 'about-us');
+        $this->run_import();
+
+        $this->assertSame('draft', get_post($shadow_id)->post_status, 'Shadow status should track its master on update');
+    }
+
     public function test_export_term_translation(): void
     {
         register_taxonomy('product_cat', 'post');
@@ -212,6 +289,56 @@ class ExportImportTest extends WP_UnitTestCase
         $shadow_id = $this->find_shadow($this->master_id, 'en_IE');
         $this->assertNotNull($shadow_id, 'Shadow should be created even with old-format dir');
         $this->assertSame('<p>Old story</p>', get_post($shadow_id)->post_content);
+    }
+
+    public function test_export_purges_deleted_master_folder(): void
+    {
+        $this->run_export();
+        $dir = $this->export_dir . '/page-' . $this->master_id . '-a-propos';
+        $this->assertDirectoryExists($dir);
+
+        wp_delete_post($this->master_id, true);
+        $this->run_export();
+
+        $this->assertDirectoryDoesNotExist($dir, 'Folder of a deleted master must be purged on re-export');
+        $this->assertFileExists($this->export_dir . '/translations.tsv', 'TSV must still be written');
+    }
+
+    public function test_export_purges_folder_after_slug_change(): void
+    {
+        $this->run_export();
+        $old = $this->export_dir . '/page-' . $this->master_id . '-a-propos';
+        $this->assertDirectoryExists($old);
+
+        wp_update_post(['ID' => $this->master_id, 'post_name' => 'a-propos-v2']);
+        $this->run_export();
+
+        $this->assertDirectoryDoesNotExist($old, 'Stale slug folder must be purged after a slug change');
+        $this->assertDirectoryExists($this->export_dir . '/page-' . $this->master_id . '-a-propos-v2');
+    }
+
+    public function test_export_purges_emptied_master_folder(): void
+    {
+        $this->run_export();
+        $dir = $this->export_dir . '/page-' . $this->master_id . '-a-propos';
+        $this->assertDirectoryExists($dir);
+
+        wp_update_post(['ID' => $this->master_id, 'post_content' => '']);
+        $this->run_export();
+
+        $this->assertDirectoryDoesNotExist($dir, 'Folder of an emptied master must be purged');
+    }
+
+    public function test_export_purge_is_scoped_to_exported_type(): void
+    {
+        // An orphan folder of a different post type must survive a --type run.
+        $product_orphan = $this->export_dir . '/product-99999-ghost';
+        mkdir($product_orphan, 0755, true);
+        file_put_contents($product_orphan . '/fr_FR.html', '<p>ghost</p>');
+
+        $this->run_export(['type' => 'page']);
+
+        $this->assertDirectoryExists($product_orphan, '--type=page must not purge product folders');
     }
 
     // === Helpers ===
