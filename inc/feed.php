@@ -155,12 +155,30 @@ function polyglot_feed_get_products(): array
     $products = [];
     foreach ((new WP_Query($args))->posts as $id) {
         $product = wc_get_product($id);
-        if ($product instanceof WC_Product) {
+        if ($product instanceof WC_Product && polyglot_feed_master_published($product)) {
             $products[] = $product;
         }
     }
 
     return $products;
+}
+
+/**
+ * A shadow inherits the master's status only at translate/import time; a later
+ * status change on the master (e.g. a one-off custom-order product set to
+ * `private` once fulfilled) does NOT propagate to its already-published shadows.
+ * Guard the feed so an orphaned published shadow of a non-public master never
+ * leaks into a shadow-domain feed. Masters (and standalone products) carry no
+ * `_master_id` and always pass; a deleted master yields a false status → excluded.
+ */
+function polyglot_feed_master_published(WC_Product $product): bool
+{
+    $master_id = (int) $product->get_meta('_master_id');
+    if (! $master_id) {
+        return true;
+    }
+
+    return 'publish' === get_post_status($master_id);
 }
 
 /**

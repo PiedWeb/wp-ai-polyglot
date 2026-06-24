@@ -281,6 +281,60 @@ class GoogleFeedTest extends WP_UnitTestCase
         $this->assertSame(0, substr_count(polyglot_feed_build_xml(), '<item>'));
     }
 
+    /**
+     * A published shadow whose master was later set to `private` (e.g. a one-off
+     * custom-order product hidden once fulfilled) must not leak into the feed.
+     */
+    public function testFeedExcludesShadowOfPrivateMaster(): void
+    {
+        $master = $this->makeMaster('100', 'PRIV');
+        $this->makeShadow($master->get_id(), 'da_DK');
+        $master->set_status('private');
+        $master->save();
+
+        $_SERVER['HTTP_HOST'] = 'dk.test';
+        $this->assertSame(0, substr_count(polyglot_feed_build_xml(), '<item>'));
+    }
+
+    public function testFeedExcludesShadowOfDraftMaster(): void
+    {
+        $master = $this->makeMaster('100', 'DRFT');
+        $this->makeShadow($master->get_id(), 'da_DK');
+        $master->set_status('draft');
+        $master->save();
+
+        $_SERVER['HTTP_HOST'] = 'dk.test';
+        $this->assertSame(0, substr_count(polyglot_feed_build_xml(), '<item>'));
+    }
+
+    public function testFeedExcludesVariableShadowOfPrivateMaster(): void
+    {
+        $parent = $this->makeVariableMaster('PRIVBEAM');
+
+        $shadow = new WC_Product_Variable();
+        $shadow->set_name('Beam DK');
+        $shadow->set_attributes($parent->get_attributes());
+        $shadow->update_meta_data('_master_id', $parent->get_id());
+        $shadow->update_meta_data('_locale', 'da_DK');
+        $shadow->set_status('publish');
+        $shadow->save();
+
+        $parent->set_status('private');
+        $parent->save();
+
+        $_SERVER['HTTP_HOST'] = 'dk.test';
+        $this->assertSame(0, substr_count(polyglot_feed_build_xml(), '<item>'));
+    }
+
+    public function testFeedKeepsShadowOfPublishedMaster(): void
+    {
+        $master = $this->makeMaster('100', 'KEEP');
+        $this->makeShadow($master->get_id(), 'da_DK');
+
+        $_SERVER['HTTP_HOST'] = 'dk.test';
+        $this->assertSame(1, substr_count(polyglot_feed_build_xml(), '<item>'));
+    }
+
     // --- FX markup (covers payment-conversion cost) ---
 
     public function testMarkupAppliedOnTopOfRate(): void
