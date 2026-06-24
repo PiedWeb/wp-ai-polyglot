@@ -190,18 +190,58 @@ function polyglot_feed_render_items(array $items): string
     foreach ($items as $item) {
         $out .= "<item>\n";
         foreach ($item as $tag => $value) {
-            if (is_array($value)) {
-                foreach ($value as $single) {
-                    $out .= polyglot_feed_tag($tag, (string) $single);
-                }
-            } else {
-                $out .= polyglot_feed_tag($tag, (string) $value);
-            }
+            $out .= polyglot_feed_render_field($tag, $value);
         }
         $out .= "</item>\n";
     }
 
     return $out;
+}
+
+/**
+ * Render one item field. A scalar becomes <tag>value</tag>; a sequential list of
+ * scalars repeats the tag (e.g. g:additional_image_link); an associative array —
+ * or a list of them — becomes a nested element (e.g. g:shipping wrapping
+ * g:country/g:service/g:price).
+ *
+ * @param string|string[]|array<string, string>|array<int, array<string, string>> $value
+ */
+function polyglot_feed_render_field(string $tag, $value): string
+{
+    if (! is_array($value)) {
+        return polyglot_feed_tag($tag, (string) $value);
+    }
+
+    // Associative array → a single nested group.
+    if (array_keys($value) !== range(0, count($value) - 1)) {
+        return polyglot_feed_render_group($tag, $value);
+    }
+
+    // Sequential list → repeated scalars or repeated nested groups.
+    $out = '';
+    foreach ($value as $single) {
+        $out .= is_array($single)
+            ? polyglot_feed_render_group($tag, $single)
+            : polyglot_feed_tag($tag, (string) $single);
+    }
+
+    return $out;
+}
+
+/**
+ * @param array<string, string> $children
+ */
+function polyglot_feed_render_group(string $tag, array $children): string
+{
+    $inner = '';
+    foreach ($children as $child_tag => $child_value) {
+        $inner .= '  '.polyglot_feed_tag($child_tag, (string) $child_value);
+    }
+    if ('' === $inner) {
+        return '';
+    }
+
+    return '  <'.$tag.">\n".$inner.'  </'.$tag.">\n";
 }
 
 function polyglot_feed_tag(string $tag, string $value): string
@@ -241,6 +281,8 @@ function polyglot_feed_map_product(WC_Product $product): ?array
     $item += polyglot_feed_image_fields($product);
     $item += polyglot_feed_brand_identifier_fields($product);
     $item += polyglot_feed_taxonomy_fields($product);
+    $item += polyglot_feed_shipping_fields($product);
+    $item += polyglot_feed_promotion_fields($product);
 
     return apply_filters('polyglot_feed_item', $item, $product, null);
 }
@@ -315,6 +357,8 @@ function polyglot_feed_map_variable(WC_Product $product): array
         $item += polyglot_feed_image_fields($variation->get_image_id() ? $variation : $product);
         $item += polyglot_feed_brand_identifier_fields($product);
         $item += polyglot_feed_taxonomy_fields($product);
+        $item += polyglot_feed_shipping_fields($product);
+        $item += polyglot_feed_promotion_fields($product);
 
         $items[] = apply_filters('polyglot_feed_item', $item, $product, $variation);
     }
@@ -402,6 +446,72 @@ function polyglot_feed_price_tags(float $regular, float $active, bool $on_sale, 
 function polyglot_feed_format_amount(float $amount, string $currency): string
 {
     return number_format($amount, 2, '.', '').' '.$currency;
+}
+
+/**
+ * Shipping + handling-time fields. Both are opt-in via filters so the generic
+ * plugin emits nothing unless the host site supplies values:
+ *   - polyglot_feed_max_handling_time / polyglot_feed_min_handling_time → int days
+ *   - polyglot_feed_shipping → list of ['country' => 'FR', 'price' => 8.0,
+ *     'service' => 'Standard' (optional)]; prices are in the display currency.
+ * Keeping shipping out of the generic core (and consistent with the storefront
+ * JSON-LD) is the host's responsibility — feed and page MUST agree or Google
+ * flags the mismatch.
+ *
+ * @return array<string, string|array<int, array<string, string>>>
+ */
+function polyglot_feed_shipping_fields(WC_Product $product): array
+{
+    $fields = [];
+    $currency = polyglot_get_current_currency();
+
+    $max = apply_filters('polyglot_feed_max_handling_time', null, $product);
+    if (null !== $max && '' !== $max) {
+        $min = apply_filters('polyglot_feed_min_handling_time', 0, $product);
+        if (null !== $min && '' !== $min) {
+            $fields['g:min_handling_time'] = (string) (int) $min;
+        }
+        $fields['g:max_handling_time'] = (string) (int) $max;
+    }
+
+    $groups = [];
+    foreach ((array) apply_filters('polyglot_feed_shipping', [], $product, $currency) as $entry) {
+        if (! is_array($entry) || ! isset($entry['country'])) {
+            continue;
+        }
+        $group = ['g:country' => (string) $entry['country']];
+        if (isset($entry['service']) && '' !== $entry['service']) {
+            $group['g:service'] = (string) $entry['service'];
+        }
+        if (isset($entry['price'])) {
+            $group['g:price'] = polyglot_feed_format_amount((float) $entry['price'], $currency);
+        }
+        $groups[] = $group;
+    }
+    if ($groups) {
+        $fields['g:shipping'] = $groups;
+    }
+
+    return $fields;
+}
+
+/**
+ * Google Merchant promotion links. Opt-in via the polyglot_feed_promotion_ids
+ * filter — a list of promotion IDs that already exist in Merchant Center. The
+ * discount itself (code, value, minimum spend, dates, country) is defined in the
+ * Merchant Center promotion, NOT in the feed; products only reference it by ID.
+ * A product may carry several g:promotion_id tags.
+ *
+ * @return array<string, string[]>
+ */
+function polyglot_feed_promotion_fields(WC_Product $product): array
+{
+    $ids = array_values(array_unique(array_filter(
+        array_map('strval', (array) apply_filters('polyglot_feed_promotion_ids', [], $product)),
+        'strlen'
+    )));
+
+    return $ids ? ['g:promotion_id' => $ids] : [];
 }
 
 /**
