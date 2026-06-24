@@ -80,8 +80,56 @@ function polyglot_intercept_shadow_stock_reduction(int $quantity, $order, $item)
 }
 
 // ============================================================
-// PRICE BRIDGE — Shadow reads prices from Master
+// CURRENCY BRIDGE — Per-domain currency
 // ============================================================
+//
+// Shadow domains report their own currency (POLYGLOT_LOCALES[...]['currency']).
+// Combined with the price conversion below, the storefront and the Google feed
+// show identical prices in the local currency — a Merchant Center requirement.
+// Admin / master keep the store's base currency unchanged.
+
+add_filter('woocommerce_currency', 'polyglot_domain_currency');
+
+function polyglot_domain_currency($currency)
+{
+    if (is_admin() && ! (defined('REST_REQUEST') && REST_REQUEST)) {
+        return $currency;
+    }
+
+    $entry = polyglot_get_current_entry();
+
+    return $entry['currency'] ?? $currency;
+}
+
+/**
+ * Convert an amount expressed in the base (master) currency to the current
+ * domain currency. No-op on the base currency or when the amount is empty.
+ *
+ * @param string|float|int $amount
+ *
+ * @return string|float|int
+ */
+function polyglot_maybe_convert_from_base($amount)
+{
+    if ('' === $amount || null === $amount) {
+        return $amount;
+    }
+
+    $currency = polyglot_get_current_currency();
+    if ($currency === polyglot_fx_base_currency()) {
+        return $amount;
+    }
+
+    return (string) polyglot_convert_price((float) $amount, $currency);
+}
+
+// ============================================================
+// PRICE BRIDGE — Shadow reads prices from Master (FX-converted when needed)
+// ============================================================
+//
+// A shadow's OWN _price is assumed to already be in its local currency and is
+// returned verbatim (early return on a non-empty value). Otherwise the master
+// price (base currency) is read and converted to the current domain currency.
 
 add_filter('woocommerce_product_get_price', 'polyglot_virtual_price', 10, 2);
 add_filter('woocommerce_product_get_regular_price', 'polyglot_virtual_regular_price', 10, 2);
@@ -95,7 +143,7 @@ function polyglot_virtual_price($value, $product)
 
     $master = polyglot_get_master($product);
 
-    return $master ? $master->get_price() : $value;
+    return $master ? polyglot_maybe_convert_from_base($master->get_price()) : $value;
 }
 
 function polyglot_virtual_regular_price($value, $product)
@@ -106,7 +154,7 @@ function polyglot_virtual_regular_price($value, $product)
 
     $master = polyglot_get_master($product);
 
-    return $master ? $master->get_regular_price() : $value;
+    return $master ? polyglot_maybe_convert_from_base($master->get_regular_price()) : $value;
 }
 
 function polyglot_virtual_sale_price($value, $product)
@@ -117,7 +165,7 @@ function polyglot_virtual_sale_price($value, $product)
 
     $master = polyglot_get_master($product);
 
-    return $master ? $master->get_sale_price() : $value;
+    return $master ? polyglot_maybe_convert_from_base($master->get_sale_price()) : $value;
 }
 
 // ============================================================

@@ -3,7 +3,7 @@
  * Plugin Name: PiedWeb AI Polyglot
  * Plugin URI:  https://wap.piedweb.com
  * Description: Master/Shadow i18n architecture. One master language, N shadow languages via domain map.
- * Version:     2.0.0
+ * Version:     2.1.0
  * Author:      PiedWeb
  * Author URI:  https://en.piedweb.com
  * License:     GPL-2.0-or-later
@@ -45,7 +45,7 @@ if (is_multisite()) {
     return;
 }
 
-define('POLYGLOT_VERSION', '2.0.0');
+define('POLYGLOT_VERSION', '2.1.0');
 define('POLYGLOT_PLUGIN_FILE', __FILE__);
 define('POLYGLOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('POLYGLOT_WC_SLUGS_OPTION', 'polyglot_wc_slugs');
@@ -59,6 +59,7 @@ register_activation_hook(__FILE__, function (): void {
 });
 
 register_deactivation_hook(__FILE__, function (): void {
+    wp_clear_scheduled_hook('polyglot_fx_refresh');
     flush_rewrite_rules();
 });
 
@@ -67,11 +68,13 @@ register_deactivation_hook(__FILE__, function (): void {
 // ============================================================
 
 require_once __DIR__.'/inc/helpers.php';
+require_once __DIR__.'/inc/exchange-rates.php';
 require_once __DIR__.'/inc/permalink.php';
 require_once __DIR__.'/inc/routing.php';
 require_once __DIR__.'/inc/wc-product-bridge.php';
 require_once __DIR__.'/inc/wc-review-bridge.php';
 require_once __DIR__.'/inc/seo.php';
+require_once __DIR__.'/inc/feed.php';
 require_once __DIR__.'/inc/admin.php';
 require_once __DIR__.'/inc/frontend.php';
 require_once __DIR__.'/inc/draft-link-handler.php';

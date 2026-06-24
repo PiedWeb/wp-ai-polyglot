@@ -25,10 +25,13 @@ if (! defined('POLYGLOT_TRANSLATIONS_DIR')) {
 }
 
 if (! defined('POLYGLOT_LOCALES')) {
+    // The WC suite includes a non-base-currency locale (DKK) to exercise the
+    // currency filter and FX price conversion (inc/exchange-rates.php).
     define('POLYGLOT_LOCALES', [
         'master.test' => ['locale' => 'fr_FR', 'hreflang' => 'fr', 'label' => 'Français', 'currency' => 'EUR', 'master' => true],
         'en.test'     => ['locale' => 'en_IE', 'hreflang' => 'en', 'label' => 'English',  'currency' => 'EUR'],
         'es.test'     => ['locale' => 'es_ES', 'hreflang' => 'es', 'label' => 'Español',  'currency' => 'EUR'],
+        'dk.test'     => ['locale' => 'da_DK', 'hreflang' => 'da', 'label' => 'Dansk',    'currency' => 'DKK'],
     ]);
 }
 

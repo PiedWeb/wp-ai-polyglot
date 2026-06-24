@@ -4,7 +4,7 @@ Tags: multilingual, translation, woocommerce, hreflang, i18n
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,12 @@ Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/li
 
 == Changelog ==
 
+= 2.1.0 =
+* Google product feed (Merchant Center): per-domain `/polyglot-feed/google.xml` endpoint, one feed per locale/currency/URL
+* Variations virtualized from the master on shadow domains (shared item_group_id)
+* Per-domain currency (`woocommerce_currency` filter) + ECB daily FX conversion of master prices
+* New WP-CLI commands: `wp polyglot update-exchange-rates` and `wp polyglot feed`
+
 = 2.0.0 =
 * Initial public release on WordPress.org
 * Master/Shadow architecture with domain-based routing
@@ -124,6 +130,9 @@ Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/li
 * `check-links` WP-CLI command for detecting mislocalized internal links
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Adds a native Google Merchant Center product feed (one per domain) with per-locale currency and ECB FX-converted pricing.
 
 = 2.0.0 =
 First public release.

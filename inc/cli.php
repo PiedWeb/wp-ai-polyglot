@@ -251,6 +251,85 @@ class Polyglot_CLI
     }
 
     /**
+     * Fetch ECB daily reference rates and store them for FX price conversion.
+     *
+     * ## USAGE
+     *
+     *   wp polyglot update-exchange-rates
+     *
+     * Stores base→currency margined rates in the 'polyglot_exchange_rates' option.
+     * Run daily (a WP-Cron event does this automatically when a non-base currency
+     * locale exists). Shadow products without their own price are converted from
+     * the master (base currency) price using these rates.
+     */
+    public function update_exchange_rates()
+    {
+        $result = polyglot_update_exchange_rates();
+        if (is_wp_error($result)) {
+            WP_CLI::error($result->get_error_message());
+        }
+
+        $targets = polyglot_fx_target_currencies();
+        if (empty($targets)) {
+            WP_CLI::success('No non-base currency configured — nothing to convert.');
+
+            return;
+        }
+
+        WP_CLI::log(sprintf(
+            'Base %s · ECB date %s · margin %.1f%%',
+            $result['base'],
+            $result['date'],
+            ((float) $result['margin']) * 100
+        ));
+        foreach ($targets as $currency) {
+            WP_CLI::log(sprintf(
+                '  %s: %.4f (raw %.4f)',
+                $currency,
+                $result['rates'][$currency] ?? 0,
+                $result['raw_rates'][$currency] ?? 0
+            ));
+        }
+        WP_CLI::success('Exchange rates updated.');
+    }
+
+    /**
+     * Render the Google product feed for one locale (debug helper).
+     *
+     * ## USAGE
+     *
+     *   wp polyglot feed --target=da_DK
+     *
+     * ## OPTIONS
+     *
+     * [--target=<locale>]
+     * : Locale to render (default: master locale).
+     *
+     * Prices and currency reflect the target locale. NOTE: product links reflect
+     * the CLI environment's home URL (usually the master domain) — use
+     * `curl https://<domain>/polyglot-feed/google.xml` to verify per-domain URLs.
+     */
+    public function feed($args, $assoc_args)
+    {
+        if (! function_exists('wc_get_products')) {
+            WP_CLI::error('WooCommerce is not active.');
+        }
+
+        $target = $assoc_args['target'] ?? polyglot_get_master_locale();
+        $authority = polyglot_locale_to_authority($target);
+        if (! $authority) {
+            WP_CLI::error("Unknown locale: {$target}");
+        }
+
+        $override = static fn () => $authority;
+        add_filter('polyglot_current_authority', $override);
+        $xml = polyglot_feed_build_xml();
+        remove_filter('polyglot_current_authority', $override);
+
+        WP_CLI::line($xml);
+    }
+
+    /**
      * Export all translations to a directory (TSV + HTML files).
      *
      * ## USAGE
