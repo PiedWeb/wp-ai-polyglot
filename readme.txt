@@ -4,7 +4,7 @@ Tags: hreflang, ai-translation, automatic-translation, language-switcher, multi-
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,16 @@ Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/li
 
 == Changelog ==
 
+= 2.2.0 =
+* Flat-file write API: `wp polyglot write` (stdin → JSON) applies one flat file to the DB under an optimistic lock (etag compare-and-swap)
+* Frontmatter flat format (YAML-ish front matter + HTML body) replaces the TSV — one file per locale per entity
+* Terms (taxonomy) adopt the same model: `term-{taxonomy}-{id}/{locale}.html`, body = description
+* `import` is now flat-driven and etag-locked (`--force` to override); `translate --payload` gains `--if-match`
+* New `wp polyglot push [--all]` reconciles out-of-band edits (vim, git pull, batch)
+* Staleness tracking via content-hash meta (`untranslated --stale`)
+* Stable folder layout `{type}-{id}` + read-only `_index.md`
+* Dev tooling: php-cs-fixer + phpstan (WordPress/WooCommerce stubs); CI runs phpstan
+
 = 2.1.0 =
 * Google product feed (Merchant Center): per-domain `/polyglot-feed/google.xml` endpoint, one feed per locale/currency/URL
 * Variations virtualized from the master on shadow domains (shared item_group_id)
@@ -130,6 +140,9 @@ Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/li
 * `check-links` WP-CLI command for detecting mislocalized internal links
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+Flat storage moves from TSV to per-locale frontmatter files — run `wp polyglot export` once to regenerate the flat tree. Editing a flat file now syncs to the DB via `wp polyglot write` under an optimistic lock.
 
 = 2.1.0 =
 Adds a native Google Merchant Center product feed (one per domain) with per-locale currency and ECB FX-converted pricing.

@@ -27,8 +27,12 @@ class Polyglot_CLI
      *
      * [--force]
      * : Overwrite even if manually edited.
+     *
+     * [--if-match=<etag>]
+     * : Optimistic lock: apply only if the shadow's current etag matches (or
+     *   `new` to require it not yet exist). Mismatch is skipped, not an error.
      */
-    public function translate($args, $assoc_args)
+    public function translate($args, $assoc_args): void
     {
         $master_id = (int) $args[0];
         $target_locale = $assoc_args['target'];
@@ -87,6 +91,29 @@ class Polyglot_CLI
             }
         }
 
+        // Optimistic lock (decision #9): a per-post --if-match makes the
+        // break-glass payload path lost-update-safe like `write`.
+        if (isset($assoc_args['if-match'])) {
+            $if_match = (string) $assoc_args['if-match'];
+            if ($existing_id) {
+                clean_post_cache($existing_id);
+                if ('new' === $if_match) {
+                    WP_CLI::warning("If-Match=new but shadow $existing_id already exists ($target_locale). Skipped.");
+
+                    return;
+                }
+                if ($if_match !== polyglot_post_etag(get_post($existing_id))) {
+                    WP_CLI::warning("Shadow $existing_id changed since If-Match ($target_locale). Skipped.");
+
+                    return;
+                }
+            } elseif ('new' !== $if_match) {
+                WP_CLI::warning("If-Match references a shadow that no longer exists ($target_locale). Skipped.");
+
+                return;
+            }
+        }
+
         $master_post = get_post($master_id);
         $post_args = [
             'ID' => $existing_id ? $existing_id : 0,
@@ -111,6 +138,9 @@ class Polyglot_CLI
         update_post_meta($shadow_id, '_master_id', $master_id);
         update_post_meta($shadow_id, '_locale', $target_locale);
         delete_post_meta($shadow_id, '_translation_mode');
+        if ($master_post) {
+            update_post_meta($shadow_id, '_src_hash', polyglot_content_hash($master_post));
+        }
 
         if (isset($ai_data['price'])) {
             update_post_meta($shadow_id, '_price', $ai_data['price']);
@@ -127,7 +157,7 @@ class Polyglot_CLI
      *
      *   wp polyglot translate-term 5 --taxonomy=product_cat --target=en_IE --name="Shoes"
      */
-    public function translate_term($args, $assoc_args)
+    public function translate_term($args, $assoc_args): void
     {
         $master_term_id = (int) $args[0];
         $taxonomy = $assoc_args['taxonomy'];
@@ -170,8 +200,15 @@ class Polyglot_CLI
      *
      *   wp polyglot untranslated --type=product --target=en_IE
      *   wp polyglot untranslated --type=product              # shows all missing
+     *   wp polyglot untranslated --type=page --stale         # also list shadows whose master changed
+     *
+     * ## OPTIONS
+     *
+     * [--stale]
+     * : Also report existing shadows whose master's translatable content has
+     *   changed since they were translated (src_hash mismatch).
      */
-    public function untranslated($args, $assoc_args)
+    public function untranslated($args, $assoc_args): void
     {
         $post_type = $assoc_args['type'] ?? 'product';
         $target_locale = $assoc_args['target'] ?? null;
@@ -205,13 +242,24 @@ class Polyglot_CLI
             $shadow_locales[] = $cfg['locale'];
         }
 
+        $stale_flag = ! empty($assoc_args['stale']);
         $total_missing = 0;
+        $total_stale = 0;
         foreach ($shadow_locales as $locale) {
             $missing = [];
+            $stale = [];
             foreach ($masters as $id) {
                 $shadow = $this->find_shadow($id, $locale);
                 if (! $shadow) {
                     $missing[] = $id;
+
+                    continue;
+                }
+                if ($stale_flag) {
+                    $master = get_post($id);
+                    if ($master && get_post_meta($shadow, '_src_hash', true) !== polyglot_content_hash($master)) {
+                        $stale[] = $id;
+                    }
                 }
             }
             if (! empty($missing)) {
@@ -221,10 +269,17 @@ class Polyglot_CLI
                 }
                 $total_missing += count($missing);
             }
+            if (! empty($stale)) {
+                WP_CLI::log("\n[$locale] ".count($stale)." stale $post_type(s) (master changed since translation):");
+                foreach ($stale as $id) {
+                    WP_CLI::log("  - ID $id: ".get_the_title($id));
+                }
+                $total_stale += count($stale);
+            }
         }
 
-        if (0 === $total_missing) {
-            WP_CLI::success('All posts are translated!');
+        if (0 === $total_missing && 0 === $total_stale) {
+            WP_CLI::success($stale_flag ? 'All posts are translated and up to date!' : 'All posts are translated!');
         }
     }
 
@@ -235,7 +290,7 @@ class Polyglot_CLI
      *
      *   wp polyglot locales
      */
-    public function locales()
+    public function locales(): void
     {
         WP_CLI::log('Configured locales:');
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -263,7 +318,7 @@ class Polyglot_CLI
      * locale exists). Shadow products without their own price are converted from
      * the master (base currency) price using these rates.
      */
-    public function update_exchange_rates()
+    public function update_exchange_rates(): void
     {
         $result = polyglot_update_exchange_rates();
         if (is_wp_error($result)) {
@@ -308,7 +363,7 @@ class Polyglot_CLI
      * the CLI environment's home URL (usually the master domain) — use
      * `curl https://<domain>/polyglot-feed/google.xml` to verify per-domain URLs.
      */
-    public function feed($args, $assoc_args)
+    public function feed($args, $assoc_args): void
     {
         if (! function_exists('wc_get_products')) {
             WP_CLI::error('WooCommerce is not active.');
@@ -348,7 +403,7 @@ class Polyglot_CLI
      *   auto-export-on-save hook, inc/autoexport.php). Bails out silently if
      *   another import/export is already running.
      */
-    public function export($args, $assoc_args)
+    public function export($args, $assoc_args): void
     {
         if (! empty($assoc_args['worker'])) {
             $this->export_worker_drain($assoc_args);
@@ -362,7 +417,7 @@ class Polyglot_CLI
             $res = $this->run_export_core($assoc_args);
             $this->release_sync_lock();
             $purged = $res['purged'] ? ", {$res['purged']} orphan folder(s) purged" : '';
-            WP_CLI::success("Exported to {$res['dir']}/ — {$res['entities']} entities, {$res['rows']} TSV rows{$purged}.");
+            WP_CLI::success("Exported to {$res['dir']}/ — {$res['entities']} entities{$purged}.");
         } catch (Throwable $e) {
             $this->release_sync_lock();
 
@@ -449,7 +504,7 @@ class Polyglot_CLI
             $shadow_locales[] = $cfg['locale'];
         }
         if (empty($shadow_locales)) {
-            throw new \RuntimeException('No shadow locales matched.');
+            throw new RuntimeException('No shadow locales matched.');
         }
 
         // Post types to export
@@ -462,9 +517,7 @@ class Polyglot_CLI
         }
 
         // --- POSTS ---
-        $tsv_rows = [];
         $master_locale = polyglot_get_master_locale();
-        $tsv_rows[] = array_merge(['type', 'master_id', 'field', $master_locale], $shadow_locales);
 
         // Batch-load all shadow mappings
         $shadow_map = $this->build_shadow_map($post_types);
@@ -485,6 +538,9 @@ class Polyglot_CLI
 
         // Folder basenames (re)written this run, used to purge orphans below.
         $kept_folders = [];
+
+        // Rows for the read-only _index.md (grep by id/slug + coverage).
+        $index_rows = [];
 
         foreach ($post_types as $post_type) {
             $masters = $wpdb->get_col($wpdb->prepare(
@@ -511,56 +567,50 @@ class Polyglot_CLI
                     $shadows[$locale] = $sid ? get_post($sid) : null;
                 }
 
-                // Short fields → TSV
-                $short_fields = ['title', 'slug'];
-                if ($is_product) {
-                    $short_fields[] = 'short_desc';
-                }
-
-                foreach ($short_fields as $field) {
-                    $fr_val = match ($field) {
-                        'title' => $post->post_title,
-                        'slug' => get_post_meta($post->ID, 'custom_permalink', true) ?: $post->post_name,
-                        'short_desc' => $post->post_excerpt,
-                    };
-
-                    $row = [$post_type, $master_id, $field, $fr_val];
-                    foreach ($shadow_locales as $locale) {
-                        $s = $shadows[$locale];
-                        $row[] = $s ? match ($field) {
-                            'title' => $s->post_title,
-                            'slug' => get_post_meta($s->ID, 'custom_permalink', true) ?: $s->post_name,
-                            'short_desc' => $s->post_excerpt,
-                        } : '';
-                    }
-                    $tsv_rows[] = $row;
-                }
-
-                // Long content → HTML files
+                // Long content + per-locale frontmatter → HTML files.
+                // Folder is the stable "{type}-{id}" (slug lives in frontmatter);
+                // an old slug-suffixed folder is purged below as an orphan.
                 $fr_content = $post->post_content;
-                $slug = $post->post_name;
-                $folder = "$dir/$post_type-$master_id-$slug";
-                $old_folder = "$dir/$post_type-$master_id";
-                if (is_dir($old_folder) && ! is_dir($folder)) {
-                    // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-                    rename($old_folder, $folder);
-                }
+                $folder = "$dir/$post_type-$master_id";
 
                 if ('' !== trim($fr_content)) {
                     if (! is_dir($folder)) {
                         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
                         mkdir($folder, 0755, true);
                     }
-                    file_put_contents("$folder/$master_locale.html", $fr_content);
+                    file_put_contents("$folder/$master_locale.html", polyglot_flat_build($post, $master_locale, null, $is_product));
 
+                    $master_chash = polyglot_content_hash($post);
+                    $present = 0;
+                    $stale = 0;
                     foreach ($shadow_locales as $locale) {
                         $s = $shadows[$locale];
                         if ($s && '' !== trim($s->post_content)) {
-                            file_put_contents("$folder/$locale.html", $s->post_content);
+                            // Self-heal: a shadow with no staleness baseline (legacy
+                            // content predating _src_hash, or imported without one)
+                            // is assumed current as of now, so staleness only flags
+                            // genuine post-baseline master changes.
+                            if ('' === (string) get_post_meta($s->ID, '_src_hash', true)) {
+                                update_post_meta($s->ID, '_src_hash', $master_chash);
+                            }
+                            file_put_contents("$folder/$locale.html", polyglot_flat_build($s, $locale, (int) $master_id, $is_product));
+                            ++$present;
+                            if (get_post_meta($s->ID, '_src_hash', true) !== $master_chash) {
+                                ++$stale;
+                            }
                         }
                     }
 
                     $kept_folders[basename($folder)] = true;
+                    $index_rows[] = [
+                        'id' => (int) $master_id,
+                        'type' => $post_type,
+                        'slug' => get_post_meta($master_id, 'custom_permalink', true) ?: $post->post_name,
+                        'title' => $post->post_title,
+                        'present' => $present,
+                        'total' => count($shadow_locales),
+                        'stale' => $stale,
+                    ];
                 }
             }
         }
@@ -575,7 +625,7 @@ class Polyglot_CLI
         $purged = 0;
         foreach ($post_types as $post_type) {
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_glob -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-            foreach (glob("$dir/$post_type-*", GLOB_ONLYDIR) ?: [] as $path) {
+            foreach (glob("$dir/$post_type-*", \GLOB_ONLYDIR) ?: [] as $path) {
                 $base = basename($path);
                 // Only "{type}-{id}" or "{type}-{id}-{slug}"; never a sibling
                 // post type whose name happens to share this prefix.
@@ -611,63 +661,85 @@ class Polyglot_CLI
                 'hide_empty' => false,
                 'meta_query' => [
                     'relation' => 'OR',
-                    [
-                        'key' => '_master_term_id',
-                        'compare' => 'NOT EXISTS',
-                    ],
+                    ['key' => '_master_term_id', 'compare' => 'NOT EXISTS'],
                 ],
             ]);
-
             if (is_wp_error($terms)) {
                 continue;
             }
 
+            $kept_term_folders = [];
             foreach ($terms as $term) {
-                // Skip if this term IS a shadow
-                $is_shadow = get_term_meta($term->term_id, '_master_term_id', true);
-                if ($is_shadow) {
-                    continue;
+                if (get_term_meta($term->term_id, '_master_term_id', true)) {
+                    continue; // shadow term — written under its master's folder
+                }
+                $folder = "$dir/term-$taxonomy-{$term->term_id}";
+                if (! is_dir($folder)) {
+                    mkdir($folder, 0755, true);
+                }
+                file_put_contents("$folder/$master_locale.html", polyglot_term_flat_build($term, $master_locale, null, $taxonomy));
+
+                $present = 0;
+                foreach ($shadow_locales as $locale) {
+                    $stid = $term_shadow_map[$term->term_id][$locale] ?? null;
+                    $st = $stid ? get_term($stid, $taxonomy) : null;
+                    if ($st instanceof WP_Term) {
+                        file_put_contents("$folder/$locale.html", polyglot_term_flat_build($st, $locale, (int) $term->term_id, $taxonomy));
+                        ++$present;
+                    }
                 }
 
-                foreach (['name', 'slug'] as $field) {
-                    $fr_val = ('name' === $field) ? $term->name : $term->slug;
-                    $row = ["term:$taxonomy", $term->term_id, $field, $fr_val];
+                $kept_term_folders[basename($folder)] = true;
+                $index_rows[] = [
+                    'id' => (int) $term->term_id,
+                    'type' => "term:$taxonomy",
+                    'slug' => $term->slug,
+                    'title' => $term->name,
+                    'present' => $present,
+                    'total' => count($shadow_locales),
+                    'stale' => 0,
+                ];
+            }
 
-                    foreach ($shadow_locales as $locale) {
-                        $shadow_tid = $term_shadow_map[$term->term_id][$locale] ?? null;
-                        if ($shadow_tid) {
-                            $st = get_term($shadow_tid);
-                            $row[] = ('name' === $field) ? $st->name : $st->slug;
-                        } else {
-                            $row[] = '';
-                        }
-                    }
-                    $tsv_rows[] = $row;
+            // Purge orphan term folders for this taxonomy (master deleted).
+            foreach (glob("$dir/term-$taxonomy-*", \GLOB_ONLYDIR) ?: [] as $path) {
+                if (! isset($kept_term_folders[basename($path)])) {
+                    $this->rmdir_recursive($path);
+                    ++$purged;
                 }
             }
         }
 
-        // Write TSV
-        $tsv_path = "$dir/translations.tsv";
-        // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-        $fp = fopen($tsv_path, 'w');
-        foreach ($tsv_rows as $row) {
-            fputcsv($fp, $row, "\t");
+        // Read-only index: grep by id/slug, see translation coverage at a glance.
+        usort($index_rows, static fn ($a, $b) => [$a['type'], $a['id']] <=> [$b['type'], $b['id']]);
+        $index_md = "# Polyglot flat — index (généré, lecture seule)\n\n";
+        $index_md .= "| id | type | slug | titre | trad | stale |\n|---|---|---|---|---|---|\n";
+        foreach ($index_rows as $r) {
+            $title = str_replace(['|', "\n", "\r"], ['\\|', ' ', ''], (string) $r['title']);
+            $index_md .= sprintf("| %d | %s | %s | %s | %d/%d | %s |\n", $r['id'], $r['type'], $r['slug'], $title, $r['present'], $r['total'], $r['stale'] ? (string) $r['stale'] : '—');
         }
-        fclose($fp);
-        // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+        file_put_contents("$dir/_index.md", $index_md);
 
-        $post_count = count(array_unique(array_column(array_slice($tsv_rows, 1), 1)));
+        // Self-heal: the wide TSV is retired (Option B). Drop a stale one left
+        // over from a pre-migration export so it can't be mistaken for live data.
+        if (file_exists("$dir/translations.tsv")) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink -- WP-CLI command, batch flat-file I/O.
+            unlink("$dir/translations.tsv");
+        }
 
-        return ['dir' => $dir, 'entities' => $post_count, 'rows' => count($tsv_rows) - 1, 'purged' => $purged];
+        return ['dir' => $dir, 'entities' => count($index_rows), 'purged' => $purged];
     }
 
     /**
-     * Import translations from a directory (TSV + HTML files).
+     * Import flat files into the DB (bulk apply). Reuses the same per-file,
+     * optimistic-locked write path as `write`/`push`, iterating every
+     * polyglot-flat/<...>/<locale>.html — posts, products and terms alike.
      *
      * ## USAGE
      *
-     *   wp polyglot import [--dry-run] [--force]
+     *   wp polyglot import            # apply all flat files (skips conflicts/locks)
+     *   wp polyglot import --force    # override the etag lock and manual shadows
+     *   wp polyglot import --dry-run  # preview
      *
      * ## OPTIONS
      *
@@ -675,9 +747,9 @@ class Polyglot_CLI
      * : Preview changes without writing.
      *
      * [--force]
-     * : Overwrite manually-edited shadows.
+     * : Override the optimistic lock and manually-edited (manual) shadows.
      */
-    public function import($args, $assoc_args)
+    public function import($args, $assoc_args): void
     {
         $this->acquire_sync_lock('import');
 
@@ -685,287 +757,72 @@ class Polyglot_CLI
             $dir = polyglot_translations_dir();
             $dry_run = ! empty($assoc_args['dry-run']);
             $force = ! empty($assoc_args['force']);
-            global $wpdb;
-
-            $tsv_path = "$dir/translations.tsv";
-            if (! file_exists($tsv_path)) {
-                WP_CLI::error("File not found: $tsv_path");
-            }
-
-            // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-            $fp = fopen($tsv_path, 'r');
-            $header = fgetcsv($fp, 0, "\t");
-            // header: type, master_id, field, <master_locale>, locale1, locale2, ...
-            $master_locale = $header[3];
-            $locales = array_slice($header, 4);
-
-            // Group rows by (type, master_id)
-            $entities = [];
-            while (($row = fgetcsv($fp, 0, "\t")) !== false) {
-                if (count($row) < 4) {
-                    continue;
-                }
-                $type = $row[0];
-                $master_id = $row[1];
-                $field = $row[2];
-                $key = "$type|$master_id";
-
-                // Master column (index 3)
-                $master_val = $row[3] ?? '';
-                if ('' !== $master_val) {
-                    $entities[$key][$master_locale][$field] = $master_val;
-                }
-
-                foreach ($locales as $i => $locale) {
-                    $val = $row[$i + 4] ?? '';
-                    if ('' !== $val) {
-                        $entities[$key][$locale][$field] = $val;
-                    }
-                }
-            }
-            fclose($fp);
-            // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-
+            $master_locale = polyglot_get_master_locale();
             $stats = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
 
-            // Collect post types and master IDs from entity keys
-            $post_types_index = [];
-            $master_ids_index = [];
-            foreach (array_keys($entities) as $entity_key) {
-                [$type, $id] = explode('|', $entity_key);
-                if (! str_starts_with($type, 'term:')) {
-                    $post_types_index[$type] = true;
-                    $master_ids_index[$id] = (int) $id;
-                }
-            }
-            $post_types = array_keys($post_types_index);
-            $master_ids = array_values($master_ids_index);
-
-            // Batch-preload all shadow mappings
-            $shadow_map = $post_types ? $this->build_shadow_map($post_types) : [];
-            $term_shadow_map = $this->build_term_shadow_map();
-
-            // Collect all shadow IDs for batch meta preloading
-            $all_shadow_ids = [];
-            foreach ($shadow_map as $per_locale) {
-                foreach ($per_locale as $sid) {
-                    $all_shadow_ids[] = $sid;
-                }
-            }
-
-            // Batch-load _translation_mode for all existing shadows
-            $translation_modes = $this->batch_load_postmeta($all_shadow_ids, '_translation_mode');
-
-            // Prime post caches for masters
-            if ($master_ids) {
-                _prime_post_caches($master_ids);
-            }
-
-            // Performance: defer term counting and suspend cache invalidation during import
             if (! $dry_run) {
                 wp_defer_term_counting(true);
-                wp_suspend_cache_invalidation(true);
             }
 
-            foreach ($entities as $key => $locale_data) {
-                [$type, $master_id] = explode('|', $key);
+            // Every flat file, masters first so a shadow reads fresh master state.
+            $files = array_filter(
+                glob("$dir/*/*.html") ?: [],
+                static fn ($f) => ! str_contains($f, '/_new/')
+            );
+            usort($files, static fn ($a, $b) => (int) (basename($b, '.html') === $master_locale)
+                <=> (int) (basename($a, '.html') === $master_locale));
 
-                // --- TERMS ---
-                if (str_starts_with($type, 'term:')) {
-                    $taxonomy = substr($type, 5);
-                    foreach ($locale_data as $locale => $fields) {
-                        $name = $fields['name'] ?? null;
-                        if (! $name) {
-                            continue;
-                        }
+            foreach ($files as $file) {
+                $raw = (string) file_get_contents($file);
+                [$front] = polyglot_flat_parse($raw);
+                $locale = (string) ($front['locale'] ?? basename($file, '.html'));
 
-                        $slug = $fields['slug'] ?? sanitize_title($name);
-
-                        if ($locale === $master_locale) {
-                            $term = get_term((int) $master_id, $taxonomy);
-                            if (! $term || is_wp_error($term)) {
-                                continue;
-                            }
-                            if ($dry_run) {
-                                WP_CLI::log("[DRY-RUN] Would update term:$taxonomy master $master_id ($locale): $name");
-                                ++$stats['updated'];
-
-                                continue;
-                            }
-                            wp_update_term((int) $master_id, $taxonomy, ['name' => $name, 'slug' => $slug]);
-                            ++$stats['updated'];
-
-                            continue;
-                        }
-
-                        $existing = $term_shadow_map[(int) $master_id][$locale] ?? null;
-
-                        $action = $existing ? 'update' : 'create';
-                        if ($dry_run) {
-                            WP_CLI::log("[DRY-RUN] Would $action term:$taxonomy shadow for master $master_id ($locale): $name");
-                            ++$stats[$action.'d'];
-
-                            continue;
-                        }
-
-                        if ($existing) {
-                            wp_update_term($existing, $taxonomy, ['name' => $name, 'slug' => $slug]);
-                            ++$stats['updated'];
-                        } else {
-                            // Adopt orphan term if one exists with the same slug
-                            $orphan = get_term_by('slug', $slug, $taxonomy);
-                            if ($orphan) {
-                                wp_update_term($orphan->term_id, $taxonomy, ['name' => $name, 'slug' => $slug]);
-                                update_term_meta($orphan->term_id, '_master_term_id', $master_id);
-                                update_term_meta($orphan->term_id, '_locale', $locale);
-                                $term_shadow_map[(int) $master_id][$locale] = $orphan->term_id;
-                                ++$stats['updated'];
-                            } else {
-                                $result = wp_insert_term($name, $taxonomy, ['slug' => $slug]);
-                                if (is_wp_error($result)) {
-                                    WP_CLI::warning("Term insert failed for master $master_id ($locale): ".$result->get_error_message());
-                                    ++$stats['errors'];
-
-                                    continue;
-                                }
-                                update_term_meta($result['term_id'], '_master_term_id', $master_id);
-                                update_term_meta($result['term_id'], '_locale', $locale);
-                                $term_shadow_map[(int) $master_id][$locale] = $result['term_id'];
-                                ++$stats['created'];
-                            }
-                        }
-                    }
+                // Human lock: never bulk-overwrite a manually-edited shadow unless
+                // --force (the hook/`write` path applies deliberate edits directly).
+                if (! $force && $this->is_locked_shadow($front, $locale, $master_locale)) {
+                    WP_CLI::log("Skipped (manual): $file");
+                    ++$stats['skipped'];
 
                     continue;
                 }
 
-                // --- POSTS / PRODUCTS ---
-                $post_type = $type;
-                foreach ($locale_data as $locale => $fields) {
-                    $title = $fields['title'] ?? null;
-                    if (! $title) {
-                        continue;
-                    }
+                if ($dry_run) {
+                    WP_CLI::log("[DRY-RUN] Would apply: $file");
+                    ++$stats['updated'];
 
-                    if ($locale === $master_locale) {
-                        $master_post = get_post($master_id);
-                        if (! $master_post) {
-                            continue;
-                        }
+                    continue;
+                }
 
-                        $html_file = $this->flat_folder($dir, $post_type, (int) $master_id) . "/$locale.html";
-                        $content = file_exists($html_file) ? file_get_contents($html_file) : null;
+                try {
+                    $res = $this->write_dispatch($raw, $force);
+                } catch (Throwable $e) {
+                    WP_CLI::warning("Error on $file: ".$e->getMessage());
+                    ++$stats['errors'];
 
-                        if ($dry_run) {
-                            $has_html = null !== $content ? ' + HTML content' : '';
-                            WP_CLI::log("[DRY-RUN] Would update $post_type master $master_id ($locale): \"$title\"$has_html");
-                            ++$stats['updated'];
+                    continue;
+                }
 
-                            continue;
-                        }
+                switch ((int) ($res['status'] ?? 500)) {
+                    case 201:
+                        ++$stats['created'];
 
-                        $post_args = [
-                            'ID' => (int) $master_id,
-                            'post_title' => $title,
-                            'post_name' => $fields['slug'] ?? $master_post->post_name,
-                        ];
-                        if (isset($fields['short_desc'])) {
-                            $post_args['post_excerpt'] = $fields['short_desc'];
-                        }
-                        if (null !== $content) {
-                            $post_args['post_content'] = $content;
-                        }
-
-                        $result = wp_update_post($post_args);
-                        if (is_wp_error($result)) {
-                            WP_CLI::warning("Failed to update master $master_id: ".$result->get_error_message());
-                            ++$stats['errors'];
-
-                            continue;
-                        }
-
-                        if (isset($fields['slug'])) {
-                            update_post_meta((int) $master_id, 'custom_permalink', $fields['slug']);
-                        }
+                        break;
+                    case 200:
                         ++$stats['updated'];
 
-                        continue;
-                    }
+                        break;
+                    case 409:
+                        WP_CLI::warning("Conflict (use --force): $file");
+                        ++$stats['skipped'];
 
-                    $existing_id = $shadow_map[(int) $master_id][$locale] ?? null;
-
-                    // Check human lock
-                    if ($existing_id) {
-                        $mode = $translation_modes[$existing_id] ?? '';
-                        if ('manual' === $mode && ! $force) {
-                            WP_CLI::warning("Skipped shadow $existing_id (master $master_id, $locale): manually edited. Use --force.");
-                            ++$stats['skipped'];
-
-                            continue;
-                        }
-                    }
-
-                    // Load HTML content from file if it exists
-                    $html_file = $this->flat_folder($dir, $post_type, (int) $master_id) . "/$locale.html";
-                    $content = file_exists($html_file) ? file_get_contents($html_file) : null;
-
-                    $action = $existing_id ? 'update' : 'create';
-                    if ($dry_run) {
-                        $has_html = null !== $content ? ' + HTML content' : '';
-                        WP_CLI::log("[DRY-RUN] Would $action $post_type shadow for master $master_id ($locale): \"$title\"$has_html");
-                        ++$stats[$action.'d'];
-
-                        continue;
-                    }
-
-                    $master_post = get_post($master_id);
-                    $post_args = [
-                        'ID' => $existing_id ?: 0,
-                        'post_title' => $title,
-                        'post_name' => $fields['slug'] ?? sanitize_title($title),
-                        'post_excerpt' => $fields['short_desc'] ?? '',
-                        // Mirror the master's status: a draft master's translations
-                        // stay drafts, a published master's shadows go live.
-                        'post_status' => $master_post ? $master_post->post_status : 'publish',
-                        'post_type' => $post_type,
-                        'menu_order' => $master_post ? $master_post->menu_order : 0,
-                    ];
-
-                    $GLOBALS['polyglot_pending_locale'] = $locale;
-                    if ($existing_id && null === $content) {
-                        // Updating with no HTML file — don't touch existing content
-                        $shadow_id = wp_update_post($post_args);
-                    } else {
-                        $post_args['post_content'] = $content ?? '';
-                        $shadow_id = wp_insert_post($post_args);
-                    }
-                    unset($GLOBALS['polyglot_pending_locale']);
-
-                    if (is_wp_error($shadow_id)) {
-                        WP_CLI::warning("Failed for master $master_id ($locale): ".$shadow_id->get_error_message());
+                        break;
+                    default:
+                        WP_CLI::warning("Error on $file: ".($res['error'] ?? 'unknown'));
                         ++$stats['errors'];
-
-                        continue;
-                    }
-
-                    update_post_meta($shadow_id, '_master_id', $master_id);
-                    update_post_meta($shadow_id, '_locale', $locale);
-                    delete_post_meta($shadow_id, '_translation_mode');
-
-                    if (isset($fields['slug'])) {
-                        update_post_meta($shadow_id, 'custom_permalink', $fields['slug']);
-                    }
-
-                    // Update shadow map for subsequent lookups
-                    $shadow_map[(int) $master_id][$locale] = $shadow_id;
-
-                    ++$stats[$action.'d'];
                 }
             }
 
-            // Restore deferred operations
             if (! $dry_run) {
-                wp_suspend_cache_invalidation(false);
                 wp_defer_term_counting(false);
                 wp_cache_flush();
             }
@@ -980,6 +837,24 @@ class Polyglot_CLI
         }
 
         $this->maybe_drain_pending_export();
+    }
+
+    /**
+     * Whether a flat file targets a manually-edited (Human Lock) shadow post.
+     * Terms have no human lock; masters are never locked.
+     */
+    private function is_locked_shadow(array $front, string $locale, string $master_locale): bool
+    {
+        if ($locale === $master_locale || isset($front['taxonomy'])) {
+            return false;
+        }
+        $master_id = (int) ($front['master_id'] ?? 0);
+        if (! $master_id) {
+            return false;
+        }
+        $sid = $this->find_shadow($master_id, $locale);
+
+        return $sid && 'manual' === get_post_meta((int) $sid, '_translation_mode', true);
     }
 
     /**
@@ -1004,7 +879,7 @@ class Polyglot_CLI
      * [--force]
      * : Overwrite even if manually edited.
      */
-    public function translate_comment($args, $assoc_args)
+    public function translate_comment($args, $assoc_args): void
     {
         $comment_id = (int) $args[0];
         $target_locale = $assoc_args['target'];
@@ -1081,14 +956,512 @@ class Polyglot_CLI
         WP_CLI::success("Shadow comment $shadow_comment_id created/updated for '$target_locale' (master comment: $comment_id).");
     }
 
-    private function flat_folder(string $dir, string $post_type, int $master_id): string
+    /**
+     * Write a single flat file's state to the DB under an optimistic lock.
+     *
+     * Reads the edited flat file (frontmatter + body) from STDIN — the hook
+     * pipes it at edit time so a concurrent export can't swap the file out from
+     * under us — or, for `push`/manual use, from --file. Compares the
+     * frontmatter `etag` against a fresh read of the post's editable fields:
+     *   - match    → applies, returns {status:200, etag, path, content}
+     *   - mismatch → no DB write, returns the current DB {status:409, …}
+     *   - etag:new → create (shadow, or master via the _new/ handshake)
+     *
+     * Emits a single JSON object on STDOUT and nothing else; diagnostics go to
+     * STDERR. The folder is master-keyed ("{type}-{master_id}"); the response
+     * `path` is the canonical location the hook must write back to.
+     *
+     * ## OPTIONS
+     *
+     * [--file=<path>]
+     * : Read the flat file from this path instead of STDIN (push / manual use).
+     *
+     * @when after_wp_load
+     */
+    public function write($args, $assoc_args)
     {
-        $matches = glob("$dir/$post_type-$master_id-*") ?: [];
-        if ($matches !== []) {
-            return $matches[0];
+        $raw = isset($assoc_args['file'])
+            ? (file_exists($assoc_args['file']) ? file_get_contents($assoc_args['file']) : '')
+            : (string) file_get_contents('php://stdin');
+
+        try {
+            if ('' === trim($raw)) {
+                throw new RuntimeException('Empty payload (nothing on STDIN and no readable --file).');
+            }
+            $result = $this->write_apply($raw);
+        } catch (Throwable $e) {
+            // Always emit structured output so the hook / push can branch on it
+            // rather than dying on a hard WP_CLI::error.
+            $result = ['status' => 500, 'error' => $e->getMessage()];
         }
 
-        return "$dir/$post_type-$master_id";
+        WP_CLI::line(json_encode($result, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
+
+        // Return for in-process callers (tests / push); WP-CLI ignores it.
+        return $result;
+    }
+
+    /**
+     * Reconcile flat files to the DB out-of-band — the PostToolUse hook only
+     * fires on the agent's own edits, so this covers human (vim) edits, a
+     * post-`git pull` sync, or a batch. Runs `write` per file under the same
+     * optimistic lock: 200/201 self-converge (canonical written back), 409 is
+     * reported and left untouched for manual resolution.
+     *
+     * ## USAGE
+     *
+     *   wp polyglot push            # files changed since the last push
+     *   wp polyglot push --all      # every flat file
+     *
+     * ## OPTIONS
+     *
+     * [--all]
+     * : Push every *.html file, not just those modified since the last push.
+     */
+    public function push($args, $assoc_args): void
+    {
+        $dir = polyglot_translations_dir();
+        $all = ! empty($assoc_args['all']);
+        $since = $all ? 0 : (int) get_option('polyglot_push_marker', 0);
+
+        $files = array_merge(glob("$dir/*/*.html") ?: [], glob("$dir/_new/*/*.html") ?: []);
+        $start = time();
+        $stats = ['applied' => 0, 'created' => 0, 'conflict' => 0, 'skipped' => 0, 'error' => 0];
+
+        foreach ($files as $f) {
+            if (! $all && (int) filemtime($f) <= $since) {
+                ++$stats['skipped'];
+
+                continue;
+            }
+            $res = $this->write_apply_safe((string) file_get_contents($f));
+            $status = (int) ($res['status'] ?? 500);
+
+            if (200 === $status || 201 === $status) {
+                $this->converge_flat_file($f, $res['path'] ?? $f, (string) ($res['content'] ?? ''));
+                ++$stats[201 === $status ? 'created' : 'applied'];
+            } elseif (409 === $status) {
+                WP_CLI::warning("CONFLICT: $f changed server-side — left untouched, resolve manually.");
+                ++$stats['conflict'];
+            } else {
+                WP_CLI::warning("Error on $f: ".($res['error'] ?? 'unknown'));
+                ++$stats['error'];
+            }
+        }
+
+        update_option('polyglot_push_marker', $start, false);
+        WP_CLI::success(sprintf(
+            'push: %d applied, %d created, %d conflict(s), %d skipped, %d error(s).',
+            $stats['applied'],
+            $stats['created'],
+            $stats['conflict'],
+            $stats['skipped'],
+            $stats['error']
+        ));
+    }
+
+    /** write_apply wrapped so one malformed file can't abort a `push` batch. */
+    private function write_apply_safe(string $raw): array
+    {
+        try {
+            return $this->write_apply($raw);
+        } catch (Throwable $e) {
+            return ['status' => 500, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Write a 200/201 canonical response back to the flat tree, relocating (and
+     * cleaning up the old stub folder) when the canonical folder differs.
+     */
+    private function converge_flat_file(string $edited, string $canonical, string $content): void
+    {
+        if (rtrim(dirname($canonical), '/') !== rtrim(dirname($edited), '/')) {
+            if (! is_dir(dirname($canonical))) {
+                mkdir(dirname($canonical), 0755, true);
+            }
+            file_put_contents($canonical, $content);
+            unlink($edited);
+            $old_dir = dirname($edited);
+            if (is_dir($old_dir) && [] === array_diff((array) scandir($old_dir), ['.', '..'])) {
+                rmdir($old_dir);
+            }
+        } else {
+            file_put_contents($canonical, $content);
+        }
+    }
+
+    /**
+     * Core of `write`: parse, lock, compare-and-swap, apply, converge. Returns
+     * the response array; throws on malformed input (the caller renders it).
+     * Separated from I/O so it is directly testable.
+     *
+     * @return array{status:int, etag:string, path:string, content:string}
+     */
+    private function write_apply(string $raw): array
+    {
+        // Effectively-blocking acquire: the autoexport worker holds the lock
+        // only briefly, so retry ~5s rather than failing a racing edit outright.
+        $got = false;
+        for ($i = 0; $i < 50; ++$i) {
+            if ($this->try_acquire_sync_lock('write')) {
+                $got = true;
+
+                break;
+            }
+            usleep(100000);
+        }
+        if (! $got) {
+            throw new RuntimeException('Could not acquire the polyglot sync lock (import/export running).');
+        }
+
+        try {
+            $result = $this->write_dispatch($raw);
+        } finally {
+            $this->release_sync_lock();
+        }
+
+        // Drain a full export armed by a concurrent admin save while we held the
+        // lock (local dev only). Silent: export_worker_drain logs nothing to
+        // STDOUT, so the JSON response stays clean.
+        if (function_exists('polyglot_autoexport_enabled') && polyglot_autoexport_enabled()
+            && get_transient('polyglot_export_pending')) {
+            $this->export_worker_drain([]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Parse a flat payload and apply it (post or term, master or shadow). The
+     * caller owns the sync lock. `$force` bypasses the etag CAS and the human
+     * lock (used by `import`); without it a stale write returns 409.
+     *
+     * @return array{status:int, etag:string, path:string, content:string}
+     */
+    private function write_dispatch(string $raw, bool $force = false): array
+    {
+        [$front, $body] = polyglot_flat_parse($raw);
+        $locale = trim((string) ($front['locale'] ?? ''));
+        if ('' === $locale) {
+            throw new RuntimeException('Frontmatter is missing a `locale`.');
+        }
+        $base_etag = (string) ($front['etag'] ?? '');
+        $is_create = ('new' === $base_etag || '' === $base_etag);
+        $is_master = ($locale === polyglot_get_master_locale());
+
+        if (isset($front['taxonomy'])) {
+            return $this->write_term($front, $body, $locale, $base_etag, $is_create, $is_master, $force);
+        }
+
+        return $is_master
+            ? $this->write_master($front, $body, $locale, $base_etag, $is_create, $force)
+            : $this->write_shadow($front, $body, $locale, $base_etag, $is_create, $force);
+    }
+
+    /**
+     * Apply a master-locale write (update, or create via the _new/ handshake).
+     */
+    private function write_master(array $front, string $body, string $locale, string $base_etag, bool $is_create, bool $force = false): array
+    {
+        $id = (int) ($front['id'] ?? 0);
+
+        if (! $id && $is_create) {
+            return $this->create_master($front, $body, $locale);
+        }
+        if (! $id) {
+            throw new RuntimeException('Master frontmatter has no `id` and is not a create (etag must be `new`).');
+        }
+
+        clean_post_cache($id);
+        $post = get_post($id);
+        if (! $post) {
+            throw new RuntimeException("Master $id not found. (Create new masters via polyglot-flat/_new/.)");
+        }
+
+        if (! $force && $base_etag !== polyglot_post_etag($post)) {
+            return $this->flat_response(409, $post, $locale, null);
+        }
+
+        $post_args = [
+            'ID' => $id,
+            'post_title' => $front['title'] ?? $post->post_title,
+            'post_name' => $front['slug'] ?? $post->post_name,
+            'post_content' => $body,
+        ];
+        if (isset($front['short_desc'])) {
+            $post_args['post_excerpt'] = $front['short_desc'];
+        }
+
+        $res = wp_update_post($post_args, true);
+        if (is_wp_error($res)) {
+            throw new RuntimeException('Write failed: '.$res->get_error_message());
+        }
+        $this->apply_post_metas($id, $front, 'product' === $post->post_type, null);
+
+        clean_post_cache($id);
+
+        return $this->flat_response(200, get_post($id), $locale, null);
+    }
+
+    /**
+     * Apply a shadow-locale write (create or update for a given master/locale).
+     */
+    private function write_shadow(array $front, string $body, string $locale, string $base_etag, bool $is_create, bool $force = false): array
+    {
+        $master_id = (int) ($front['master_id'] ?? 0);
+        if (! $master_id) {
+            throw new RuntimeException('Shadow frontmatter is missing `master_id`.');
+        }
+        $master_post = get_post($master_id);
+        if (! $master_post) {
+            throw new RuntimeException("Master $master_id not found for shadow ($locale).");
+        }
+
+        $existing_id = $this->find_shadow($master_id, $locale);
+
+        if ($existing_id) {
+            clean_post_cache($existing_id);
+            $current = get_post($existing_id);
+            // A create against an existing shadow, or a stale etag, both conflict
+            // (unless --force overrides the lock).
+            if (! $force && ($is_create || $base_etag !== polyglot_post_etag($current))) {
+                return $this->flat_response(409, $current, $locale, $master_id);
+            }
+        } elseif (! $is_create && ! $force) {
+            // base etag references a shadow that no longer exists → conflict.
+            return [
+                'status' => 409,
+                'etag' => 'new',
+                'path' => $this->flat_path_for($master_post->post_type, $master_id, $locale),
+                'content' => '',
+                'note' => 'shadow-missing',
+            ];
+        }
+
+        $is_product = ('product' === $master_post->post_type);
+        $post_args = [
+            'ID' => $existing_id ?: 0,
+            'post_title' => $front['title'] ?? '',
+            'post_name' => $front['slug'] ?? sanitize_title($front['title'] ?? ''),
+            'post_excerpt' => $front['short_desc'] ?? '',
+            'post_status' => $master_post->post_status,
+            'post_type' => $master_post->post_type,
+            'post_content' => $body,
+            'menu_order' => $master_post->menu_order,
+        ];
+
+        $GLOBALS['polyglot_pending_locale'] = $locale;
+        $new_id = $existing_id ? wp_update_post($post_args, true) : wp_insert_post($post_args, true);
+        unset($GLOBALS['polyglot_pending_locale']);
+
+        if (is_wp_error($new_id)) {
+            throw new RuntimeException('Write failed: '.$new_id->get_error_message());
+        }
+
+        update_post_meta($new_id, '_master_id', $master_id);
+        update_post_meta($new_id, '_locale', $locale);
+        update_post_meta($new_id, '_src_hash', polyglot_content_hash($master_post));
+        $this->apply_post_metas($new_id, $front, $is_product, $front['mode'] ?? 'auto');
+
+        clean_post_cache($new_id);
+
+        return $this->flat_response($existing_id ? 200 : 201, get_post($new_id), $locale, $master_id);
+    }
+
+    /**
+     * Create a brand-new master from a _new/ staging file and return its
+     * canonical path. Idempotent: if a master with the same slug already exists
+     * (e.g. the hook re-ran on a leftover stub), resolve to it instead of
+     * duplicating.
+     */
+    private function create_master(array $front, string $body, string $locale): array
+    {
+        global $wpdb;
+
+        $post_type = (string) ($front['type'] ?? 'page');
+        if (! in_array($post_type, polyglot_get_post_types(), true)) {
+            throw new RuntimeException("Unknown post type '$post_type' for new master.");
+        }
+        $title = (string) ($front['title'] ?? '');
+        if ('' === $title) {
+            throw new RuntimeException('A new master needs a `title`.');
+        }
+        $post_name = $front['slug'] ?? sanitize_title($title);
+
+        $dupe = $wpdb->get_var($wpdb->prepare(
+            "SELECT p.ID FROM $wpdb->posts p
+             LEFT JOIN $wpdb->postmeta pm ON p.ID = pm.post_id AND pm.meta_key = '_master_id'
+             WHERE p.post_name = %s AND p.post_type = %s AND pm.meta_value IS NULL
+             AND p.post_status NOT IN ('trash', 'auto-draft') LIMIT 1",
+            sanitize_title($post_name),
+            $post_type
+        ));
+        if ($dupe) {
+            clean_post_cache((int) $dupe);
+
+            return $this->flat_response(200, get_post((int) $dupe), $locale, null);
+        }
+
+        $new_id = wp_insert_post([
+            'post_title' => $title,
+            'post_name' => $post_name,
+            'post_excerpt' => $front['short_desc'] ?? '',
+            'post_content' => $body,
+            'post_status' => $front['status'] ?? 'draft',
+            'post_type' => $post_type,
+        ], true);
+        if (is_wp_error($new_id)) {
+            throw new RuntimeException('Create master failed: '.$new_id->get_error_message());
+        }
+        $this->apply_post_metas($new_id, $front, 'product' === $post_type, null);
+
+        clean_post_cache($new_id);
+
+        return $this->flat_response(201, get_post($new_id), $locale, null);
+    }
+
+    /**
+     * Apply slug/price metas and (for shadows) the Human-Lock stamp. `$mode` is
+     * null for masters (no stamp); 'manual' stamps _translation_mode, anything
+     * else clears it so the bulk `translate` break-glass can still touch it.
+     */
+    private function apply_post_metas(int $post_id, array $front, bool $is_product, ?string $mode): void
+    {
+        if (isset($front['slug'])) {
+            update_post_meta($post_id, 'custom_permalink', $front['slug']);
+        }
+        if ($is_product && isset($front['price']) && '' !== $front['price']) {
+            update_post_meta($post_id, '_price', $front['price']);
+            update_post_meta($post_id, '_regular_price', $front['price']);
+        }
+        if (null === $mode) {
+            return;
+        }
+        if ('manual' === $mode) {
+            update_post_meta($post_id, '_translation_mode', 'manual');
+        } else {
+            delete_post_meta($post_id, '_translation_mode');
+        }
+    }
+
+    /**
+     * Apply a term write (taxonomy frontmatter). Master = update only (new
+     * master terms are created in wp-admin); shadow = create or update. CAS on
+     * the term etag unless $force. The flat body carries the term description.
+     */
+    private function write_term(array $front, string $body, string $locale, string $base_etag, bool $is_create, bool $is_master, bool $force): array
+    {
+        $taxonomy = (string) $front['taxonomy'];
+        $name = (string) ($front['name'] ?? '');
+        $slug = (string) ($front['slug'] ?? sanitize_title($name));
+        $term_args = ['name' => $name, 'slug' => $slug, 'description' => $body];
+
+        if ($is_master) {
+            $term_id = (int) ($front['term_id'] ?? 0);
+            if (! $term_id) {
+                throw new RuntimeException('Master term has no `term_id` (create master terms in wp-admin).');
+            }
+            $term = get_term($term_id, $taxonomy);
+            if (! $term instanceof WP_Term) {
+                throw new RuntimeException("Master term $term_id not found in $taxonomy.");
+            }
+            if (! $force && $base_etag !== polyglot_term_etag($term)) {
+                return $this->term_flat_response(409, $term, $locale, null, $taxonomy);
+            }
+            if ('' !== $name) {
+                $term_args['name'] = $name;
+            } else {
+                unset($term_args['name']);
+            }
+            $res = wp_update_term($term_id, $taxonomy, $term_args);
+            if (is_wp_error($res)) {
+                throw new RuntimeException('Term write failed: '.$res->get_error_message());
+            }
+            clean_term_cache($term_id, $taxonomy);
+
+            return $this->term_flat_response(200, get_term($term_id, $taxonomy), $locale, null, $taxonomy);
+        }
+
+        $master_term_id = (int) ($front['master_term_id'] ?? 0);
+        if (! $master_term_id) {
+            throw new RuntimeException('Shadow term is missing `master_term_id`.');
+        }
+        $existing = (int) $this->find_shadow_term($master_term_id, $locale);
+
+        if ($existing) {
+            $current = get_term($existing, $taxonomy);
+            if (! $force && ($is_create || $base_etag !== polyglot_term_etag($current))) {
+                return $this->term_flat_response(409, $current, $locale, $master_term_id, $taxonomy);
+            }
+            wp_update_term($existing, $taxonomy, $term_args);
+            clean_term_cache($existing, $taxonomy);
+
+            return $this->term_flat_response(200, get_term($existing, $taxonomy), $locale, $master_term_id, $taxonomy);
+        }
+
+        if (! $is_create && ! $force) {
+            return [
+                'status' => 409,
+                'etag' => 'new',
+                'path' => $this->term_flat_path($taxonomy, $master_term_id, $locale),
+                'content' => '',
+                'note' => 'shadow-missing',
+            ];
+        }
+
+        $ins = wp_insert_term($name, $taxonomy, ['slug' => $slug, 'description' => $body]);
+        if (is_wp_error($ins)) {
+            throw new RuntimeException('Term create failed: '.$ins->get_error_message());
+        }
+        $new_id = (int) $ins['term_id'];
+        update_term_meta($new_id, '_master_term_id', $master_term_id);
+        update_term_meta($new_id, '_locale', $locale);
+        clean_term_cache($new_id, $taxonomy);
+
+        return $this->term_flat_response(201, get_term($new_id, $taxonomy), $locale, $master_term_id, $taxonomy);
+    }
+
+    private function term_flat_path(string $taxonomy, int $folder_id, string $locale): string
+    {
+        return polyglot_translations_dir()."/term-$taxonomy-$folder_id/$locale.html";
+    }
+
+    private function term_flat_response(int $status, WP_Term $term, string $locale, ?int $master_term_id, string $taxonomy): array
+    {
+        return [
+            'status' => $status,
+            'etag' => polyglot_term_etag($term),
+            'path' => $this->term_flat_path($taxonomy, $master_term_id ?? $term->term_id, $locale),
+            'content' => polyglot_term_flat_build($term, $locale, $master_term_id, $taxonomy),
+        ];
+    }
+
+    /**
+     * Canonical flat path for a post. The folder is master-keyed: a shadow
+     * lives in its master's folder, so pass the master id as $folder_id.
+     */
+    private function flat_path_for(string $post_type, int $folder_id, string $locale): string
+    {
+        return polyglot_translations_dir()."/$post_type-$folder_id/$locale.html";
+    }
+
+    /**
+     * Build a write() response: status + the canonical serialized file + its
+     * fresh etag + path.
+     *
+     * @return array{status:int, etag:string, path:string, content:string}
+     */
+    private function flat_response(int $status, WP_Post $post, string $locale, ?int $master_id): array
+    {
+        $is_product = ('product' === $post->post_type);
+
+        return [
+            'status' => $status,
+            'etag' => polyglot_post_etag($post),
+            'path' => $this->flat_path_for($post->post_type, $master_id ?? $post->ID, $locale),
+            'content' => polyglot_flat_build($post, $locale, $master_id, $is_product),
+        ];
     }
 
     /**
@@ -1167,7 +1540,7 @@ class Polyglot_CLI
             }
         }
 
-        $available = implode(', ', array_column(array_filter(POLYGLOT_LOCALES, fn ($c) => empty($c['master'])), 'locale'));
+        $available = implode(', ', array_column(array_filter(POLYGLOT_LOCALES, static fn ($c) => empty($c['master'])), 'locale'));
         WP_CLI::error("Unknown target locale '$locale'. Available: {$available}");
     }
 
@@ -1199,36 +1572,18 @@ class Polyglot_CLI
         ));
     }
 
-    /**
-     * Load a single postmeta key for a set of post IDs in one query.
-     *
-     * @param int[]  $ids      post IDs to query
-     * @param string $meta_key meta key to fetch
-     *
-     * @return array<int, string> $result[$post_id] = $meta_value
-     */
-    private function batch_load_postmeta(array $ids, string $meta_key): array
+    private function find_shadow_term($master_term_id, $locale)
     {
         global $wpdb;
 
-        if (! $ids) {
-            return [];
-        }
-
-        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT post_id, meta_value FROM $wpdb->postmeta
-             WHERE meta_key = %s AND post_id IN ($placeholders)",
-            $meta_key,
-            ...$ids
+        return $wpdb->get_var($wpdb->prepare(
+            "SELECT tm1.term_id FROM $wpdb->termmeta tm1
+             JOIN $wpdb->termmeta tm2 ON tm1.term_id = tm2.term_id AND tm2.meta_key = '_locale'
+             WHERE tm1.meta_key = '_master_term_id' AND tm1.meta_value = %d
+             AND tm2.meta_value = %s LIMIT 1",
+            $master_term_id,
+            $locale
         ));
-
-        $result = [];
-        foreach ($rows as $row) {
-            $result[(int) $row->post_id] = $row->meta_value;
-        }
-
-        return $result;
     }
 
     /**
@@ -1299,7 +1654,7 @@ class Polyglot_CLI
      *   # Show current slugs for all locales:
      *   wp polyglot translate-slugs --status
      */
-    public function translate_slugs($args, $assoc_args)
+    public function translate_slugs($args, $assoc_args): void
     {
         // --- STATUS MODE ---
         if (! empty($assoc_args['status'])) {
@@ -1369,6 +1724,7 @@ class Polyglot_CLI
 
         WP_CLI::success("WC slugs for '$target_locale' saved: ".json_encode($slugs, \JSON_UNESCAPED_UNICODE));
     }
+
     /**
      * Check post content for mislocalized internal links and localhost URLs.
      *
@@ -1390,7 +1746,7 @@ class Polyglot_CLI
      * [--rendered]
      * : Scan rendered HTML via HTTP instead of post_content. Report-only, no --fix.
      */
-    public function check_links($args, $assoc_args)
+    public function check_links($args, $assoc_args): void
     {
         $filter_locale = $assoc_args['locale'] ?? null;
         $fix = ! empty($assoc_args['fix']);
@@ -1429,16 +1785,16 @@ class Polyglot_CLI
             ...$post_types
         ));
 
-        $master_slugs    = []; // master_id => trimmed slug (for lookup)
+        $master_slugs = []; // master_id => trimmed slug (for lookup)
         $all_known_slugs = []; // $all_known_slugs[$locale][$slug] = true
-        $slug_paths      = []; // $slug_paths[$locale][$slug] = raw path (ltrim only, preserves trailing slash)
+        $slug_paths = []; // $slug_paths[$locale][$slug] = raw path (ltrim only, preserves trailing slash)
 
         foreach ($masters_rows as $m) {
-            $raw  = $m->custom_permalink ?: $m->post_name;
+            $raw = $m->custom_permalink ?: $m->post_name;
             $slug = trim($raw, '/');
-            $master_slugs[(int) $m->ID]        = $slug;
+            $master_slugs[(int) $m->ID] = $slug;
             $all_known_slugs[$master_locale][$slug] = true;
-            $slug_paths[$master_locale][$slug]      = ltrim($raw, '/');
+            $slug_paths[$master_locale][$slug] = ltrim($raw, '/');
         }
 
         // All shadow posts
@@ -1458,13 +1814,13 @@ class Polyglot_CLI
         $slug_map = []; // $slug_map[$locale][$fr_slug] = $shadow_slug
 
         foreach ($shadows_rows as $s) {
-            $raw         = $s->custom_permalink ?: $s->post_name;
+            $raw = $s->custom_permalink ?: $s->post_name;
             $shadow_slug = trim($raw, '/');
-            $locale      = $s->locale;
-            $fr_slug     = $master_slugs[(int) $s->master_id] ?? null;
+            $locale = $s->locale;
+            $fr_slug = $master_slugs[(int) $s->master_id] ?? null;
 
             $all_known_slugs[$locale][$shadow_slug] = true;
-            $slug_paths[$locale][$shadow_slug]      = ltrim($raw, '/');
+            $slug_paths[$locale][$shadow_slug] = ltrim($raw, '/');
 
             if ($fr_slug && $fr_slug !== $shadow_slug) {
                 $slug_map[$locale][$fr_slug] = $shadow_slug;
@@ -1736,7 +2092,7 @@ class Polyglot_CLI
             $progress->tick();
 
             // Only skip TLS verification for local hosts (self-signed dev certs).
-            $host = (string) wp_parse_url($url, PHP_URL_HOST);
+            $host = (string) wp_parse_url($url, \PHP_URL_HOST);
             $is_local = str_contains($host, 'localhost')
                 || str_contains($host, '127.0.0.1')
                 || str_ends_with($host, '.test')
@@ -1804,7 +2160,7 @@ class Polyglot_CLI
                 $path = $parsed['path'] ?? '';
                 $host = $parsed['host'] ?? null;
                 $port = $parsed['port'] ?? null;
-                $authority = $host !== null ? $host.($port !== null ? ":$port" : '') : null;
+                $authority = null !== $host ? $host.(null !== $port ? ":$port" : '') : null;
 
                 // For relative URLs, authority is null — treat as same-locale
                 if ($authority && ! isset($known_authorities[$authority])) {
@@ -1917,7 +2273,7 @@ class Polyglot_CLI
         if (0 === $total_issues) {
             WP_CLI::success('No trailing slash issues found in rendered HTML.');
         } else {
-            WP_CLI::warning("$total_issues issue(s) found across ".count($issues)." locale(s).");
+            WP_CLI::warning("$total_issues issue(s) found across ".count($issues).' locale(s).');
         }
     }
 }

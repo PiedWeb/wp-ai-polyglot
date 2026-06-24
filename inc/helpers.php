@@ -20,7 +20,7 @@ if (! defined('ABSPATH')) {
 function polyglot_translations_dir(): string
 {
     if (! defined('POLYGLOT_TRANSLATIONS_DIR')) {
-        return rtrim(trailingslashit(wp_upload_dir()['basedir']) . 'polyglot-flat', '/\\');
+        return rtrim(trailingslashit(wp_upload_dir()['basedir']).'polyglot-flat', '/\\');
     }
 
     $dir = POLYGLOT_TRANSLATIONS_DIR;
@@ -30,7 +30,7 @@ function polyglot_translations_dir(): string
         return rtrim($dir, '/\\');
     }
 
-    return rtrim(trailingslashit(wp_upload_dir()['basedir']) . $dir, '/\\');
+    return rtrim(trailingslashit(wp_upload_dir()['basedir']).$dir, '/\\');
 }
 
 function polyglot_get_current_authority(): string
@@ -112,7 +112,7 @@ function polyglot_authority_to_url(string $authority): string
 
 function polyglot_get_shadow_locales(): array
 {
-    $shadows = array_filter(POLYGLOT_LOCALES, fn($cfg) => empty($cfg['master']));
+    $shadows = array_filter(POLYGLOT_LOCALES, static fn ($cfg) => empty($cfg['master']));
 
     return array_column($shadows, 'locale');
 }
@@ -163,6 +163,194 @@ function polyglot_get_post_types(): array
 function polyglot_exportable_statuses(): array
 {
     return apply_filters('polyglot_exportable_statuses', ['publish', 'draft', 'pending', 'private', 'future']);
+}
+
+// ============================================================
+// FLAT-FILE FORMAT — frontmatter + body, and the optimistic-lock etag
+// ============================================================
+//
+// Each polyglot-flat/<type>-<id>/<locale>.html is a small frontmatter block (a
+// fixed, known set of scalar keys) followed by the raw HTML body. `etag` is the
+// optimistic-lock token (If-Match) for the flat-write pipeline: md5 of every
+// field a flat edit can change, so any concurrent change to the post flips it.
+// It MUST be computed identically at export time and write time — hence this
+// single shared helper. Keep it in lockstep with the staleness hash (Phase 2),
+// which deliberately excludes slug + price.
+
+/**
+ * Optimistic-lock token for a post's editable fields (title, public slug,
+ * excerpt, content, price). Covers slug + price so a concurrent slug/price
+ * change is detected.
+ */
+function polyglot_post_etag(WP_Post $post): string
+{
+    $slug = get_post_meta($post->ID, 'custom_permalink', true) ?: $post->post_name;
+    $price = ('product' === $post->post_type) ? (string) get_post_meta($post->ID, '_price', true) : '';
+
+    return md5(implode("\0", [
+        (string) $post->post_title,
+        (string) $slug,
+        (string) $post->post_excerpt,
+        (string) $post->post_content,
+        $price,
+    ]));
+}
+
+/**
+ * Staleness hash for a master's *translatable* text (title, excerpt, content).
+ * Deliberately EXCLUDES slug and price (decision #5: a master slug-only change
+ * must not flag its shadows for retranslation). A shadow stores this value in
+ * `_src_hash` at translation time; it is stale once it no longer equals the
+ * master's current hash. Separate from the etag, which locks every field.
+ */
+function polyglot_content_hash(WP_Post $master): string
+{
+    return md5(implode("\0", [
+        (string) $master->post_title,
+        (string) $master->post_excerpt,
+        (string) $master->post_content,
+    ]));
+}
+
+/**
+ * Optimistic-lock token for a term's editable fields (name, slug, description).
+ * Terms have no body of their own; the description is carried in the flat body.
+ */
+function polyglot_term_etag(WP_Term $term): string
+{
+    return md5(implode("\0", [
+        (string) $term->name,
+        (string) $term->slug,
+        (string) $term->description,
+    ]));
+}
+
+/**
+ * Build the canonical flat-file string for a term (master or shadow). The body
+ * carries the term description; name/slug live in the frontmatter.
+ * `$master_term_id` is null for a master term.
+ */
+function polyglot_term_flat_build(WP_Term $term, string $locale, ?int $master_term_id, string $taxonomy): string
+{
+    return polyglot_flat_serialize([
+        'term_id' => $term->term_id,
+        'master_term_id' => $master_term_id,
+        'taxonomy' => $taxonomy,
+        'locale' => $locale,
+        'etag' => polyglot_term_etag($term),
+        'name' => $term->name,
+        'slug' => $term->slug,
+    ], (string) $term->description);
+}
+
+/**
+ * Whether a scalar can be written bare (unquoted). Anything with surrounding
+ * whitespace, a newline, an embedded ": " or a leading YAML sigil is quoted
+ * (JSON-encoded) instead, so the parse round-trips unambiguously.
+ */
+function polyglot_flat_is_bare_safe(string $value): bool
+{
+    if ('' === $value || $value !== trim($value)) {
+        return false;
+    }
+    if (false !== strpbrk($value[0], "\"'#-[]{}>|*&!%@`")) {
+        return false;
+    }
+
+    return ! preg_match('/[\r\n]/', $value) && ! str_contains($value, ': ');
+}
+
+/**
+ * Serialize a flat file: frontmatter (null/empty values skipped) + body.
+ *
+ * @param array<string, scalar|null> $front
+ */
+function polyglot_flat_serialize(array $front, string $body): string
+{
+    $lines = ['---'];
+    foreach ($front as $key => $value) {
+        if (null === $value || '' === $value) {
+            continue;
+        }
+        $value = (string) $value;
+        $lines[] = $key.': '.(polyglot_flat_is_bare_safe($value)
+            ? $value
+            : json_encode($value, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
+    }
+    $lines[] = '---';
+
+    return implode("\n", $lines)."\n".$body;
+}
+
+/**
+ * Parse a flat file into [frontmatter, body]. A file with no leading "---"
+ * block is treated as a bare body (back-compat with pre-frontmatter files).
+ * The body is returned verbatim (line endings preserved); a "---" line inside
+ * the body is safe because only the FIRST closing delimiter ends the block.
+ *
+ * @return array{0: array<string, string>, 1: string}
+ */
+function polyglot_flat_parse(string $raw): array
+{
+    if (! preg_match('/^---\r?\n(.*?)\r?\n---\r?\n?(.*)$/s', $raw, $m)) {
+        return [[], $raw];
+    }
+
+    $front = [];
+    foreach (preg_split('/\r\n|\n/', $m[1]) as $line) {
+        $sep = strpos($line, ':');
+        if (false === $sep) {
+            continue;
+        }
+        $key = trim(substr($line, 0, $sep));
+        if ('' === $key) {
+            continue;
+        }
+        $val = ltrim(substr($line, $sep + 1));
+        if ('' !== $val && '"' === $val[0]) {
+            $decoded = json_decode($val, true);
+            if (is_string($decoded)) {
+                $val = $decoded;
+            }
+        }
+        $front[$key] = $val;
+    }
+
+    return [$front, $m[2]];
+}
+
+/**
+ * Strip frontmatter and return just the HTML body (for import → post_content).
+ */
+function polyglot_flat_body(string $raw): string
+{
+    return polyglot_flat_parse($raw)[1];
+}
+
+/**
+ * Build the canonical flat-file string for a post (master or shadow).
+ * `$master_id` is null for a master (the key is then omitted from frontmatter).
+ */
+function polyglot_flat_build(WP_Post $post, string $locale, ?int $master_id, bool $is_product): string
+{
+    $front = [
+        'id' => $post->ID,
+        'master_id' => $master_id,
+        'locale' => $locale,
+        'etag' => polyglot_post_etag($post),
+        'mode' => null === $master_id ? 'manual' : (get_post_meta($post->ID, '_translation_mode', true) ?: 'auto'),
+        'slug' => get_post_meta($post->ID, 'custom_permalink', true) ?: $post->post_name,
+        'title' => $post->post_title,
+    ];
+    if ($is_product) {
+        $front['short_desc'] = $post->post_excerpt;
+        $front['price'] = (string) get_post_meta($post->ID, '_price', true);
+    }
+    if (null !== $master_id) {
+        $front['src_hash'] = (string) get_post_meta($post->ID, '_src_hash', true);
+    }
+
+    return polyglot_flat_serialize($front, (string) $post->post_content);
 }
 
 // ============================================================
