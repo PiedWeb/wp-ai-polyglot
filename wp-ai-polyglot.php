@@ -75,6 +75,7 @@ require_once __DIR__.'/inc/wc-product-bridge.php';
 require_once __DIR__.'/inc/wc-review-bridge.php';
 require_once __DIR__.'/inc/seo.php';
 require_once __DIR__.'/inc/feed.php';
+require_once __DIR__.'/inc/fb-feed.php';
 require_once __DIR__.'/inc/admin.php';
 require_once __DIR__.'/inc/frontend.php';
 require_once __DIR__.'/inc/draft-link-handler.php';
