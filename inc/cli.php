@@ -277,18 +277,16 @@ class Polyglot_CLI
             return;
         }
 
-        WP_CLI::log(sprintf(
-            'Base %s · ECB date %s · margin %.1f%%',
-            $result['base'],
-            $result['date'],
-            ((float) $result['margin']) * 100
-        ));
+        WP_CLI::log(sprintf('Base %s · ECB date %s', $result['base'], $result['date']));
         foreach ($targets as $currency) {
+            $rate = (float) ($result['rates'][$currency] ?? 0);
+            $markup = polyglot_fx_markup($currency);
             WP_CLI::log(sprintf(
-                '  %s: %.4f (raw %.4f)',
+                '  %s: %.4f  (markup %+.1f%% → effective %.4f)',
                 $currency,
-                $result['rates'][$currency] ?? 0,
-                $result['raw_rates'][$currency] ?? 0
+                $rate,
+                $markup * 100,
+                $rate * (1 + $markup)
             ));
         }
         WP_CLI::success('Exchange rates updated.');

@@ -169,6 +169,41 @@ function polyglot_virtual_sale_price($value, $product)
 }
 
 // ============================================================
+// SHIPPING BRIDGE — Convert carrier (Boxtal) rate costs to the domain currency
+// ============================================================
+//
+// Boxtal returns shipping rates in the base currency (EUR). On non-base domains
+// we convert each rate's cost (and taxes) with the same per-currency FX rate +
+// markup as products, so the cart total stays consistent with the displayed
+// product prices. Without this, a DKK cart would show EUR shipping amounts.
+
+add_filter('woocommerce_package_rates', 'polyglot_convert_shipping_rates', 20);
+
+function polyglot_convert_shipping_rates(array $rates): array
+{
+    $currency = polyglot_get_current_currency();
+    if ($currency === polyglot_fx_base_currency()) {
+        return $rates;
+    }
+
+    foreach ($rates as $rate) {
+        $rate->set_cost(polyglot_convert_price((float) $rate->get_cost(), $currency));
+
+        $taxes = $rate->get_taxes();
+        if (is_array($taxes)) {
+            foreach ($taxes as $key => $tax) {
+                if (is_numeric($tax)) {
+                    $taxes[$key] = polyglot_convert_price((float) $tax, $currency);
+                }
+            }
+            $rate->set_taxes($taxes);
+        }
+    }
+
+    return $rates;
+}
+
+// ============================================================
 // IMAGE BRIDGE — Shadow inherits images from Master
 // ============================================================
 

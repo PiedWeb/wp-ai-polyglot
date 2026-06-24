@@ -280,4 +280,45 @@ class GoogleFeedTest extends WP_UnitTestCase
         $_SERVER['HTTP_HOST'] = 'dk.test';
         $this->assertSame(0, substr_count(polyglot_feed_build_xml(), '<item>'));
     }
+
+    // --- FX markup (covers payment-conversion cost) ---
+
+    public function testMarkupAppliedOnTopOfRate(): void
+    {
+        $cb = static fn ($value, $currency) => 'DKK' === $currency ? 0.05 : $value;
+        add_filter('polyglot_fx_markup', $cb, 10, 2);
+        // rate 7.0 × (1 + 0.05) = 7.35 → 100 → 735
+        $this->assertSame(735.0, polyglot_convert_price(100.0, 'DKK'));
+        remove_filter('polyglot_fx_markup', $cb, 10);
+    }
+
+    public function testMarkupNeverAppliedToBaseCurrency(): void
+    {
+        $cb = static fn () => 0.20;
+        add_filter('polyglot_fx_markup', $cb, 10, 2);
+        $this->assertSame(100.0, polyglot_convert_price(100.0, 'EUR'));
+        remove_filter('polyglot_fx_markup', $cb, 10);
+    }
+
+    // --- Shipping cost conversion ---
+
+    public function testShippingRatesConvertedOnShadowDomain(): void
+    {
+        $rate = new WC_Shipping_Rate('flat', 'Flat', 10.0, [], 'flat_rate');
+
+        $_SERVER['HTTP_HOST'] = 'dk.test';
+        $converted = polyglot_convert_shipping_rates(['flat' => $rate]);
+
+        $this->assertSame(70.0, (float) $converted['flat']->get_cost()); // 10 × 7.0
+    }
+
+    public function testShippingRatesUntouchedOnBaseDomain(): void
+    {
+        $rate = new WC_Shipping_Rate('flat', 'Flat', 10.0, [], 'flat_rate');
+
+        $_SERVER['HTTP_HOST'] = 'master.test';
+        $converted = polyglot_convert_shipping_rates(['flat' => $rate]);
+
+        $this->assertSame(10.0, (float) $converted['flat']->get_cost());
+    }
 }
