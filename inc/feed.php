@@ -136,19 +136,31 @@ function polyglot_feed_build_xml(): string
  */
 function polyglot_feed_get_products(): array
 {
+    // Enumerate with WP_Query, not wc_get_products(): shadow products are created
+    // outside WC's CRUD (wp polyglot translate) and are absent from
+    // wc_product_meta_lookup, the table wc_get_products() relies on — so it
+    // silently returns zero shadows, leaving every non-master feed empty. A raw
+    // WP_Query reads wp_posts directly; polyglot_filter_by_domain (inc/routing.php)
+    // still restricts results to the current domain's locale via pre_get_posts.
     $args = apply_filters('polyglot_feed_query_args', [
-        'status' => 'publish',
-        'limit' => -1,
+        'post_type' => 'product',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
         'orderby' => 'ID',
         'order' => 'ASC',
-        'return' => 'objects',
+        'fields' => 'ids',
+        'no_found_rows' => true,
     ]);
 
-    // wc_get_products runs a secondary product WP_Query, so polyglot_filter_by_domain
-    // (inc/routing.php) restricts results to the current domain's locale automatically.
-    $products = wc_get_products($args);
+    $products = [];
+    foreach ((new WP_Query($args))->posts as $id) {
+        $product = wc_get_product($id);
+        if ($product instanceof WC_Product) {
+            $products[] = $product;
+        }
+    }
 
-    return is_array($products) ? $products : [];
+    return $products;
 }
 
 /**
