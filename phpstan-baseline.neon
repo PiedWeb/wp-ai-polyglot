@@ -1,0 +1,3865 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 3
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot access offset ''polyglot_locale'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot access property \$ID on mixed\.$#'
+			identifier: property.nonObject
+			count: 7
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot access property \$locale on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot access property \$post_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot access property \$postmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot call method get_results\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot call method get_var\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot call method prepare\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: inc/admin.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 3
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_add_langue_column\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_add_langue_column\(\) has parameter \$columns with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_add_order_locale_column\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_add_order_locale_column\(\) has parameter \$columns with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_add_user_locale_column\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_add_user_locale_column\(\) has parameter \$columns with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_admin_locale_dropdown\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_admin_locale_dropdown\(\) has parameter \$post_type with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_admin_shadow_banner\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_flag_manual_edit\(\) has parameter \$post with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_flag_manual_edit\(\) has parameter \$post_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_flag_manual_edit\(\) has parameter \$update with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_register_translation_metabox\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_langue_column\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_langue_column\(\) has parameter \$column with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_langue_column\(\) has parameter \$post_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_order_locale_column\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_order_locale_column\(\) has parameter \$column with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_order_locale_column\(\) has parameter \$post_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_order_locale_column_hpos\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_order_locale_column_hpos\(\) has parameter \$column with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_order_locale_column_hpos\(\) has parameter \$order with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_translation_metabox\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_translation_metabox\(\) has parameter \$post with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_user_locale_column\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_user_locale_column\(\) has parameter \$column with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_user_locale_column\(\) has parameter \$output with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Function polyglot_render_user_locale_column\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$locale of function polyglot_format_locale_badge expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$locale of function polyglot_locale_to_label expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_edit_post_link expects int\|WP_Post, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_post_type expects int\|WP_Post\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$post_id of function get_post_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 11
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$post_id of function update_post_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$str of function sanitize_text_field expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$string of function strtoupper expects string, bool\|string given\.$#'
+			identifier: argument.type
+			count: 5
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_attr expects string, bool\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_attr expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_html expects string, bool\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_html expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_html expects string, int\<0, max\> given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_html expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$url of function esc_url expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#1 \$user_id of function get_user_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#4 \$screen of function add_meta_box expects array\|string\|WP_Screen\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Parameter \#4 \$screen of function add_meta_box expects array\|string\|WP_Screen\|null, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/admin.php
+
+		-
+			message: '#^Part \$_polyglot_type \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: inc/admin.php
+
+		-
+			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 3
+			path: inc/admin.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 5
+			path: inc/admin.php
+
+		-
+			message: '#^Found usage of constant WP_HOME\. Use home_url\(\) or get_home_url\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: inc/autoexport.php
+
+		-
+			message: '#^Function polyglot_autoexport_on_save\(\) has parameter \$post with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/autoexport.php
+
+		-
+			message: '#^Function polyglot_autoexport_on_save\(\) has parameter \$post_before with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/autoexport.php
+
+		-
+			message: '#^Function polyglot_autoexport_on_save\(\) has parameter \$post_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/autoexport.php
+
+		-
+			message: '#^Function polyglot_autoexport_on_save\(\) has parameter \$update with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/autoexport.php
+
+		-
+			message: '#^Parameter \#1 \$post of function wp_is_post_autosave expects int\|WP_Post, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/autoexport.php
+
+		-
+			message: '#^Parameter \#1 \$post of function wp_is_post_revision expects int\|WP_Post, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/autoexport.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 8
+			path: inc/cli.php
+
+		-
+			message: '#^Binary operation "\." between mixed and '' ORDER BY ID'' results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with int\<0, max\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''all'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''base'' on array\<string, mixed\>\|WP_Error\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''category_base'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''category_base''\|''product_base''\|''tag_base'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''command'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''date'' on array\<string, mixed\>\|WP_Error\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''dry\-run'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''file'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''fix'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''force'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''if\-match'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''locale'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''payload'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''pid'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''post_type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''price'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''product_base'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''rates'' on array\<string, mixed\>\|WP_Error\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''rendered'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''stale'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''started'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''status'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''tag_base'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''target'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 7
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''taxonomy'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''term_id'' on array\{term_id\: int, term_taxonomy_id\: int\|string\}\|WP_Error\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''translated_content'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''translated_description'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''translated_short_desc'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''translated_title'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''worker'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset 0 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset int\|string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$ID on mixed\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$comment_approved on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$comment_author on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$comment_author_email on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$comment_content on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$comment_date on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$comment_date_gmt on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$comment_post_ID on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$comment_type on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$commentmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$custom_permalink on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$locale on mixed\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$master_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$master_term_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$post_content on WP_Post\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$post_content on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$post_excerpt on WP_Post\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$post_name on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$post_title on WP_Post\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$post_title on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$post_type on WP_Post\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$postmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 15
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$posts on mixed\.$#'
+			identifier: property.nonObject
+			count: 8
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$shadow_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$shadow_term_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$termmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 6
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot call method get_col\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot call method get_results\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 5
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot call method get_var\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 6
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot call method prepare\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 14
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot call method query\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot cast mixed to float\.$#'
+			identifier: cast.double
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 26
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 9
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:apply_post_metas\(\) has parameter \$front with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:build_shadow_map\(\) should return array\<int, array\<string, int\>\> but returns array\<int, array\<int\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:build_term_shadow_map\(\) should return array\<int, array\<string, int\>\> but returns array\<int, array\<int\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:check_links\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:check_links\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:check_links_rendered\(\) has parameter \$all_known_slugs with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:check_links_rendered\(\) has parameter \$known_authorities with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:check_links_rendered\(\) has parameter \$slug_paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:create_master\(\) has parameter \$front with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:create_master\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:export\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:export\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:export_worker_drain\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:feed\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:feed\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow\(\) has parameter \$locale with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow\(\) has parameter \$master_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow_comment\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow_comment\(\) has parameter \$locale with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow_comment\(\) has parameter \$master_comment_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow_term\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow_term\(\) has parameter \$locale with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:find_shadow_term\(\) has parameter \$master_term_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:import\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:import\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:is_locked_shadow\(\) has parameter \$front with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:push\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:push\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:run_export_core\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:run_export_core\(\) should return array\{dir\: string, entities\: int, rows\: int, purged\: int\} but returns array\{dir\: string, entities\: int\<0, max\>, purged\: int\<0, max\>\}\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:term_flat_response\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:translate\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:translate\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:translate_comment\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:translate_comment\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:translate_slugs\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:translate_slugs\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:translate_term\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:translate_term\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:untranslated\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:untranslated\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write_apply_safe\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write_dispatch\(\) should return array\{status\: int, etag\: string, path\: string, content\: string\} but returns array\.$#'
+			identifier: return.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write_master\(\) has parameter \$front with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write_master\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write_shadow\(\) has parameter \$front with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write_shadow\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write_term\(\) has parameter \$front with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:write_term\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Offset ''error'' on array\{status\: int, etag\: string, path\: string, content\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Offset ''status'' on array\{status\: int, etag\: string, path\: string, content\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Offset 0 might not exist on array\{\}\|array\{0\: mixed, 1\?\: mixed\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<non\-falsy\-string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$comment_id of function delete_comment_meta expects int, int\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$comment_id of function get_comment_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$comment_id of function update_comment_meta expects int, int\|false given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$commentdata of function wp_insert_comment expects array\{comment_agent\?\: string, comment_approved\?\: int\|string, comment_author\?\: string, comment_author_email\?\: string, comment_author_IP\?\: string, comment_author_url\?\: string, comment_content\?\: string, comment_date\?\: string, \.\.\.\}, array\{comment_post_ID\: int, comment_author\: string, comment_author_email\: string, comment_content\: mixed, comment_date\: string, comment_date_gmt\: string, comment_approved\: string, comment_type\: string\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$filename of function file_exists expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$filename of function file_get_contents expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$filter_locale of method Polyglot_CLI\:\:check_links_rendered\(\) expects string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$haystack of function str_ends_with expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$json of function json_decode expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$locale of function polyglot_locale_to_authority expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$locale of method Polyglot_CLI\:\:validate_shadow_locale\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$message of static method WP_CLI\:\:error\(\) expects string\|Throwable\|WP_Error, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$message of static method WP_CLI\:\:line\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 4
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$post of function clean_post_cache expects int\|WP_Post, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_post expects int\|WP_Post\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 4
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_the_title expects int\|WP_Post, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$post of function polyglot_post_etag expects WP_Post, WP_Post\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$post_id of function get_post_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$post_types of method Polyglot_CLI\:\:build_shadow_map\(\) expects array\<string\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$postarr of function wp_insert_post expects array\{ID\?\: int, post_author\?\: int, post_date\?\: string, post_date_gmt\?\: string, post_content\?\: string, post_content_filtered\?\: string, post_title\?\: string, post_excerpt\?\: string, \.\.\.\}, array\{ID\: mixed, post_title\: mixed, post_content\: mixed, post_excerpt\: mixed, post_status\: string, post_type\: mixed, post_name\: string, menu_order\: int\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$postarr of function wp_insert_post expects array\{ID\?\: int, post_author\?\: int, post_date\?\: string, post_date_gmt\?\: string, post_content\?\: string, post_content_filtered\?\: string, post_title\?\: string, post_excerpt\?\: string, \.\.\.\}, array\{ID\: mixed, post_title\: mixed, post_name\: mixed, post_excerpt\: mixed, post_status\: string, post_type\: string, post_content\: string, menu_order\: int\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$postarr of function wp_insert_post expects array\{ID\?\: int, post_author\?\: int, post_date\?\: string, post_date_gmt\?\: string, post_content\?\: string, post_content_filtered\?\: string, post_title\?\: string, post_excerpt\?\: string, \.\.\.\}, array\{post_title\: non\-empty\-string, post_name\: mixed, post_excerpt\: mixed, post_content\: string, post_status\: mixed, post_type\: string\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$postarr of function wp_update_post expects array\{ID\?\: int, post_author\?\: int, post_date\?\: string, post_date_gmt\?\: string, post_content\?\: string, post_content_filtered\?\: string, post_title\?\: string, post_excerpt\?\: string, \.\.\.\}, array\{ID\: int, post_content\: mixed\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$postarr of function wp_update_post expects array\{ID\?\: int, post_author\?\: int, post_date\?\: string, post_date_gmt\?\: string, post_content\?\: string, post_content_filtered\?\: string, post_title\?\: string, post_excerpt\?\: string, \.\.\.\}, array\{ID\: int\<min, \-1\>\|int\<1, max\>, post_title\: mixed, post_name\: mixed, post_content\: string, post_excerpt\?\: mixed\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$postarr of function wp_update_post expects array\{ID\?\: int, post_author\?\: int, post_date\?\: string, post_date_gmt\?\: string, post_content\?\: string, post_content_filtered\?\: string, post_title\?\: string, post_excerpt\?\: string, \.\.\.\}, array\{ID\: mixed, post_title\: mixed, post_name\: mixed, post_excerpt\: mixed, post_status\: string, post_type\: string, post_content\: string, menu_order\: int\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$raw of method Polyglot_CLI\:\:write_apply\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$str of function preg_quote expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$string of function ltrim expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$term of function polyglot_term_etag expects WP_Term, WP_Error\|WP_Term\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$term of function wp_insert_term expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$term_id of function update_term_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$term_id of function wp_update_term expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$title of function sanitize_title expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 5
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array\<int, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$canonical of method Polyglot_CLI\:\:converge_flat_file\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$locale of function polyglot_flat_build expects string, bool\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$locale of function polyglot_term_flat_build expects string, bool\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$post of method Polyglot_CLI\:\:flat_response\(\) expects WP_Post, WP_Post\|null given\.$#'
+			identifier: argument.type
+			count: 5
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$subject of function preg_match_all expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$taxonomy of function wp_insert_term expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$taxonomy of function wp_update_term expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$term of method Polyglot_CLI\:\:term_flat_response\(\) expects WP_Term, WP_Error\|WP_Term\|null given\.$#'
+			identifier: argument.type
+			count: 4
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#3 \$subject of function str_replace expects array\<string\>\|string, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#3 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#4 \$mode of method Polyglot_CLI\:\:apply_post_metas\(\) expects string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#4 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$existing \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$existing_id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 4
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$locale \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$master_id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$new_term_id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$post_type \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 5
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$sp\-\>ID \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$sp\-\>post_title \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$target \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$target_locale \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 8
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$wpdb\-\>commentmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 15
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$wpdb\-\>posts \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 8
+			path: inc/cli.php
+
+		-
+			message: '#^Part \$wpdb\-\>termmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 6
+			path: inc/cli.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 11
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$ID on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Cannot access property \$childNodes on DOMElement\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Cannot access property \$postmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Cannot access property \$posts on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Cannot call method get_row\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Cannot call method prepare\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Cannot call method replaceChild\(\) on DOMNode\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 2
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Function polyglot_resolve_url_any_status\(\) should return int\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Parameter \#2 \$value of method DOMElement\:\:setAttribute\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Part \$locale \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 3
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Part \$wpdb\-\>posts \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/draft-link-handler.php
+
+		-
+			message: '#^Action callback returns array\<string, mixed\>\|WP_Error but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Call to function is_array\(\) with 0\.0 will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Cannot cast mixed to float\.$#'
+			identifier: cast.double
+			count: 2
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Function polyglot_fx_base_currency\(\) should return string but returns bool\|string\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Function polyglot_fx_snapshot\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Function polyglot_fx_target_currencies\(\) should return array\<string\> but returns list\<int\|string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Function polyglot_get_current_currency\(\) should return string but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Function polyglot_update_exchange_rates\(\) should return array\<string, mixed\>\|WP_Error but returns array\.$#'
+			identifier: return.type
+			count: 2
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Offset string on \*NEVER\* on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: inc/exchange-rates.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Cannot cast mixed to float\.$#'
+			identifier: cast.double
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 5
+			path: inc/feed.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 6
+			path: inc/feed.php
+
+		-
+			message: '#^Function polyglot_feed_map_product\(\) should return array\<string, array\<string\>\|string\>\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Function polyglot_feed_map_variable\(\) should return array\<int, array\<string, array\<string\>\|string\>\> but returns list\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Parameter \#1 \$attachment_id of function wp_get_attachment_image_url expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Parameter \#1 \$attachment_id of function wp_get_attachment_image_url expects int, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, ''strval'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Parameter \#1 \$query of class WP_Query constructor expects array\|string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Parameter \#1 \$string of function rawurlencode expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Parameter \#1 \(mixed\) of echo cannot be converted to string\.$#'
+			identifier: echo.nonString
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Parameter \#2 \$callback of function array_filter expects \(callable\(string\)\: bool\)\|null, ''strlen'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Parameter \#2 \$children of function polyglot_feed_render_group expects array\<string, string\>, array\<array\<string, string\>\|string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/feed.php
+
+		-
+			message: '#^Cannot access offset ''cta'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Cannot access offset ''message'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Function polyglot_bar_i18n\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Function polyglot_cookie_translations\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Function polyglot_cookie_translations\(\) should return array but returns mixed\.$#'
+			identifier: return.type
+			count: 2
+			path: inc/frontend.php
+
+		-
+			message: '#^Offset ''hreflang'' might not exist on array\|null\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Offset ''label'' might not exist on array\|null\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Offset ''locale'' might not exist on array\|null\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Parameter \#1 \$locale of function polyglot_locale_to_country expects string, bool\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Parameter \#1 \$locale of function polyglot_locale_to_country expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Parameter \#2 \$replace of function str_replace expects array\<string\>\|string, list given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/frontend.php
+
+		-
+			message: '#^Parameter \#3 \$subject of function str_replace expects array\<string\>\|string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: inc/frontend.php
+
+		-
+			message: '#^Argument of an invalid type list\<string\>\|false supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot access property \$master_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot access property \$post_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot access property \$postmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot call method get_results\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot call method get_var\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot call method prepare\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 3
+			path: inc/helpers.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 4
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_exportable_statuses\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_exportable_statuses\(\) should return array but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_find_shadow_id\(\) should return int\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_get_current_authority\(\) should return string but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_get_current_entry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_get_current_locale\(\) should return string but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_get_master_authority\(\) should return string but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_get_master_locale\(\) should return string but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_get_post_types\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_get_post_types\(\) should return array but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_get_shadow_locales\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_locale_map\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_locale_map\(\) should return array but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_locale_to_authority\(\) should return string but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Function polyglot_locale_to_label\(\) should return string but returns bool\|string\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Parameter \#1 \$front of function polyglot_flat_serialize expects array\<string, bool\|float\|int\|string\|null\>, array\<string, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Parameter \#1 \$str of function sanitize_text_field expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Parameter \#2 \$array of function array_key_exists expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 4
+			path: inc/helpers.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 1
+			path: inc/helpers.php
+
+		-
+			message: '#^Access to an undefined property WP_Post\|WP_Post_Type\|WP_Term\|WP_User\:\:\$ID\.$#'
+			identifier: property.notFound
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Access to an undefined property WP_Post\|WP_Post_Type\|WP_Term\|WP_User\:\:\$post_type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Binary operation "\." between ''/'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Binary operation "\." between ''\^'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 6
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset ''category_base'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset ''p'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset ''page_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset ''pagename'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset ''post_type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset ''product_base'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset ''tag_base'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access property \$ID on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access property \$feeds on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access property \$post_name on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access property \$post_status on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access property \$post_type on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access property \$postmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 8
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access property \$posts on mixed\.$#'
+			identifier: property.nonObject
+			count: 5
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot call method get_var\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 5
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot call method prepare\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 5
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 6
+			path: inc/permalink.php
+
+		-
+			message: '#^Function polyglot_get_wc_slugs\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Function polyglot_get_wc_slugs\(\) should return array\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Function polyglot_resolve_by_slug\(\) should return int\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_unique expects an array of values castable to string, list\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$location of function wp_redirect expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_post expects int\|WP_Post\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_post_status expects int\|WP_Post\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$post_id of function get_post_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$slug of function polyglot_resolve_by_slug expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$str of function sanitize_text_field expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$string of function ltrim expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$string of function rtrim expects string, string\|false\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, string\|false\|null given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$url of function wp_parse_url expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#1 \$url of function wp_parse_url expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/permalink.php
+
+		-
+			message: '#^Parameter \#2 \$post_type of function polyglot_resolve_by_slug expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/permalink.php
+
+		-
+			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 8
+			path: inc/permalink.php
+
+		-
+			message: '#^Part \$wpdb\-\>posts \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 5
+			path: inc/permalink.php
+
+		-
+			message: '#^Cannot access an offset on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot access offset ''products'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot access property \$postmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot call method get\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 4
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot call method get_var\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot call method is_main_query\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot call method prepare\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot call method set\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: inc/routing.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 3
+			path: inc/routing.php
+
+		-
+			message: '#^Function polyglot_admin_filter_shadows\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Function polyglot_admin_filter_shadows\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Function polyglot_filter_by_domain\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Function polyglot_swap_block_product_ids\(\) has parameter \$block with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Function polyglot_swap_block_product_ids\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Function polyglot_swap_static_page\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Function polyglot_swap_static_page\(\) has parameter \$pre with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Function polyglot_wc_page_id\(\) should return int but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_intersect expects an array of values castable to string, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, ''polyglot_wc_page_id'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#1 \$hook_name of function add_filter expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#1 \$hook_name of function remove_filter expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#1 \$str of function sanitize_text_field expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#2 \$arrays of function array_intersect expects an array of values castable to string, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#2 \$callback of function array_filter expects \(callable\(mixed\)\: bool\)\|null, ''strlen'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#3 \$subject of function str_replace expects array\<string\>\|string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Parameter \#4 \$secure of function wc_setcookie expects bool, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/routing.php
+
+		-
+			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: inc/routing.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 7
+			path: inc/seo.php
+
+		-
+			message: '#^Binary operation "\." between ''/'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access an offset on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 6
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$ID on mixed\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$locale on mixed\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$master_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$meta_value on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$post_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$post_name on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$postmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 6
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$posts on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$term_id on WP_Post\|WP_Post_Type\|WP_Term\|WP_User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$term_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot access property \$termmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot call method get_results\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 6
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot call method prepare\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 6
+			path: inc/seo.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 10
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_get_locale_paths\(\) should return array\<string, string\> but returns array\<string, bool\|string\|null\>\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_get_locale_paths\(\) should return array\<string, string\> but returns array\<string, string\|false\|null\>\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_get_locale_paths\(\) should return array\<string, string\> but returns mixed\.$#'
+			identifier: return.type
+			count: 2
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_inject_hreflang\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_sitemap_hreflang_ob_start\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_sitemap_posts_filter\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_sitemap_posts_filter\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_sitemap_taxonomies_filter\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_sitemap_taxonomies_filter\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_sitemap_track_entry\(\) has parameter \$entry with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_sitemap_track_entry\(\) has parameter \$post with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Function polyglot_sitemap_track_entry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_unique expects an array of values castable to string, array\<int, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_unique expects an array of values castable to string, list given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_values expects array\<T\>, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_permalink expects int\|WP_Post, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Parameter \#1 \$post_id of function get_post_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_attr expects string, bool\|string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/seo.php
+
+		-
+			message: '#^Parameter \#1 \$url of function wp_parse_url expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/seo.php
+
+		-
+			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 6
+			path: inc/seo.php
+
+		-
+			message: '#^Part \$wpdb\-\>posts \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: inc/seo.php
+
+		-
+			message: '#^Part \$wpdb\-\>termmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: inc/seo.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 9
+			path: inc/seo.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Call to an undefined method object\:\:get_id\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot access offset ''product_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot access property \$id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot access property \$label on mixed\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot call method get_meta\(\) on WC_Order\|WC_Order_Refund\|true\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot call method save\(\) on WC_Order\|WC_Order_Refund\|true\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot call method update_meta_data\(\) on WC_Order\|WC_Order_Refund\|true\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_apply_checkout_translation\(\) has parameter \$map with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_block_wc_locale_switch\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_block_wc_locale_switch\(\) has parameter \$do_switch with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_email_content_translations\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_email_locale_active\(\) should return bool but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_email_restore_locale\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_email_restore_locale\(\) has parameter \$order_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_email_switch_locale\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_email_switch_locale\(\) has parameter \$order_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_save_order_locale\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_save_order_locale\(\) has parameter \$order_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_tag_registration_locale\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_tag_registration_locale\(\) has parameter \$user_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_cart_item_name\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_cart_item_name\(\) has parameter \$cart_item with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_cart_item_name\(\) has parameter \$cart_item_key with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_cart_item_name\(\) has parameter \$name with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_checkout_privacy\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_checkout_terms\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_email_additional_content\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_email_additional_content\(\) has parameter \$content with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_email_additional_content\(\) has parameter \$email with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_email_additional_content\(\) has parameter \$object with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_email_footer\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_email_footer\(\) has parameter \$email with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_email_footer\(\) has parameter \$text with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_shipping_labels\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Function polyglot_translate_shipping_labels\(\) has parameter \$rates with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#1 \$format of function sprintf expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#1 \$haystack of function str_contains expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#1 \$locale of function switch_to_locale expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#1 \$master_id of function polyglot_find_shadow_id expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#1 \$post_id of function get_post_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#1 \$post_id of function update_post_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#1 \$user_id of function update_user_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#1 \$value of function polyglot_apply_checkout_translation expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#2 \$replace of function str_replace expects array\<string\>\|string, string\|false\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#2 \$subject of function preg_match expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Parameter \#3 \$subject of function str_replace expects array\<string\>\|string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/wc-i18n.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_cost\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_gallery_image_ids\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_id\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_image_id\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_meta\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_price\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_product\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_regular_price\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_sale_price\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_stock_quantity\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_stock_status\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method get_taxes\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method is_in_stock\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method set_cost\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot call method set_taxes\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot cast mixed to float\.$#'
+			identifier: cast.double
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 2
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_convert_shipping_rates\(\) has parameter \$rates with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_convert_shipping_rates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_domain_currency\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_domain_currency\(\) has parameter \$currency with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_get_master\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_get_master\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_intercept_shadow_stock_reduction\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_intercept_shadow_stock_reduction\(\) has parameter \$item with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_intercept_shadow_stock_reduction\(\) has parameter \$order with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_gallery_image_ids\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_gallery_image_ids\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_gallery_image_ids\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_in_stock\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_in_stock\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_in_stock\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_price\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_price\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_price\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_product_image_id\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_product_image_id\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_product_image_id\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_regular_price\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_regular_price\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_regular_price\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_related_products\(\) has parameter \$args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_related_products\(\) has parameter \$related_ids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_related_products\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_sale_price\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_sale_price\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_sale_price\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_stock\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_stock\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_stock\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_stock_status\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_stock_status\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_stock_status\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_thumbnail\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_thumbnail\(\) has parameter \$post with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_thumbnail\(\) has parameter \$thumbnail_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$amount of function polyglot_maybe_convert_from_base expects float\|int\|string, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, ''intval'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$key of function array_key_exists expects int\|string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_post_thumbnail_id expects int\|WP_Post\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Parameter \#2 \$array of function array_key_exists expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Parameter \#2 \$limit of function wc_get_related_products expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between null and float\|int\|non\-empty\-string will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: inc/wc-product-bridge.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 2
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Binary operation "\*" between mixed and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Binary operation "\.\=" between mixed and mixed results in an error\.$#'
+			identifier: assignOp.invalid
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Binary operation "\.\=" between mixed and non\-falsy\-string results in an error\.$#'
+			identifier: assignOp.invalid
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access offset ''comment_post_ID'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access offset ''join'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access offset ''post_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access offset ''where'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access property \$cnt on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access property \$comment_post_ID on WP_Comment\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access property \$commentmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 7
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access property \$comments on mixed\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access property \$query_vars on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot access property \$rating on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot call method get_id\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 6
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot call method get_results\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot call method prepare\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 4
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_count_locale_reviews\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_count_locale_reviews\(\) has parameter \$post_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_locale_rating_counts\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_locale_rating_counts\(\) has parameter \$post_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_redirect_review_submission\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_redirect_review_submission\(\) has parameter \$commentdata with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_tag_review_source_locale\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_tag_review_source_locale\(\) has parameter \$comment_approved with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_tag_review_source_locale\(\) has parameter \$comment_id with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_average_rating\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_average_rating\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_average_rating\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_rating_counts\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_rating_counts\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_rating_counts\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_review_comments_clauses\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_review_comments_clauses\(\) has parameter \$clauses with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_review_comments_clauses\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_review_count\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_review_count\(\) has parameter \$product with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Function polyglot_virtual_review_count\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_sum expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$comment of function get_comment expects int\|string\|WP_Comment\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$comment_id of function get_comment_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$comment_id of function update_comment_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_post expects int\|WP_Post\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$post of function get_post expects int\|WP_Post\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Parameter \#1 \$post_id of function get_post_meta expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Parameter \#3 \$subject of function preg_replace expects array\<float\|int\|string\>\|string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Part \$post_id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Part \$wpdb\-\>commentmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 7
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Part \$wpdb\-\>comments \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 4
+			path: inc/wc-review-bridge.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 3
+			path: uninstall.php
+
+		-
+			message: '#^Cannot access property \$commentmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 5
+			path: uninstall.php
+
+		-
+			message: '#^Cannot access property \$postmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 5
+			path: uninstall.php
+
+		-
+			message: '#^Cannot access property \$termmeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: uninstall.php
+
+		-
+			message: '#^Cannot access property \$usermeta on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: uninstall.php
+
+		-
+			message: '#^Cannot call method delete\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 11
+			path: uninstall.php
+
+		-
+			message: '#^Cannot call method get_col\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: uninstall.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 4
+			path: uninstall.php
+
+		-
+			message: '#^Part \$wpdb\-\>commentmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: uninstall.php
+
+		-
+			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: uninstall.php
+
+		-
+			message: '#^Part \$wpdb\-\>termmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: uninstall.php
+
+		-
+			message: '#^Part \$master_id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: wp-ai-polyglot.php

@@ -1,0 +1,40 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: max
+
+    paths:
+        - wp-ai-polyglot.php
+        - uninstall.php
+        - inc
+
+    # Templates are presentation partials that receive their variables via
+    # the including scope (extract()/include) — analyzing them at max level
+    # only yields "undefined variable" noise, so they stay out of scope.
+    excludePaths:
+        - templates/*
+
+    # WooCommerce + WP-CLI symbol definitions (WP core stubs come from the
+    # szepeviktor extension). phpstan-constants.php declares the config
+    # constants the plugin reads from wp-config.php.
+    bootstrapFiles:
+        - vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+        - vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+        - phpstan-constants.php
+
+    # Constants whose value is environment-defined: PHPStan must not narrow
+    # control flow (e.g. `if (defined(...) && !CONST)`) on their placeholders.
+    dynamicConstantNames:
+        - POLYGLOT_LOCALES
+        - POLYGLOT_BAR
+        - POLYGLOT_FOOTER
+        - POLYGLOT_FEED
+        - POLYGLOT_FEED_BRAND
+        - POLYGLOT_FEED_GPC_DEFAULT
+        - POLYGLOT_AUTOEXPORT
+        - POLYGLOT_WP_BIN
+        - POLYGLOT_TRANSLATIONS_DIR
+        - WP_HOME
+        - WP_CLI

@@ -17,6 +17,9 @@
 /.phpunit.result.cache
 /composer.json
 /composer.lock
+/phpstan.dist.neon
+/phpstan-baseline.neon
+/phpstan-constants.php
 /phpunit.xml
 /phpunit.xml.dist
 /phpunit-wc.xml
