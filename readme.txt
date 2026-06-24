@@ -1,6 +1,6 @@
 === PiedWeb AI Polyglot ===
 Contributors: piedweb
-Tags: multilingual, translation, woocommerce, hreflang, i18n
+Tags: hreflang, ai-translation, automatic-translation, language-switcher, multi-currency, content-translation, multicurrency, multi-language, woo-multilingual, translator, machine-translation, duplicate-content, internationalization, bilingual, localization, i18n, multilingual, translation, woocommerce
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
