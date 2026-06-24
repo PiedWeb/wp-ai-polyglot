@@ -49,10 +49,17 @@ function polyglot_filter_by_domain($query): void
         return;
     }
 
-    // For secondary queries, only filter managed post types
+    // For secondary queries, act as soon as the query targets at least one
+    // managed (translatable) post type. This used to bail whenever ANY
+    // requested type was unmanaged, so a MIXED request such as
+    // ['product', 'product_variation'] — emitted by WooCommerce catalog/feed
+    // exporters like facebook-for-woocommerce — slipped through unfiltered and
+    // leaked every shadow product into the result set. Queries that touch no
+    // managed type at all (attachments, nav items, orders, or a standalone
+    // 'product_variation' children lookup) are still left untouched.
     if (! $query->is_main_query()) {
-        $types = (array) $query->get('post_type');
-        if (empty($types) || '' === $types[0] || array_diff($types, polyglot_get_post_types())) {
+        $types = array_filter((array) $query->get('post_type'), 'strlen');
+        if (empty($types) || ! array_intersect($types, polyglot_get_post_types())) {
             return;
         }
     }
@@ -62,13 +69,23 @@ function polyglot_filter_by_domain($query): void
     $meta_query = $query->get('meta_query') ?: [];
 
     if ($is_master) {
-        // Master domain: show posts WITHOUT _master_id
+        // Master domain: show posts WITHOUT _master_id. product_variation rows
+        // carry no _master_id, so variations of master products are kept.
         $meta_query[] = [
             'key' => '_master_id',
             'compare' => 'NOT EXISTS',
         ];
     } else {
-        // Shadow domain: show posts matching this locale
+        // Shadow domain: show posts matching this locale.
+        //
+        // Caveat: product_variation rows carry no _locale, so a mixed
+        // product+product_variation query running in a SHADOW context drops the
+        // variations. This is harmless today (shadow products are simple, and no
+        // storefront path mixes the two types on a shadow domain) — the only
+        // real consumer of mixed queries, the catalog/feed exporters, runs in
+        // the master/cron context handled above. If variable shadow products are
+        // ever introduced, switch this branch to a post_type-aware posts_where
+        // clause that keeps variations.
         $meta_query[] = [
             'key' => '_locale',
             'value' => $locale,
