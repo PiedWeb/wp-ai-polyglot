@@ -43,5 +43,9 @@ function polyglot_fb_exclude_shadows($should, $product)
     // Variations carry no _master_id of their own — resolve to the parent.
     $product_id = $product->get_parent_id() ?: $product->get_id();
 
-    return get_post_meta($product_id, '_master_id', true) ? false : $should;
+    if (get_post_meta($product_id, '_master_id', true)) {
+        return false; // shadow product — never belongs in the Facebook catalog
+    }
+
+    return $should;
 }

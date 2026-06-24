@@ -64,6 +64,22 @@ class FbFeedExclusionTest extends WP_UnitTestCase
         $this->assertFalse($this->shouldSync(wc_get_product($variation->get_id())));
     }
 
+    public function testMasterVariationIsSynced(): void
+    {
+        // A variable MASTER product: its variations carry no _master_id and the
+        // parent has none either, so they must stay in the feed.
+        $master = new WC_Product_Variable();
+        $master->set_name('Variable master');
+        $master->save();
+
+        $variation = new WC_Product_Variation();
+        $variation->set_parent_id($master->get_id());
+        $variation->set_regular_price('50');
+        $variation->save();
+
+        $this->assertTrue($this->shouldSync(wc_get_product($variation->get_id())));
+    }
+
     public function testEarlierExclusionIsPreserved(): void
     {
         $master = new WC_Product_Simple();
