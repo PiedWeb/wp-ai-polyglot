@@ -29,15 +29,23 @@ else
     fi
 fi
 
+# The wordpress-develop repo tags major releases with three parts (e.g. 7.0.0),
+# while the version-check API and the wordpress.org core archive use two parts
+# (e.g. 7.0). Normalise to three parts for the develop tarball + extracted dir.
+WP_DEV_VERSION="$WP_VERSION"
+if [[ "$WP_DEV_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    WP_DEV_VERSION="${WP_DEV_VERSION}.0"
+fi
+
 # Set up WP test suite (download via GitHub tarball — no svn required)
 if [ ! -d "$WP_TESTS_DIR/includes" ]; then
     mkdir -p "$WP_TESTS_DIR"
 
     TMPDIR=$(mktemp -d)
-    curl -sL "https://github.com/WordPress/wordpress-develop/archive/refs/tags/${WP_VERSION}.tar.gz" -o "$TMPDIR/wp-dev.tar.gz"
+    curl -sL "https://github.com/WordPress/wordpress-develop/archive/refs/tags/${WP_DEV_VERSION}.tar.gz" -o "$TMPDIR/wp-dev.tar.gz"
     tar -xzf "$TMPDIR/wp-dev.tar.gz" -C "$TMPDIR"
 
-    WP_DEV_DIR="$TMPDIR/wordpress-develop-${WP_VERSION}"
+    WP_DEV_DIR="$TMPDIR/wordpress-develop-${WP_DEV_VERSION}"
     cp -r "$WP_DEV_DIR/tests/phpunit/includes" "$WP_TESTS_DIR/includes"
     cp -r "$WP_DEV_DIR/tests/phpunit/data" "$WP_TESTS_DIR/data"
     rm -rf "$TMPDIR"
