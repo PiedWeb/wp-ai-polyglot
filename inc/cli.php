@@ -31,6 +31,10 @@ class Polyglot_CLI
      * [--if-match=<etag>]
      * : Optimistic lock: apply only if the shadow's current etag matches (or
      *   `new` to require it not yet exist). Mismatch is skipped, not an error.
+     *
+     * [--no-fix-links]
+     * : Skip the automatic `check-links --fix` pass run on the target locale
+     *   after the shadow is saved.
      */
     public function translate($args, $assoc_args): void
     {
@@ -148,6 +152,31 @@ class Polyglot_CLI
         }
 
         WP_CLI::success("Shadow $shadow_id created/updated for '$target_locale' (master: $master_id).");
+
+        $this->maybe_autofix_links($target_locale, $assoc_args);
+    }
+
+    /**
+     * Auto-run `check-links --fix` after a content mutation so shadow links
+     * never drift out of sync — same zero-discipline promise as flat-edit.
+     * Scoped to one locale when known (cheap), all shadows for a full import.
+     * Suppressed by --no-fix-links; prints a one-line recap only when it
+     * actually had to change something.
+     */
+    private function maybe_autofix_links(?string $locale, array $assoc_args): void
+    {
+        if (! empty($assoc_args['no-fix-links'])) {
+            return;
+        }
+        $r = $this->run_check_links($locale, true, false, true);
+        if ($r['issues'] > 0) {
+            $remaining = $r['issues'] - $r['fixed'];
+            WP_CLI::log(sprintf(
+                'check-links: %d fixed%s.',
+                $r['fixed'],
+                $remaining > 0 ? ", {$remaining} still flagged" : ''
+            ));
+        }
     }
 
     /**
@@ -748,6 +777,10 @@ class Polyglot_CLI
      *
      * [--force]
      * : Override the optimistic lock and manually-edited (manual) shadows.
+     *
+     * [--no-fix-links]
+     * : Skip the automatic `check-links --fix` pass run across all shadows
+     *   after the import completes.
      */
     public function import($args, $assoc_args): void
     {
@@ -834,6 +867,10 @@ class Polyglot_CLI
             $this->release_sync_lock();
 
             throw $e;
+        }
+
+        if (empty($assoc_args['dry-run'])) {
+            $this->maybe_autofix_links(null, $assoc_args);
         }
 
         $this->maybe_drain_pending_export();
@@ -1754,6 +1791,20 @@ class Polyglot_CLI
         if ($rendered && $fix) {
             WP_CLI::error('--fix cannot be used with --rendered.');
         }
+
+        $this->run_check_links($filter_locale, $fix, $rendered, false);
+    }
+
+    /**
+     * Core mislocalized-link scanner shared by the `check-links` command and the
+     * post-import / post-translate auto-fix chain. With $quiet it emits no
+     * WP_CLI output and just returns the counts so the caller can print its own
+     * one-line recap.
+     *
+     * @return array{issues:int, fixed:int}
+     */
+    private function run_check_links(?string $filter_locale, bool $fix, bool $rendered, bool $quiet = false): array
+    {
         global $wpdb;
 
         $post_types = polyglot_get_post_types();
@@ -1830,7 +1881,7 @@ class Polyglot_CLI
         if ($rendered) {
             $this->check_links_rendered($filter_locale, $all_known_slugs, $slug_paths, $known_authorities);
 
-            return;
+            return ['issues' => 0, 'fixed' => 0];
         }
 
         // 3. Query posts with content — build shadow + master queries, combine as needed
@@ -2026,9 +2077,13 @@ class Polyglot_CLI
             }
 
             if (! empty($issues)) {
-                WP_CLI::line("\n[$locale] Post {$sp->ID} — {$sp->post_title}");
+                if (! $quiet) {
+                    WP_CLI::line("\n[$locale] Post {$sp->ID} — {$sp->post_title}");
+                }
                 foreach ($issues as [$type, $source, $url, $suggestion]) {
-                    WP_CLI::line("  [$type] $source=\"$url\" → /$suggestion");
+                    if (! $quiet) {
+                        WP_CLI::line("  [$type] $source=\"$url\" → /$suggestion");
+                    }
                     ++$total_issues;
                 }
 
@@ -2042,15 +2097,19 @@ class Polyglot_CLI
             }
         }
 
-        if (0 === $total_issues) {
-            WP_CLI::success('No mislocalized links found.');
-        } else {
-            $msg = "$total_issues issue(s) found.";
-            if ($fix) {
-                $msg .= " Fixed $fixed_posts post(s).";
+        if (! $quiet) {
+            if (0 === $total_issues) {
+                WP_CLI::success('No mislocalized links found.');
+            } else {
+                $msg = "$total_issues issue(s) found.";
+                if ($fix) {
+                    $msg .= " Fixed $fixed_posts post(s).";
+                }
+                WP_CLI::success($msg);
             }
-            WP_CLI::success($msg);
         }
+
+        return ['issues' => $total_issues, 'fixed' => $fixed_posts];
     }
 
     private function check_links_rendered(

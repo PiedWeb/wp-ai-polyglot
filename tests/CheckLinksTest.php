@@ -148,6 +148,44 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('href="/poutres"', $updated_product->post_content);
     }
 
+    public function test_translate_auto_fixes_links_without_manual_check(): void
+    {
+        // Re-translating the master pushes content linking to the French slug
+        // /contact; the post-translate auto-fix chain must localize it to
+        // /contact-us with no separate check_links() call.
+        $this->cli->translate([$this->master_page], [
+            'target' => 'en_IE',
+            'force' => true,
+            'payload' => json_encode([
+                'post_type' => 'page',
+                'translated_title' => 'Contact Us',
+                'translated_description' => '<p>See our <a href="/contact">contact page</a>.</p>',
+            ]),
+        ]);
+
+        $updated = get_post($this->en_page);
+        $this->assertStringContainsString('href="/contact-us"', $updated->post_content);
+        $this->assertStringNotContainsString('href="/contact"', $updated->post_content);
+    }
+
+    public function test_no_fix_links_flag_skips_auto_fix(): void
+    {
+        $this->cli->translate([$this->master_page], [
+            'target' => 'en_IE',
+            'force' => true,
+            'no-fix-links' => true,
+            'payload' => json_encode([
+                'post_type' => 'page',
+                'translated_title' => 'Contact Us',
+                'translated_description' => '<p>See our <a href="/contact">contact page</a>.</p>',
+            ]),
+        ]);
+
+        // Without the auto-fix pass the French slug survives untouched.
+        $updated = get_post($this->en_page);
+        $this->assertStringContainsString('href="/contact"', $updated->post_content);
+    }
+
     public function test_skips_external_and_anchor_links(): void
     {
         // Create shadow with only external/anchor links

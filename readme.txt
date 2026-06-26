@@ -112,6 +112,9 @@ Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/li
 
 == Changelog ==
 
+= 2.3.0 =
+* `check-links --fix` now runs automatically after `import` and `translate` (opt out with `--no-fix-links`)
+
 = 2.2.0 =
 * Flat-file write API: `wp polyglot write` (stdin → JSON) applies one flat file to the DB under an optimistic lock (etag compare-and-swap)
 * Frontmatter flat format (YAML-ish front matter + HTML body) replaces the TSV — one file per locale per entity
