@@ -3,7 +3,7 @@
  * Plugin Name: PiedWeb AI Polyglot
  * Plugin URI:  https://wap.piedweb.com
  * Description: Master/Shadow i18n architecture. One master language, N shadow languages via domain map.
- * Version:     2.2.0
+ * Version:     2.3.0
  * Author:      PiedWeb
  * Author URI:  https://en.piedweb.com
  * License:     GPL-2.0-or-later
@@ -45,7 +45,7 @@ if (is_multisite()) {
     return;
 }
 
-define('POLYGLOT_VERSION', '2.2.0');
+define('POLYGLOT_VERSION', '2.3.0');
 define('POLYGLOT_PLUGIN_FILE', __FILE__);
 define('POLYGLOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('POLYGLOT_WC_SLUGS_OPTION', 'polyglot_wc_slugs');
