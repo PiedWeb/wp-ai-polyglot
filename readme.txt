@@ -114,6 +114,7 @@ Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/li
 
 = 2.3.0 =
 * `check-links --fix` now runs automatically after `import` and `translate` (opt out with `--no-fix-links`)
+* New `wp polyglot doctor` — one-screen health-check: locale config, master/shadow drift (orphans, status parity), hreflang uniqueness, exchange-rate coverage/freshness, and per-locale feed endpoints (`--quick` to skip HTTP). `--format=json`, non-zero exit on failure.
 
 = 2.2.0 =
 * Flat-file write API: `wp polyglot write` (stdin → JSON) applies one flat file to the DB under an optimistic lock (etag compare-and-swap)

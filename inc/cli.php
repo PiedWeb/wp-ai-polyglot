@@ -180,6 +180,238 @@ class Polyglot_CLI
     }
 
     /**
+     * Health-check the polyglot setup and exit non-zero if anything is broken.
+     *
+     * Offline checks (always): locale config, master/shadow integrity, hreflang
+     * uniqueness, exchange-rate freshness/coverage. Online checks (unless
+     * --quick): one HTTP probe of each locale's Google feed endpoint.
+     *
+     * ## USAGE
+     *
+     *   wp polyglot doctor            # full check (incl. HTTP feed probes)
+     *   wp polyglot doctor --quick    # offline checks only
+     *   wp polyglot doctor --json     # machine-readable output
+     *
+     * ## OPTIONS
+     *
+     * [--quick]
+     * : Skip the HTTP feed/endpoint probes (offline checks only).
+     *
+     * [--format=<format>]
+     * : Output format.
+     * ---
+     * default: table
+     * options:
+     *   - table
+     *   - json
+     * ---
+     */
+    public function doctor($args, $assoc_args): void
+    {
+        $checks = $this->run_doctor_checks(! empty($assoc_args['quick']));
+        $counts = ['ok' => 0, 'warn' => 0, 'fail' => 0];
+        foreach ($checks as $c) {
+            ++$counts[$c['status']];
+        }
+        $summary = sprintf('%d ok, %d warning(s), %d failure(s).', $counts['ok'], $counts['warn'], $counts['fail']);
+
+        if ('json' === ($assoc_args['format'] ?? 'table')) {
+            WP_CLI::line(json_encode(
+                ['pass' => 0 === $counts['fail'], 'summary' => $summary, 'checks' => $checks],
+                \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT
+            ));
+            WP_CLI::halt($counts['fail'] > 0 ? 1 : 0);
+        }
+
+        $symbols = ['ok' => '✓', 'warn' => '!', 'fail' => '✗'];
+        foreach ($checks as $c) {
+            WP_CLI::line(sprintf('  %s  %-22s %s', $symbols[$c['status']], $c['name'], $c['detail']));
+        }
+        WP_CLI::line('');
+        if ($counts['fail'] > 0) {
+            WP_CLI::error($summary); // prints + exits 1
+        }
+        WP_CLI::success($summary);
+    }
+
+    /**
+     * Run every doctor check and return a flat list of result rows.
+     *
+     * @return array<int, array{name:string, status:string, detail:string}>
+     */
+    private function run_doctor_checks(bool $quick): array
+    {
+        $checks = array_merge(
+            $this->doctor_check_locales(),
+            $this->doctor_check_drift(),
+            $this->doctor_check_hreflang(),
+            $this->doctor_check_fx(),
+        );
+        if (! $quick) {
+            $checks = array_merge($checks, $this->doctor_check_endpoints());
+        }
+
+        return $checks;
+    }
+
+    /** Exactly one master and every locale entry carries the required keys. */
+    private function doctor_check_locales(): array
+    {
+        $masters = 0;
+        $missing = [];
+        foreach (POLYGLOT_LOCALES as $authority => $cfg) {
+            if (! empty($cfg['master'])) {
+                ++$masters;
+            }
+            foreach (['locale', 'hreflang', 'label', 'currency'] as $key) {
+                if (empty($cfg[$key])) {
+                    $missing[] = "$authority.$key";
+                }
+            }
+        }
+
+        $rows = [1 === $masters
+            ? ['name' => 'Locale config', 'status' => 'ok', 'detail' => count(POLYGLOT_LOCALES).' locales, 1 master']
+            : ['name' => 'Locale config', 'status' => 'fail', 'detail' => "expected exactly 1 master, found $masters"]];
+        if ($missing) {
+            $rows[] = ['name' => 'Locale fields', 'status' => 'fail', 'detail' => 'missing: '.implode(', ', $missing)];
+        }
+
+        return $rows;
+    }
+
+    /** Orphan shadows, invalid/missing _locale, and master↔shadow status parity. */
+    private function doctor_check_drift(): array
+    {
+        global $wpdb;
+        $post_types = polyglot_get_post_types();
+        $ph = implode(',', array_fill(0, count($post_types), '%s'));
+        $valid_locales = array_column(array_values(POLYGLOT_LOCALES), 'locale');
+
+        $shadows = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.ID, p.post_status, mid.meta_value AS master_id, loc.meta_value AS locale
+             FROM $wpdb->posts p
+             JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
+             LEFT JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
+             WHERE p.post_type IN ($ph) AND p.post_status NOT IN ('trash', 'auto-draft')",
+            ...$post_types
+        ));
+
+        $orphans = $bad_locale = $no_locale = $status_drift = 0;
+        foreach ($shadows as $s) {
+            $master = $s->master_id ? get_post((int) $s->master_id) : null;
+            if (! $master || 'trash' === $master->post_status) {
+                ++$orphans;
+
+                continue;
+            }
+            if (empty($s->locale)) {
+                ++$no_locale;
+            } elseif (! in_array($s->locale, $valid_locales, true)) {
+                ++$bad_locale;
+            }
+            if ($master->post_status !== $s->post_status) {
+                ++$status_drift;
+            }
+        }
+
+        return [
+            0 === $orphans
+                ? ['name' => 'Orphan shadows', 'status' => 'ok', 'detail' => 'none']
+                : ['name' => 'Orphan shadows', 'status' => 'fail', 'detail' => "$orphans shadow(s) point to a missing master"],
+            0 === $bad_locale + $no_locale
+                ? ['name' => 'Shadow locales', 'status' => 'ok', 'detail' => 'all valid']
+                : ['name' => 'Shadow locales', 'status' => 'fail', 'detail' => "$bad_locale invalid, $no_locale missing _locale"],
+            0 === $status_drift
+                ? ['name' => 'Status parity', 'status' => 'ok', 'detail' => 'shadows match their master']
+                : ['name' => 'Status parity', 'status' => 'warn', 'detail' => "$status_drift shadow(s) differ from master status"],
+        ];
+    }
+
+    /** No two published shadows compete for the same (master, locale) hreflang slot. */
+    private function doctor_check_hreflang(): array
+    {
+        global $wpdb;
+        $dupes = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM (
+                SELECT mid.meta_value AS m, loc.meta_value AS l
+                FROM $wpdb->postmeta mid
+                JOIN $wpdb->postmeta loc ON mid.post_id = loc.post_id AND loc.meta_key = '_locale'
+                JOIN $wpdb->posts p ON p.ID = mid.post_id AND p.post_status = 'publish'
+                WHERE mid.meta_key = '_master_id'
+                GROUP BY m, l HAVING COUNT(*) > 1
+            ) t"
+        );
+
+        return [[
+            'name' => 'hreflang uniqueness',
+            'status' => 0 === $dupes ? 'ok' : 'fail',
+            'detail' => 0 === $dupes ? 'one shadow per (master, locale)' : "$dupes (master, locale) pair(s) duplicated",
+        ]];
+    }
+
+    /** Exchange-rate option covers every target currency and is reasonably fresh. */
+    private function doctor_check_fx(): array
+    {
+        $targets = polyglot_fx_target_currencies();
+        if (empty($targets)) {
+            return [['name' => 'Exchange rates', 'status' => 'ok', 'detail' => 'no conversion needed (all locales use base currency)']];
+        }
+
+        $data = get_option(POLYGLOT_FX_OPTION, []);
+        if (! is_array($data) || empty($data['rates'])) {
+            return [['name' => 'Exchange rates', 'status' => 'fail', 'detail' => 'no rates stored — run `wp polyglot update-exchange-rates`']];
+        }
+
+        $missing = array_values(array_filter($targets, static fn ($c) => ! isset($data['rates'][$c])));
+        $rows = [$missing
+            ? ['name' => 'FX coverage', 'status' => 'fail', 'detail' => 'no rate for '.implode(', ', $missing)]
+            : ['name' => 'FX coverage', 'status' => 'ok', 'detail' => implode(', ', $targets).' covered']];
+
+        $ts = isset($data['updated_at']) ? strtotime((string) $data['updated_at']) : 0;
+        if (! $ts) {
+            $rows[] = ['name' => 'FX freshness', 'status' => 'warn', 'detail' => 'no updated_at timestamp'];
+        } else {
+            $age_h = (int) floor((time() - $ts) / 3600);
+            $rows[] = $age_h > 48
+                ? ['name' => 'FX freshness', 'status' => 'warn', 'detail' => "rates are {$age_h}h old (>48h)"]
+                : ['name' => 'FX freshness', 'status' => 'ok', 'detail' => "updated {$age_h}h ago"];
+        }
+
+        return $rows;
+    }
+
+    /** One HTTP probe per locale of the Google feed endpoint (domain routing end-to-end). */
+    private function doctor_check_endpoints(): array
+    {
+        if (function_exists('polyglot_feed_enabled') && ! polyglot_feed_enabled()) {
+            return [['name' => 'Feed endpoints', 'status' => 'ok', 'detail' => 'feed disabled (POLYGLOT_FEED)']];
+        }
+
+        $rows = [];
+        foreach (POLYGLOT_LOCALES as $authority => $cfg) {
+            $resp = wp_remote_get('http://'.$authority.'/polyglot-feed/google.xml', ['timeout' => 5, 'redirection' => 0]);
+            $name = 'Feed '.$cfg['locale'];
+            if (is_wp_error($resp)) {
+                $rows[] = ['name' => $name, 'status' => 'warn', 'detail' => 'unreachable ('.$resp->get_error_message().')'];
+
+                continue;
+            }
+            $code = (int) wp_remote_retrieve_response_code($resp);
+            $body = (string) wp_remote_retrieve_body($resp);
+            if (200 !== $code) {
+                $rows[] = ['name' => $name, 'status' => 'fail', 'detail' => "HTTP $code"];
+            } elseif (! str_contains($body, '<rss') && ! str_contains($body, '<?xml')) {
+                $rows[] = ['name' => $name, 'status' => 'fail', 'detail' => 'response is not XML'];
+            } else {
+                $rows[] = ['name' => $name, 'status' => 'ok', 'detail' => substr_count($body, '<item').' item(s)'];
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
      * Translate a taxonomy term.
      *
      * ## USAGE
