@@ -423,10 +423,13 @@ class Polyglot_CLI
     /**
      * Lint translations for structural drift and quality issues.
      *
-     * Per master/shadow pair: structural parity (matching counts of links,
-     * images, headings, shortcodes, placeholders) is a hard failure; residual
-     * untranslated French, an anomalous length ratio, and a stale src_hash are
-     * warnings. Exits non-zero only on a parity failure.
+     * Per master/shadow pair it reports the *specific* drift: the links the
+     * shadow is missing (after resolving localized slugs) or has in excess, any
+     * missing shortcodes/placeholders (a hard failure — broken tool/format
+     * string), image/heading count drift, residual untranslated French, a
+     * length-ratio anomaly and a stale src_hash. `--format=json` carries the
+     * exact `missing`/`extra` lists per finding. Exits non-zero only on a
+     * failure.
      *
      * ## USAGE
      *
@@ -453,7 +456,8 @@ class Polyglot_CLI
         $findings = $this->run_lint($assoc_args['locale'] ?? null);
         $fails = count(array_filter($findings, static fn ($f) => 'fail' === $f['status']));
         $warns = count($findings) - $fails;
-        $summary = sprintf('lint: %d failure(s), %d warning(s).', $fails, $warns);
+        $shadows = count(array_unique(array_map(static fn ($f) => $f['id'], $findings)));
+        $summary = sprintf('lint: %d failure(s), %d warning(s) across %d shadow(s).', $fails, $warns, $shadows);
 
         if ('json' === ($assoc_args['format'] ?? 'table')) {
             WP_CLI::line(json_encode(
@@ -469,17 +473,26 @@ class Polyglot_CLI
             return;
         }
 
-        $symbols = ['fail' => '✗', 'warn' => '!'];
+        // Grouped, Pail-style: a header per shadow, then one indented row per
+        // issue with the specific drifting items listed beneath it.
+        $by_post = [];
         foreach ($findings as $f) {
-            WP_CLI::line(sprintf(
-                '  %s  [%s] %-11s #%d — %s: %s',
-                $symbols[$f['status']],
-                $f['locale'],
-                $f['type'],
-                $f['id'],
-                $f['title'],
-                $f['detail']
-            ));
+            $by_post[$f['id']][] = $f;
+        }
+        foreach ($by_post as $items) {
+            $head = $items[0];
+            WP_CLI::line('');
+            WP_CLI::line(WP_CLI::colorize("%c{$head['locale']}%n  %y#{$head['id']}%n  ".$head['title']));
+            foreach ($items as $f) {
+                $mark = 'fail' === $f['status'] ? '%r✗%n' : '%y!%n';
+                WP_CLI::line(WP_CLI::colorize(sprintf('  %s %s  %s', $mark, str_pad($f['type'], 12), $f['detail'])));
+                if (! empty($f['missing'])) {
+                    WP_CLI::line(WP_CLI::colorize('      %rmissing%n  '.implode(', ', $f['missing'])));
+                }
+                if (! empty($f['extra'])) {
+                    WP_CLI::line(WP_CLI::colorize('      %yextra%n    '.implode(', ', $f['extra'])));
+                }
+            }
         }
         WP_CLI::line('');
         if ($fails > 0) {
@@ -489,9 +502,10 @@ class Polyglot_CLI
     }
 
     /**
-     * Compare each shadow to its master and collect lint findings.
+     * Compare each shadow to its master and collect lint findings. Link,
+     * shortcode and placeholder findings carry explicit `missing`/`extra` lists.
      *
-     * @return array<int, array{locale:string, id:int, title:string, type:string, status:string, detail:string}>
+     * @return array<int, array{locale:string, id:int, title:string, type:string, status:string, detail:string, missing?:string[], extra?:string[]}>
      */
     private function run_lint(?string $filter_locale): array
     {
@@ -516,55 +530,60 @@ class Polyglot_CLI
             ...$params
         ));
 
+        $slug_map = $this->lint_build_slug_map(); // [locale => [fr_slug => shadow_slug]]
+
         $findings = [];
         foreach ($shadows as $s) {
             $master = get_post((int) $s->master_id);
             if (! $master) {
                 continue; // orphan — that's doctor's department, not lint's
             }
+            $mc = (string) $master->post_content;
+            $sc = (string) $s->post_content;
+            $locale = (string) $s->locale;
 
-            // Structural parity. Both sides are counted identically, so regex
-            // noise cancels and only real drift surfaces. A missing shortcode
-            // (broken interactive tool) or placeholder (broken format string) is
-            // a hard failure; link/image/heading drift is legitimate often
-            // enough (related-article blocks, locale CTAs) to be a warning.
-            $m = $this->lint_metrics((string) $master->post_content);
-            $sm = $this->lint_metrics((string) $s->post_content);
-            $fail_diffs = [];
-            $warn_diffs = [];
-            foreach (['shortcodes' => 'fail', 'placeholders' => 'fail', 'links' => 'warn', 'images' => 'warn', 'headings' => 'warn'] as $k => $sev) {
-                if ($m[$k] !== $sm[$k]) {
-                    $diff = "$k {$m[$k]}\u{2260}{$sm[$k]}";
-                    if ('fail' === $sev) {
-                        $fail_diffs[] = $diff;
-                    } else {
-                        $warn_diffs[] = $diff;
-                    }
+            // Links — resolve each master target through its locale's slug map,
+            // then set-diff against the shadow's actual targets. Localized-slug
+            // pairs and repeated links cancel; only genuinely missing (or
+            // surplus) targets surface, named explicitly. Often-legitimate, so
+            // a warning.
+            $map = $slug_map[$locale] ?? [];
+            $expected = array_map(static fn ($p) => $map[$p] ?? $p, $this->lint_link_targets($mc));
+            [$miss, $extra] = $this->lint_set_diff($expected, $this->lint_link_targets($sc));
+            if ($miss || $extra) {
+                $findings[] = $this->lint_row($s, 'links', 'warn', $this->lint_drift_detail($miss, $extra), $miss, $extra);
+            }
+
+            // Shortcodes / placeholders — a dropped interactive tool or format
+            // token is a hard failure. Names listed so the fix is obvious.
+            [$miss, $extra] = $this->lint_set_diff($this->lint_shortcode_tags($mc), $this->lint_shortcode_tags($sc));
+            if ($miss || $extra) {
+                $findings[] = $this->lint_row($s, 'shortcodes', 'fail', $this->lint_drift_detail($miss, $extra), $miss, $extra);
+            }
+            [$miss, $extra] = $this->lint_set_diff($this->lint_placeholders($mc), $this->lint_placeholders($sc));
+            if ($miss || $extra) {
+                $findings[] = $this->lint_row($s, 'placeholders', 'fail', $this->lint_drift_detail($miss, $extra), $miss, $extra);
+            }
+
+            // Image / heading counts — no per-item identity, so report the delta.
+            foreach (['images' => '/<img\b/i', 'headings' => '/<h[1-6]\b/i'] as $type => $regex) {
+                $mn = (int) preg_match_all($regex, $mc);
+                $sn = (int) preg_match_all($regex, $sc);
+                if ($mn !== $sn) {
+                    $findings[] = $this->lint_row($s, $type, 'warn', "master $mn, shadow $sn");
                 }
-            }
-            if ($fail_diffs) {
-                $findings[] = $this->lint_row($s, 'parity', 'fail', implode(', ', $fail_diffs));
-            }
-            if ($warn_diffs) {
-                $findings[] = $this->lint_row($s, 'parity', 'warn', implode(', ', $warn_diffs));
             }
 
             // Residual untranslated French in a non-master shadow.
-            if ($s->locale !== $master_locale) {
-                $fr = $this->lint_french_hits((string) $s->post_content);
-                if ($fr >= 6) {
-                    $findings[] = $this->lint_row($s, 'residual-fr', 'warn', "$fr French function-word(s) — may be untranslated");
-                }
+            if ($locale !== $master_locale && ($fr = $this->lint_french_hits($sc)) >= 6) {
+                $findings[] = $this->lint_row($s, 'residual-fr', 'warn', "$fr French function-word(s) — may be untranslated");
             }
 
             // Anomalous length ratio (de-tagged), skipping near-empty masters.
-            $ml = strlen(trim(wp_strip_all_tags((string) $master->post_content)));
-            $sl = strlen(trim(wp_strip_all_tags((string) $s->post_content)));
-            if ($ml >= 200) {
-                $ratio = $sl / $ml;
-                if ($ratio < 0.5 || $ratio > 2.0) {
-                    $findings[] = $this->lint_row($s, 'length', 'warn', sprintf('length ratio %.2f vs master', $ratio));
-                }
+            $ml = strlen(trim(wp_strip_all_tags($mc)));
+            $sl = strlen(trim(wp_strip_all_tags($sc)));
+            if ($ml >= 200 && ($sl / $ml < 0.5 || $sl / $ml > 2.0)) {
+                $findings[] = $this->lint_row($s, 'length', 'warn', sprintf('length ratio %.2f vs master', $sl / $ml));
             }
 
             // Stale translation — master changed since this shadow was produced.
@@ -577,10 +596,15 @@ class Polyglot_CLI
         return $findings;
     }
 
-    /** @return array{locale:string, id:int, title:string, type:string, status:string, detail:string} */
-    private function lint_row(object $s, string $type, string $status, string $detail): array
+    /**
+     * @param string[] $missing
+     * @param string[] $extra
+     *
+     * @return array{locale:string, id:int, title:string, type:string, status:string, detail:string, missing?:string[], extra?:string[]}
+     */
+    private function lint_row(object $s, string $type, string $status, string $detail, array $missing = [], array $extra = []): array
     {
-        return [
+        $row = [
             'locale' => (string) $s->locale,
             'id' => (int) $s->ID,
             'title' => (string) $s->post_title,
@@ -588,18 +612,116 @@ class Polyglot_CLI
             'status' => $status,
             'detail' => $detail,
         ];
+        if ($missing) {
+            $row['missing'] = array_values($missing);
+        }
+        if ($extra) {
+            $row['extra'] = array_values($extra);
+        }
+
+        return $row;
     }
 
-    /** Count structural elements that a faithful translation must preserve. */
-    private function lint_metrics(string $html): array
+    /** "N missing, M extra" — the short headline for a set-diff finding. */
+    private function lint_drift_detail(array $missing, array $extra): string
     {
-        return [
-            'links' => (int) preg_match_all('/<a\b[^>]*\bhref=/i', $html),
-            'images' => (int) preg_match_all('/<img\b/i', $html),
-            'headings' => (int) preg_match_all('/<h[1-6]\b/i', $html),
-            'shortcodes' => (int) preg_match_all('/\[[a-z][a-z0-9_-]*/i', $html),
-            'placeholders' => (int) preg_match_all('/%[sd]|\{[a-z0-9_]+\}/i', $html),
-        ];
+        $parts = [];
+        if ($missing) {
+            $parts[] = count($missing).' missing';
+        }
+        if ($extra) {
+            $parts[] = count($extra).' extra';
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /** Unique set difference both ways: items only in $expected, items only in $actual. */
+    private function lint_set_diff(array $expected, array $actual): array
+    {
+        $e = array_unique($expected);
+        $a = array_unique($actual);
+
+        return [array_values(array_diff($e, $a)), array_values(array_diff($a, $e))];
+    }
+
+    /** Internal (relative) link target paths in $html — no anchors, external or asset URLs. */
+    private function lint_link_targets(string $html): array
+    {
+        preg_match_all('/<a\b[^>]*\bhref=["\']([^"\']+)["\']/i', $html, $m);
+        $out = [];
+        foreach ($m[1] as $url) {
+            if (preg_match('~^(?:mailto:|tel:|#|https?://)~i', $url)) {
+                continue;
+            }
+            $path = trim((string) parse_url($url, \PHP_URL_PATH), '/');
+            if ('' !== $path && ! str_contains($path, 'wp-content')) {
+                $out[] = $path;
+            }
+        }
+
+        return $out;
+    }
+
+    /** Shortcode tag names in $html, bracketed for display (e.g. [wr_calcul_charge]). */
+    private function lint_shortcode_tags(string $html): array
+    {
+        preg_match_all('/\[([a-z][a-z0-9_-]*)/i', $html, $m);
+
+        return array_map(static fn ($t) => '['.strtolower($t).']', $m[1]);
+    }
+
+    /** printf-style and {token} placeholders in $html. */
+    private function lint_placeholders(string $html): array
+    {
+        preg_match_all('/%[sd]|\{[a-z0-9_]+\}/i', $html, $m);
+
+        return $m[0];
+    }
+
+    /**
+     * Map FR master slug → shadow slug, per locale, so master link targets can
+     * be resolved to their localized equivalents (mirrors check-links).
+     *
+     * @return array<string, array<string, string>>
+     */
+    private function lint_build_slug_map(): array
+    {
+        global $wpdb;
+        $post_types = polyglot_get_post_types();
+        $ph = implode(',', array_fill(0, count($post_types), '%s'));
+
+        $masters = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.ID, p.post_name, COALESCE(cp.meta_value, '') cp
+             FROM $wpdb->posts p
+             LEFT JOIN $wpdb->postmeta cp ON p.ID = cp.post_id AND cp.meta_key = 'custom_permalink'
+             WHERE p.post_type IN ($ph) AND p.post_status = 'publish'
+               AND p.ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')",
+            ...$post_types
+        ));
+        $master_slug = [];
+        foreach ($masters as $m) {
+            $master_slug[(int) $m->ID] = trim($m->cp ?: $m->post_name, '/');
+        }
+
+        $shadows = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.post_name, COALESCE(cp.meta_value, '') cp, loc.meta_value locale, mid.meta_value master_id
+             FROM $wpdb->posts p
+             JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
+             JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
+             LEFT JOIN $wpdb->postmeta cp ON p.ID = cp.post_id AND cp.meta_key = 'custom_permalink'
+             WHERE p.post_type IN ($ph) AND p.post_status = 'publish'",
+            ...$post_types
+        ));
+        $map = [];
+        foreach ($shadows as $s) {
+            $fr = $master_slug[(int) $s->master_id] ?? null;
+            if ($fr) {
+                $map[$s->locale][$fr] = trim($s->cp ?: $s->post_name, '/');
+            }
+        }
+
+        return $map;
     }
 
     /** Heuristic count of distinctly-French function words left in shadow text. */

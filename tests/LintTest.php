@@ -50,19 +50,20 @@ class LintTest extends WP_UnitTestCase
     {
         $this->make_pair(
             '<p><a href="/a">x</a> [breadcrumb]</p>',
-            '<p><a href="/b">y</a> [breadcrumb]</p>'
+            '<p><a href="/a">y</a> [breadcrumb]</p>'
         );
 
         $this->assertSame([], $this->findings());
     }
 
-    public function test_missing_shortcode_is_a_failure(): void
+    public function test_missing_shortcode_is_a_failure_listing_the_tag(): void
     {
         $this->make_pair('<p>[wr_calcul_charge]</p>', '<p>tool gone</p>');
 
         $fails = array_values(array_filter($this->findings(), static fn ($f) => 'fail' === $f['status']));
         $this->assertNotEmpty($fails);
-        $this->assertSame('parity', $fails[0]['type']);
+        $this->assertSame('shortcodes', $fails[0]['type']);
+        $this->assertContains('[wr_calcul_charge]', $fails[0]['missing']);
     }
 
     public function test_missing_placeholder_is_a_failure(): void
@@ -70,6 +71,44 @@ class LintTest extends WP_UnitTestCase
         $this->make_pair('<p>Total %s due</p>', '<p>Total due</p>');
 
         $this->assertContains('fail', array_column($this->findings(), 'status'));
+    }
+
+    public function test_localized_link_is_resolved_not_flagged(): void
+    {
+        // A target page that exists in both locales with different slugs.
+        $tmaster = self::factory()->post->create([
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'post_title' => 'Contact',
+            'post_name' => 'contact',
+        ]);
+        update_post_meta($tmaster, 'custom_permalink', 'contact');
+
+        $GLOBALS['polyglot_pending_locale'] = 'en_IE';
+        $tshadow = self::factory()->post->create([
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'post_title' => 'Contact Us',
+            'post_name' => 'contact-us',
+        ]);
+        unset($GLOBALS['polyglot_pending_locale']);
+        update_post_meta($tshadow, '_master_id', $tmaster);
+        update_post_meta($tshadow, '_locale', 'en_IE');
+        update_post_meta($tshadow, 'custom_permalink', 'contact-us');
+
+        // Content master links the FR slug; its shadow links the localized one.
+        $this->make_pair('<p><a href="/contact">x</a></p>', '<p><a href="/contact-us">x</a></p>');
+
+        $this->assertNotContains('links', array_column($this->findings(), 'type'));
+    }
+
+    public function test_missing_link_lists_the_specific_target(): void
+    {
+        $this->make_pair('<p><a href="/cotation-escalade">x</a></p>', '<p>no link</p>');
+
+        $links = array_values(array_filter($this->findings(), static fn ($f) => 'links' === $f['type']));
+        $this->assertNotEmpty($links);
+        $this->assertContains('cotation-escalade', $links[0]['missing']);
     }
 
     public function test_link_drift_is_a_warning_not_a_failure(): void
