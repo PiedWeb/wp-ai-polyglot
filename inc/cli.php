@@ -254,6 +254,16 @@ class Polyglot_CLI
         return $checks;
     }
 
+    /** Build a check row, picking the ok or the failing status/detail by a boolean. */
+    private function doctor_row(string $name, bool $ok, string $ok_detail, string $bad_detail, string $bad_status = 'fail'): array
+    {
+        return [
+            'name' => $name,
+            'status' => $ok ? 'ok' : $bad_status,
+            'detail' => $ok ? $ok_detail : $bad_detail,
+        ];
+    }
+
     /** Exactly one master and every locale entry carries the required keys. */
     private function doctor_check_locales(): array
     {
@@ -270,9 +280,12 @@ class Polyglot_CLI
             }
         }
 
-        $rows = [1 === $masters
-            ? ['name' => 'Locale config', 'status' => 'ok', 'detail' => count(POLYGLOT_LOCALES).' locales, 1 master']
-            : ['name' => 'Locale config', 'status' => 'fail', 'detail' => "expected exactly 1 master, found $masters"]];
+        $rows = [$this->doctor_row(
+            'Locale config',
+            1 === $masters,
+            count(POLYGLOT_LOCALES).' locales, 1 master',
+            "expected exactly 1 master, found $masters"
+        )];
         if ($missing) {
             $rows[] = ['name' => 'Locale fields', 'status' => 'fail', 'detail' => 'missing: '.implode(', ', $missing)];
         }
@@ -316,15 +329,9 @@ class Polyglot_CLI
         }
 
         return [
-            0 === $orphans
-                ? ['name' => 'Orphan shadows', 'status' => 'ok', 'detail' => 'none']
-                : ['name' => 'Orphan shadows', 'status' => 'fail', 'detail' => "$orphans shadow(s) point to a missing master"],
-            0 === $bad_locale + $no_locale
-                ? ['name' => 'Shadow locales', 'status' => 'ok', 'detail' => 'all valid']
-                : ['name' => 'Shadow locales', 'status' => 'fail', 'detail' => "$bad_locale invalid, $no_locale missing _locale"],
-            0 === $status_drift
-                ? ['name' => 'Status parity', 'status' => 'ok', 'detail' => 'shadows match their master']
-                : ['name' => 'Status parity', 'status' => 'warn', 'detail' => "$status_drift shadow(s) differ from master status"],
+            $this->doctor_row('Orphan shadows', 0 === $orphans, 'none', "$orphans shadow(s) point to a missing master"),
+            $this->doctor_row('Shadow locales', 0 === $bad_locale + $no_locale, 'all valid', "$bad_locale invalid, $no_locale missing _locale"),
+            $this->doctor_row('Status parity', 0 === $status_drift, 'shadows match their master', "$status_drift shadow(s) differ from master status", 'warn'),
         ];
     }
 
@@ -343,11 +350,12 @@ class Polyglot_CLI
             ) t"
         );
 
-        return [[
-            'name' => 'hreflang uniqueness',
-            'status' => 0 === $dupes ? 'ok' : 'fail',
-            'detail' => 0 === $dupes ? 'one shadow per (master, locale)' : "$dupes (master, locale) pair(s) duplicated",
-        ]];
+        return [$this->doctor_row(
+            'hreflang uniqueness',
+            0 === $dupes,
+            'one shadow per (master, locale)',
+            "$dupes (master, locale) pair(s) duplicated"
+        )];
     }
 
     /** Exchange-rate option covers every target currency and is reasonably fresh. */
@@ -364,18 +372,19 @@ class Polyglot_CLI
         }
 
         $missing = array_values(array_filter($targets, static fn ($c) => ! isset($data['rates'][$c])));
-        $rows = [$missing
-            ? ['name' => 'FX coverage', 'status' => 'fail', 'detail' => 'no rate for '.implode(', ', $missing)]
-            : ['name' => 'FX coverage', 'status' => 'ok', 'detail' => implode(', ', $targets).' covered']];
+        $rows = [$this->doctor_row(
+            'FX coverage',
+            empty($missing),
+            implode(', ', $targets).' covered',
+            'no rate for '.implode(', ', $missing)
+        )];
 
         $ts = isset($data['updated_at']) ? strtotime((string) $data['updated_at']) : 0;
         if (! $ts) {
             $rows[] = ['name' => 'FX freshness', 'status' => 'warn', 'detail' => 'no updated_at timestamp'];
         } else {
             $age_h = (int) floor((time() - $ts) / 3600);
-            $rows[] = $age_h > 48
-                ? ['name' => 'FX freshness', 'status' => 'warn', 'detail' => "rates are {$age_h}h old (>48h)"]
-                : ['name' => 'FX freshness', 'status' => 'ok', 'detail' => "updated {$age_h}h ago"];
+            $rows[] = $this->doctor_row('FX freshness', $age_h <= 48, "updated {$age_h}h ago", "rates are {$age_h}h old (>48h)", 'warn');
         }
 
         return $rows;
