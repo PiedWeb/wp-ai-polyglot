@@ -74,7 +74,7 @@ function polyglot_fx_target_currencies(): array
         }
     }
 
-    return array_keys($set);
+    return apply_filters('polyglot_fx_target_currencies', array_keys($set));
 }
 
 /**

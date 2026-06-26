@@ -148,4 +148,58 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertNotEmpty($feed);
         $this->assertSame('warn', $feed[0]['status']);
     }
+
+    /**
+     * Run doctor_check_fx() with a forced non-base target currency and return
+     * its rows indexed by name. The test config is all-EUR, so the filter is
+     * what lets the failure/freshness branches be exercised at all.
+     *
+     * @return array<string, array{name:string, status:string, detail:string}>
+     */
+    private function fx_checks(callable $currencies): array
+    {
+        add_filter('polyglot_fx_target_currencies', $currencies);
+        try {
+            $method = new ReflectionMethod(Polyglot_CLI::class, 'doctor_check_fx');
+            $method->setAccessible(true);
+            $rows = $method->invoke($this->cli);
+        } finally {
+            remove_filter('polyglot_fx_target_currencies', $currencies);
+        }
+
+        $by_name = [];
+        foreach ($rows as $row) {
+            $by_name[$row['name']] = $row;
+        }
+
+        return $by_name;
+    }
+
+    public function test_fx_fails_when_no_rates_stored(): void
+    {
+        delete_option(POLYGLOT_FX_OPTION);
+
+        $fx = $this->fx_checks(static fn () => ['DKK']);
+        $this->assertSame('fail', $fx['Exchange rates']['status']);
+    }
+
+    public function test_fx_coverage_fails_when_currency_missing(): void
+    {
+        update_option(POLYGLOT_FX_OPTION, ['rates' => ['EUR' => 1.0], 'updated_at' => gmdate('c')]);
+
+        $fx = $this->fx_checks(static fn () => ['DKK']);
+        $this->assertSame('fail', $fx['FX coverage']['status']);
+    }
+
+    public function test_fx_freshness_warns_when_stale(): void
+    {
+        update_option(POLYGLOT_FX_OPTION, [
+            'rates' => ['EUR' => 1.0, 'DKK' => 7.46],
+            'updated_at' => gmdate('c', time() - 3 * DAY_IN_SECONDS),
+        ]);
+
+        $fx = $this->fx_checks(static fn () => ['DKK']);
+        $this->assertSame('ok', $fx['FX coverage']['status']);
+        $this->assertSame('warn', $fx['FX freshness']['status']);
+    }
 }
