@@ -115,7 +115,7 @@ Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/li
 = 2.3.0 =
 * `check-links --fix` now runs automatically after `import` and `translate` (opt out with `--no-fix-links`)
 * New `wp polyglot doctor` — one-screen health-check: locale config, master/shadow drift (orphans, status parity), hreflang uniqueness, exchange-rate coverage/freshness, and per-locale feed endpoints (`--quick` to skip HTTP). `--format=json`, non-zero exit on failure.
-* New `wp polyglot lint` — translation QA per master/shadow: structural parity (missing shortcodes/placeholders fail; link/image/heading drift warns), residual untranslated source text, length-ratio anomalies, stale `src_hash`. `--locale`, `--format=json`.
+* New `wp polyglot lint` — translation QA per master/shadow: names the exact links a shadow is missing (resolving localized slugs) or has in excess, plus missing shortcodes/placeholders (fail), image/heading/length drift, residual French and stale `src_hash` (warn). Grouped table view; `--format=json` carries the `missing`/`extra` lists per finding. `--locale` to scope.
 * Admin: the translations metabox is now a cross-locale switcher shown on shadow edit screens too (jump to the master or any sibling locale in one click); the language-column badge links to the master.
 
 = 2.2.0 =
