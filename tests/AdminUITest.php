@@ -177,4 +177,31 @@ class AdminUITest extends WP_UnitTestCase
         $this->assertStringContainsString('1/2', $output);
         $this->assertStringContainsString('✗', $output);
     }
+
+    public function testSwitcherRendersOnShadowWithCurrentHighlight(): void
+    {
+        ob_start();
+        polyglot_render_translation_metabox(get_post($this->shadow_en));
+        $output = ob_get_clean();
+
+        // The shadow being edited is highlighted (not a link), the master and
+        // the sibling ES locale are reachable from it.
+        $this->assertStringContainsString('editing', $output);
+        $this->assertStringContainsString('border-left:3px solid #2271b1', $output);
+        $this->assertStringContainsString('(master)', $output);
+        $this->assertStringContainsString('Español', $output);
+    }
+
+    public function testShadowBadgeLinksToMaster(): void
+    {
+        wp_set_current_user(self::factory()->user->create(['role' => 'administrator']));
+
+        ob_start();
+        polyglot_render_langue_column('polyglot_langue', $this->shadow_en);
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('<a href=', $output);
+        $this->assertStringContainsString('Edit master', $output);
+        $this->assertStringContainsString('polyglot-shadow', $output);
+    }
 }

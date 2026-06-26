@@ -88,6 +88,9 @@ function polyglot_admin_locale_dropdown($post_type)
     echo '</select>';
 }
 
+// The dropdown is applied to the listing query by polyglot_admin_filter_shadows()
+// (inc/routing.php), invoked from the pre_get_posts handler there.
+
 // ============================================================
 // ADMIN UI — "Langue" column in listings
 // ============================================================
@@ -130,9 +133,13 @@ function polyglot_render_langue_column($column, $post_id)
             }
         }
         $mode = get_post_meta($post_id, '_translation_mode', true);
-        echo '<span class="polyglot-badge polyglot-shadow">'
-            .esc_html($hreflang)
-            .'</span>';
+        $master_link = get_edit_post_link((int) $master_id);
+        $badge = '<span class="polyglot-badge polyglot-shadow">'.esc_html($hreflang).'</span>';
+        if ($master_link) {
+            echo '<a href="'.esc_url($master_link).'" title="'.esc_attr__('Edit master', 'piedweb-ai-polyglot').'">'.$badge.'</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $badge is built from an escaped hreflang.
+        } else {
+            echo $badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $badge is built from an escaped hreflang.
+        }
         if ('manual' === $mode) {
             echo ' <span class="polyglot-badge polyglot-manual" title="'.esc_attr__('Manual translation', 'piedweb-ai-polyglot').'">✎</span>';
         }
@@ -203,7 +210,7 @@ function polyglot_admin_shadow_banner()
 }
 
 // ============================================================
-// ADMIN UI — Translation metabox on master edit screen
+// ADMIN UI — Cross-locale switcher metabox (master AND shadows)
 // ============================================================
 
 add_action('add_meta_boxes', 'polyglot_register_translation_metabox');
@@ -215,11 +222,6 @@ function polyglot_register_translation_metabox()
         return;
     }
 
-    // Only show on masters (no _master_id)
-    if (get_post_meta($post->ID, '_master_id', true)) {
-        return;
-    }
-
     $post_type = get_post_type($post);
     if (! in_array($post_type, polyglot_get_post_types(), true)) {
         return;
@@ -227,60 +229,116 @@ function polyglot_register_translation_metabox()
 
     add_meta_box(
         'polyglot_translations',
-        __('Translations', 'piedweb-ai-polyglot'),
+        __('Polyglot — Translations', 'piedweb-ai-polyglot'),
         'polyglot_render_translation_metabox',
         $post_type,
         'side',
-        'default'
+        'high'
     );
 }
 
+/**
+ * Cross-locale switcher: the master plus every shadow locale, with the post
+ * currently being edited highlighted. Renders on masters and shadows alike so
+ * you can jump between any two locales (or back to the master) in one click.
+ */
 function polyglot_render_translation_metabox($post)
 {
     global $wpdb;
+
+    $current_id = (int) $post->ID;
+    $master_id = (int) get_post_meta($current_id, '_master_id', true);
+    if (! $master_id) {
+        $master_id = $current_id; // the post being edited is itself the master
+    }
+
     $shadow_locales = polyglot_get_shadow_locales();
     $total = count($shadow_locales);
 
-    // Fetch all shadows for this master
+    // All shadows of this master, keyed by locale.
     $shadows = $wpdb->get_results($wpdb->prepare(
         "SELECT pm1.post_id, pm2.meta_value AS locale
          FROM $wpdb->postmeta pm1
          JOIN $wpdb->postmeta pm2 ON pm1.post_id = pm2.post_id AND pm2.meta_key = '_locale'
          WHERE pm1.meta_key = '_master_id' AND pm1.meta_value = %d",
-        $post->ID
+        $master_id
     ));
-
     $shadow_map = [];
     foreach ($shadows as $s) {
         $shadow_map[$s->locale] = (int) $s->post_id;
     }
 
+    $master_hreflang = '';
+    foreach (POLYGLOT_LOCALES as $cfg) {
+        if (! empty($cfg['master'])) {
+            $master_hreflang = strtoupper($cfg['hreflang']);
+
+            break;
+        }
+    }
+
+    echo '<ul class="polyglot-switcher" style="margin:0;padding:0;list-style:none">';
+
+    // Master row.
+    polyglot_render_switcher_row(
+        trim($master_hreflang.' '.__('(master)', 'piedweb-ai-polyglot')),
+        get_edit_post_link($master_id),
+        $current_id === $master_id,
+        true,
+        false
+    );
+
+    // Shadow rows.
     $existing_count = 0;
-    echo '<ul style="margin:0;padding:0;list-style:none">';
     foreach ($shadow_locales as $locale) {
         $label = polyglot_locale_to_label($locale);
         if (isset($shadow_map[$locale])) {
             ++$existing_count;
             $sid = $shadow_map[$locale];
-            $mode = get_post_meta($sid, '_translation_mode', true);
-            $edit_link = get_edit_post_link($sid);
-            echo '<li style="padding:3px 0">';
-            echo '<span style="color:#46b450">✓</span> ';
-            echo esc_html($label).' — <a href="'.esc_url($edit_link).'">'.esc_html__('Edit', 'piedweb-ai-polyglot').'</a>';
-            if ('manual' === $mode) {
-                echo ' <span style="color:#f0ad4e" title="'.esc_attr__('Manual translation', 'piedweb-ai-polyglot').'">✎</span>';
-            }
-            echo '</li>';
+            polyglot_render_switcher_row(
+                $label,
+                get_edit_post_link($sid),
+                $sid === $current_id,
+                true,
+                'manual' === get_post_meta($sid, '_translation_mode', true)
+            );
         } else {
-            echo '<li style="padding:3px 0">';
-            echo '<span style="color:#999">✗</span> ';
-            echo '<span style="color:#999">'.esc_html($label).'</span>';
-            echo '</li>';
+            polyglot_render_switcher_row($label, null, false, false, false);
         }
     }
+
     echo '</ul>';
     /* translators: %1$d: number of existing translations, %2$d: total number of shadow locales */
     echo '<p style="margin:8px 0 0;color:#666"><strong>'.esc_html($existing_count).'/'.esc_html($total).'</strong> '.esc_html__('translations', 'piedweb-ai-polyglot').'</p>';
+}
+
+/**
+ * Render one row of the cross-locale switcher.
+ *
+ * @param string      $label   plain (unescaped) locale label
+ * @param string|null $link    edit link, or null when the translation is missing
+ * @param bool        $current whether this row is the post being edited
+ * @param bool        $exists  whether the translation exists
+ * @param bool        $manual  whether it is a manual (human-locked) translation
+ */
+function polyglot_render_switcher_row(string $label, ?string $link, bool $current, bool $exists, bool $manual): void
+{
+    $safe = esc_html($label);
+    $style = 'padding:3px 0'.($current ? ';font-weight:600;border-left:3px solid #2271b1;padding-left:6px;margin-left:-9px' : '');
+    echo '<li style="'.esc_attr($style).'">';
+
+    if ($current) {
+        echo '<span style="color:#2271b1">●</span> '.$safe.' — '.esc_html__('editing', 'piedweb-ai-polyglot');
+    } elseif ($exists) {
+        echo '<span style="color:#46b450">✓</span> '.$safe.' — <a href="'.esc_url((string) $link).'">'.esc_html__('Edit', 'piedweb-ai-polyglot').'</a>';
+        if ($manual) {
+            echo ' <span style="color:#f0ad4e" title="'.esc_attr__('Manual translation', 'piedweb-ai-polyglot').'">✎</span>';
+        }
+    } else {
+        echo '<span style="color:#999">✗</span> <span style="color:#999">'.$safe.'</span>';
+    }
+
+    echo '</li>';
 }
 
 // ============================================================
