@@ -101,4 +101,12 @@ class LintTest extends WP_UnitTestCase
 
         $this->assertContains('stale', array_column($this->findings(), 'type'));
     }
+
+    public function test_length_anomaly_is_a_warning(): void
+    {
+        // Master ~320 visible chars, shadow a handful → ratio well below 0.5.
+        $this->make_pair('<p>'.str_repeat('mot ', 80).'</p>', '<p>court</p>');
+
+        $this->assertContains('length', array_column($this->findings(), 'type'));
+    }
 }

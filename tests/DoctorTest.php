@@ -101,4 +101,51 @@ class DoctorTest extends WP_UnitTestCase
 
         $this->assertSame('fail', $this->checks()['hreflang uniqueness']['status']);
     }
+
+    /**
+     * Run the full (non-quick) checks with the HTTP layer mocked and return
+     * just the per-locale "Feed …" endpoint rows.
+     *
+     * @return array<int, array{name:string, status:string, detail:string}>
+     */
+    private function feed_checks(callable $http): array
+    {
+        add_filter('pre_http_request', $http);
+        try {
+            $method = new ReflectionMethod(Polyglot_CLI::class, 'run_doctor_checks');
+            $method->setAccessible(true);
+            $rows = $method->invoke($this->cli, false);
+        } finally {
+            remove_filter('pre_http_request', $http);
+        }
+
+        return array_values(array_filter($rows, static fn ($r) => str_starts_with($r['name'], 'Feed ')));
+    }
+
+    public function test_feed_endpoint_ok_on_200_xml(): void
+    {
+        $feed = $this->feed_checks(static fn () => [
+            'response' => ['code' => 200],
+            'body' => '<?xml version="1.0"?><rss><channel><item/></channel></rss>',
+        ]);
+
+        $this->assertNotEmpty($feed);
+        $this->assertSame('ok', $feed[0]['status']);
+    }
+
+    public function test_feed_endpoint_fails_on_non_200(): void
+    {
+        $feed = $this->feed_checks(static fn () => ['response' => ['code' => 404], 'body' => '']);
+
+        $this->assertNotEmpty($feed);
+        $this->assertSame('fail', $feed[0]['status']);
+    }
+
+    public function test_feed_endpoint_warns_when_unreachable(): void
+    {
+        $feed = $this->feed_checks(static fn () => new WP_Error('http_request_failed', 'connection refused'));
+
+        $this->assertNotEmpty($feed);
+        $this->assertSame('warn', $feed[0]['status']);
+    }
 }
