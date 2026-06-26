@@ -412,6 +412,207 @@ class Polyglot_CLI
     }
 
     /**
+     * Lint translations for structural drift and quality issues.
+     *
+     * Per master/shadow pair: structural parity (matching counts of links,
+     * images, headings, shortcodes, placeholders) is a hard failure; residual
+     * untranslated French, an anomalous length ratio, and a stale src_hash are
+     * warnings. Exits non-zero only on a parity failure.
+     *
+     * ## USAGE
+     *
+     *   wp polyglot lint                  # all shadows
+     *   wp polyglot lint --locale=de_DE   # one locale
+     *   wp polyglot lint --json
+     *
+     * ## OPTIONS
+     *
+     * [--locale=<locale>]
+     * : Limit to one shadow locale (default: all shadows).
+     *
+     * [--format=<format>]
+     * : Output format.
+     * ---
+     * default: table
+     * options:
+     *   - table
+     *   - json
+     * ---
+     */
+    public function lint($args, $assoc_args): void
+    {
+        $findings = $this->run_lint($assoc_args['locale'] ?? null);
+        $fails = count(array_filter($findings, static fn ($f) => 'fail' === $f['status']));
+        $warns = count($findings) - $fails;
+        $summary = sprintf('lint: %d failure(s), %d warning(s).', $fails, $warns);
+
+        if ('json' === ($assoc_args['format'] ?? 'table')) {
+            WP_CLI::line(json_encode(
+                ['pass' => 0 === $fails, 'summary' => $summary, 'findings' => $findings],
+                \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT
+            ));
+            WP_CLI::halt($fails > 0 ? 1 : 0);
+        }
+
+        if (empty($findings)) {
+            WP_CLI::success('lint: no issues.');
+
+            return;
+        }
+
+        $symbols = ['fail' => '✗', 'warn' => '!'];
+        foreach ($findings as $f) {
+            WP_CLI::line(sprintf(
+                '  %s  [%s] %-11s #%d — %s: %s',
+                $symbols[$f['status']],
+                $f['locale'],
+                $f['type'],
+                $f['id'],
+                $f['title'],
+                $f['detail']
+            ));
+        }
+        WP_CLI::line('');
+        if ($fails > 0) {
+            WP_CLI::error($summary); // prints + exits 1
+        }
+        WP_CLI::success($summary);
+    }
+
+    /**
+     * Compare each shadow to its master and collect lint findings.
+     *
+     * @return array<int, array{locale:string, id:int, title:string, type:string, status:string, detail:string}>
+     */
+    private function run_lint(?string $filter_locale): array
+    {
+        global $wpdb;
+        $post_types = polyglot_get_post_types();
+        $ph = implode(',', array_fill(0, count($post_types), '%s'));
+        $master_locale = polyglot_get_master_locale();
+
+        $params = $post_types;
+        $locale_filter = '';
+        if ($filter_locale && $filter_locale !== $master_locale) {
+            $locale_filter = ' AND loc.meta_value = %s';
+            $params[] = $filter_locale;
+        }
+
+        $shadows = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.ID, p.post_title, p.post_content, loc.meta_value AS locale, mid.meta_value AS master_id
+             FROM $wpdb->posts p
+             JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
+             JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
+             WHERE p.post_type IN ($ph) AND p.post_status = 'publish'{$locale_filter}",
+            ...$params
+        ));
+
+        $findings = [];
+        foreach ($shadows as $s) {
+            $master = get_post((int) $s->master_id);
+            if (! $master) {
+                continue; // orphan — that's doctor's department, not lint's
+            }
+
+            // Structural parity. Both sides are counted identically, so regex
+            // noise cancels and only real drift surfaces. A missing shortcode
+            // (broken interactive tool) or placeholder (broken format string) is
+            // a hard failure; link/image/heading drift is legitimate often
+            // enough (related-article blocks, locale CTAs) to be a warning.
+            $m = $this->lint_metrics((string) $master->post_content);
+            $sm = $this->lint_metrics((string) $s->post_content);
+            $fail_diffs = [];
+            $warn_diffs = [];
+            foreach (['shortcodes' => 'fail', 'placeholders' => 'fail', 'links' => 'warn', 'images' => 'warn', 'headings' => 'warn'] as $k => $sev) {
+                if ($m[$k] !== $sm[$k]) {
+                    $diff = "$k {$m[$k]}\u{2260}{$sm[$k]}";
+                    if ('fail' === $sev) {
+                        $fail_diffs[] = $diff;
+                    } else {
+                        $warn_diffs[] = $diff;
+                    }
+                }
+            }
+            if ($fail_diffs) {
+                $findings[] = $this->lint_row($s, 'parity', 'fail', implode(', ', $fail_diffs));
+            }
+            if ($warn_diffs) {
+                $findings[] = $this->lint_row($s, 'parity', 'warn', implode(', ', $warn_diffs));
+            }
+
+            // Residual untranslated French in a non-master shadow.
+            if ($s->locale !== $master_locale) {
+                $fr = $this->lint_french_hits((string) $s->post_content);
+                if ($fr >= 6) {
+                    $findings[] = $this->lint_row($s, 'residual-fr', 'warn', "$fr French function-word(s) — may be untranslated");
+                }
+            }
+
+            // Anomalous length ratio (de-tagged), skipping near-empty masters.
+            $ml = strlen(trim(wp_strip_all_tags((string) $master->post_content)));
+            $sl = strlen(trim(wp_strip_all_tags((string) $s->post_content)));
+            if ($ml >= 200) {
+                $ratio = $sl / $ml;
+                if ($ratio < 0.5 || $ratio > 2.0) {
+                    $findings[] = $this->lint_row($s, 'length', 'warn', sprintf('length ratio %.2f vs master', $ratio));
+                }
+            }
+
+            // Stale translation — master changed since this shadow was produced.
+            $src = (string) get_post_meta((int) $s->ID, '_src_hash', true);
+            if ('' !== $src && $src !== polyglot_content_hash($master)) {
+                $findings[] = $this->lint_row($s, 'stale', 'warn', 'master changed since last translate (src_hash mismatch)');
+            }
+        }
+
+        return $findings;
+    }
+
+    /** @return array{locale:string, id:int, title:string, type:string, status:string, detail:string} */
+    private function lint_row(object $s, string $type, string $status, string $detail): array
+    {
+        return [
+            'locale' => (string) $s->locale,
+            'id' => (int) $s->ID,
+            'title' => (string) $s->post_title,
+            'type' => $type,
+            'status' => $status,
+            'detail' => $detail,
+        ];
+    }
+
+    /** Count structural elements that a faithful translation must preserve. */
+    private function lint_metrics(string $html): array
+    {
+        return [
+            'links' => (int) preg_match_all('/<a\b[^>]*\bhref=/i', $html),
+            'images' => (int) preg_match_all('/<img\b/i', $html),
+            'headings' => (int) preg_match_all('/<h[1-6]\b/i', $html),
+            'shortcodes' => (int) preg_match_all('/\[[a-z][a-z0-9_-]*/i', $html),
+            'placeholders' => (int) preg_match_all('/%[sd]|\{[a-z0-9_]+\}/i', $html),
+        ];
+    }
+
+    /** Heuristic count of distinctly-French function words left in shadow text. */
+    private function lint_french_hits(string $html): int
+    {
+        $text = ' '.strtolower(wp_strip_all_tags($html)).' ';
+        // Distinctly-French function words. Deliberately excludes forms that
+        // collide with the target locales (e.g. "mais" = "more" in Portuguese).
+        $words = [
+            'avec', 'pour', 'vous', 'nous', 'votre', 'notre', 'cette', 'aussi',
+            'ainsi', 'afin', 'depuis', 'lorsque', 'parce', 'donc',
+            'leur', 'leurs', 'dont', 'alors', 'sous',
+        ];
+        $count = 0;
+        foreach ($words as $w) {
+            $count += (int) preg_match_all('/\b'.$w.'\b/', $text);
+        }
+
+        return $count;
+    }
+
+    /**
      * Translate a taxonomy term.
      *
      * ## USAGE
