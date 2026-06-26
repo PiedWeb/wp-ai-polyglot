@@ -15,7 +15,7 @@ parameters:
 		-
 			message: '#^Cannot access property \$ID on mixed\.$#'
 			identifier: property.nonObject
-			count: 7
+			count: 6
 			path: inc/admin.php
 
 		-
@@ -57,7 +57,7 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 3
+			count: 6
 			path: inc/admin.php
 
 		-
@@ -255,7 +255,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$post_id of function get_post_meta expects int, mixed given\.$#'
 			identifier: argument.type
-			count: 11
+			count: 10
 			path: inc/admin.php
 
 		-
@@ -273,7 +273,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$string of function strtoupper expects string, bool\|string given\.$#'
 			identifier: argument.type
-			count: 5
+			count: 6
 			path: inc/admin.php
 
 		-
@@ -321,7 +321,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$url of function esc_url expects string, string\|null given\.$#'
 			identifier: argument.type
-			count: 2
+			count: 1
 			path: inc/admin.php
 
 		-
@@ -403,9 +403,27 @@ parameters:
 			path: inc/autoexport.php
 
 		-
+			message: '#^Access to an undefined property object\:\:\$ID\.$#'
+			identifier: property.notFound
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Access to an undefined property object\:\:\$post_title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: inc/cli.php
+
+		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 8
+			count: 12
 			path: inc/cli.php
 
 		-
@@ -477,7 +495,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''dry\-run'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
+			count: 2
 			path: inc/cli.php
 
 		-
@@ -499,6 +517,12 @@ parameters:
 			path: inc/cli.php
 
 		-
+			message: '#^Cannot access offset ''format'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: inc/cli.php
+
+		-
 			message: '#^Cannot access offset ''if\-match'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
@@ -507,7 +531,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''locale'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
+			count: 2
 			path: inc/cli.php
 
 		-
@@ -544,6 +568,12 @@ parameters:
 			message: '#^Cannot access offset ''product_base'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access offset ''quick'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
 			path: inc/cli.php
 
 		-
@@ -663,13 +693,13 @@ parameters:
 		-
 			message: '#^Cannot access offset string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
+			count: 2
 			path: inc/cli.php
 
 		-
 			message: '#^Cannot access property \$ID on mixed\.$#'
 			identifier: property.nonObject
-			count: 3
+			count: 5
 			path: inc/cli.php
 
 		-
@@ -727,6 +757,12 @@ parameters:
 			path: inc/cli.php
 
 		-
+			message: '#^Cannot access property \$cp on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: inc/cli.php
+
+		-
 			message: '#^Cannot access property \$custom_permalink on mixed\.$#'
 			identifier: property.nonObject
 			count: 2
@@ -735,13 +771,13 @@ parameters:
 		-
 			message: '#^Cannot access property \$locale on mixed\.$#'
 			identifier: property.nonObject
-			count: 4
+			count: 7
 			path: inc/cli.php
 
 		-
 			message: '#^Cannot access property \$master_id on mixed\.$#'
 			identifier: property.nonObject
-			count: 2
+			count: 6
 			path: inc/cli.php
 
 		-
@@ -759,7 +795,7 @@ parameters:
 		-
 			message: '#^Cannot access property \$post_content on mixed\.$#'
 			identifier: property.nonObject
-			count: 1
+			count: 2
 			path: inc/cli.php
 
 		-
@@ -771,7 +807,13 @@ parameters:
 		-
 			message: '#^Cannot access property \$post_name on mixed\.$#'
 			identifier: property.nonObject
-			count: 2
+			count: 4
+			path: inc/cli.php
+
+		-
+			message: '#^Cannot access property \$post_status on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
 			path: inc/cli.php
 
 		-
@@ -795,13 +837,13 @@ parameters:
 		-
 			message: '#^Cannot access property \$postmeta on mixed\.$#'
 			identifier: property.nonObject
-			count: 15
+			count: 26
 			path: inc/cli.php
 
 		-
 			message: '#^Cannot access property \$posts on mixed\.$#'
 			identifier: property.nonObject
-			count: 8
+			count: 13
 			path: inc/cli.php
 
 		-
@@ -831,19 +873,19 @@ parameters:
 		-
 			message: '#^Cannot call method get_results\(\) on mixed\.$#'
 			identifier: method.nonObject
-			count: 5
+			count: 9
 			path: inc/cli.php
 
 		-
 			message: '#^Cannot call method get_var\(\) on mixed\.$#'
 			identifier: method.nonObject
-			count: 6
+			count: 7
 			path: inc/cli.php
 
 		-
 			message: '#^Cannot call method prepare\(\) on mixed\.$#'
 			identifier: method.nonObject
-			count: 14
+			count: 18
 			path: inc/cli.php
 
 		-
@@ -861,13 +903,13 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 26
+			count: 33
 			path: inc/cli.php
 
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
-			count: 9
+			count: 15
 			path: inc/cli.php
 
 		-
@@ -926,6 +968,54 @@ parameters:
 
 		-
 			message: '#^Method Polyglot_CLI\:\:create_master\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:doctor\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:doctor\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:doctor_check_drift\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:doctor_check_endpoints\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:doctor_check_fx\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:doctor_check_hreflang\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:doctor_check_locales\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:doctor_row\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: inc/cli.php
@@ -1033,6 +1123,78 @@ parameters:
 			path: inc/cli.php
 
 		-
+			message: '#^Method Polyglot_CLI\:\:lint\(\) has parameter \$args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint\(\) has parameter \$assoc_args with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_build_slug_map\(\) should return array\<string, array\<string, string\>\> but returns array\<array\<string, string\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_drift_detail\(\) has parameter \$extra with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_drift_detail\(\) has parameter \$missing with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_link_targets\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_placeholders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_set_diff\(\) has parameter \$actual with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_set_diff\(\) has parameter \$expected with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_set_diff\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:lint_shortcode_tags\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:maybe_autofix_links\(\) has parameter \$assoc_args with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: inc/cli.php
+
+		-
 			message: '#^Method Polyglot_CLI\:\:push\(\) has parameter \$args with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
@@ -1041,6 +1203,12 @@ parameters:
 		-
 			message: '#^Method Polyglot_CLI\:\:push\(\) has parameter \$assoc_args with no type specified\.$#'
 			identifier: missingType.parameter
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Method Polyglot_CLI\:\:run_doctor_checks\(\) should return array\<int, array\{name\: string, status\: string, detail\: string\}\> but returns array\.$#'
+			identifier: return.type
 			count: 1
 			path: inc/cli.php
 
@@ -1213,9 +1381,21 @@ parameters:
 			path: inc/cli.php
 
 		-
+			message: '#^Parameter \#1 \$array of function array_diff expects an array of values castable to string, array given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
 			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_unique expects an array of values castable to string, array given\.$#'
+			identifier: argument.type
+			count: 2
 			path: inc/cli.php
 
 		-
@@ -1255,7 +1435,13 @@ parameters:
 			path: inc/cli.php
 
 		-
-			message: '#^Parameter \#1 \$filter_locale of method Polyglot_CLI\:\:check_links_rendered\(\) expects string\|null, mixed given\.$#'
+			message: '#^Parameter \#1 \$filter_locale of method Polyglot_CLI\:\:run_check_links\(\) expects string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$filter_locale of method Polyglot_CLI\:\:run_lint\(\) expects string\|null, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: inc/cli.php
@@ -1279,6 +1465,12 @@ parameters:
 			path: inc/cli.php
 
 		-
+			message: '#^Parameter \#1 \$locale of method Polyglot_CLI\:\:maybe_autofix_links\(\) expects string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: inc/cli.php
+
+		-
 			message: '#^Parameter \#1 \$locale of method Polyglot_CLI\:\:validate_shadow_locale\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 3
@@ -1293,7 +1485,13 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$message of static method WP_CLI\:\:line\(\) expects string, string\|false given\.$#'
 			identifier: argument.type
-			count: 4
+			count: 6
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#1 \$missing of method Polyglot_CLI\:\:lint_drift_detail\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 3
 			path: inc/cli.php
 
 		-
@@ -1375,6 +1573,12 @@ parameters:
 			path: inc/cli.php
 
 		-
+			message: '#^Parameter \#1 \$s of method Polyglot_CLI\:\:lint_row\(\) expects object, mixed given\.$#'
+			identifier: argument.type
+			count: 7
+			path: inc/cli.php
+
+		-
 			message: '#^Parameter \#1 \$str of function preg_quote expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1389,7 +1593,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
 			identifier: argument.type
-			count: 2
+			count: 4
 			path: inc/cli.php
 
 		-
@@ -1435,9 +1639,27 @@ parameters:
 			path: inc/cli.php
 
 		-
+			message: '#^Parameter \#2 \$arrays of function array_diff expects an array of values castable to string, array given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$assoc_args of method Polyglot_CLI\:\:maybe_autofix_links\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: inc/cli.php
+
+		-
 			message: '#^Parameter \#2 \$canonical of method Polyglot_CLI\:\:converge_flat_file\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#2 \$extra of method Polyglot_CLI\:\:lint_drift_detail\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 3
 			path: inc/cli.php
 
 		-
@@ -1510,6 +1732,18 @@ parameters:
 			message: '#^Parameter \#4 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
 			identifier: argument.type
 			count: 2
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#5 \$missing of method Polyglot_CLI\:\:lint_row\(\) expects array\<string\>, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: inc/cli.php
+
+		-
+			message: '#^Parameter \#6 \$extra of method Polyglot_CLI\:\:lint_row\(\) expects array\<string\>, mixed given\.$#'
+			identifier: argument.type
+			count: 3
 			path: inc/cli.php
 
 		-
@@ -1587,13 +1821,13 @@ parameters:
 		-
 			message: '#^Part \$wpdb\-\>postmeta \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
-			count: 15
+			count: 26
 			path: inc/cli.php
 
 		-
 			message: '#^Part \$wpdb\-\>posts \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
-			count: 8
+			count: 13
 			path: inc/cli.php
 
 		-
@@ -1605,7 +1839,7 @@ parameters:
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 11
+			count: 13
 			path: inc/cli.php
 
 		-
@@ -1719,12 +1953,6 @@ parameters:
 		-
 			message: '#^Function polyglot_fx_snapshot\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: inc/exchange-rates.php
-
-		-
-			message: '#^Function polyglot_fx_target_currencies\(\) should return array\<string\> but returns list\<int\|string\>\.$#'
-			identifier: return.type
 			count: 1
 			path: inc/exchange-rates.php
 

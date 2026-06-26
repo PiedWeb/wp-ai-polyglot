@@ -74,7 +74,10 @@ function polyglot_fx_target_currencies(): array
         }
     }
 
-    return apply_filters('polyglot_fx_target_currencies', array_keys($set));
+    /** @var string[] $currencies */
+    $currencies = apply_filters('polyglot_fx_target_currencies', array_keys($set));
+
+    return $currencies;
 }
 
 /**
