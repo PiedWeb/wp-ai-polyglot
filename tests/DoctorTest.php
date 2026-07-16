@@ -110,7 +110,10 @@ class DoctorTest extends WP_UnitTestCase
      */
     private function feed_checks(callable $http): array
     {
-        add_filter('pre_http_request', $http);
+        // 3 args: the probed URL is the third. Without it a mock can only see the
+        // response, never the request — which is how a hardcoded http:// scheme
+        // survived here unnoticed.
+        add_filter('pre_http_request', $http, 10, 3);
         try {
             $method = new ReflectionMethod(Polyglot_CLI::class, 'run_doctor_checks');
             $method->setAccessible(true);
@@ -120,6 +123,32 @@ class DoctorTest extends WP_UnitTestCase
         }
 
         return array_values(array_filter($rows, static fn ($r) => str_starts_with($r['name'], 'Feed ')));
+    }
+
+    /**
+     * The probe must use each locale's real scheme, not a hardcoded one.
+     *
+     * Regression: it forced http:// with redirection => 0, so on any site that
+     * redirects http→https (i.e. every production site) doctor reported its own
+     * 301 as a failure — 8 permanent "Feed … HTTP 301" rows on a healthy install,
+     * which is how a check stops being read. The mocked HTTP layer here never
+     * followed a redirect, so the existing tests couldn't see it.
+     */
+    public function test_feed_probe_uses_the_locale_scheme(): void
+    {
+        $urls = [];
+        $this->feed_checks(static function ($_pre, $_args, $url) use (&$urls) {
+            $urls[] = $url;
+
+            return ['response' => ['code' => 200], 'body' => '<?xml version="1.0"?><rss><channel><item/></channel></rss>'];
+        });
+
+        $this->assertNotEmpty($urls);
+        foreach ($urls as $url) {
+            $authority = wp_parse_url($url, \PHP_URL_HOST) ?? '';
+            $expected = str_starts_with(polyglot_authority_to_url($authority), 'https://') ? 'https' : 'http';
+            $this->assertSame($expected, wp_parse_url($url, \PHP_URL_SCHEME), "Wrong scheme probed for {$authority}: {$url}");
+        }
     }
 
     public function test_feed_endpoint_ok_on_200_xml(): void
