@@ -40,9 +40,27 @@ if (! defined('WP_ADMIN')) {
     define('WP_ADMIN', false);
 }
 
-$_wc_dir = dirname(__DIR__, 2) . '/woocommerce/woocommerce.php';
-if (! file_exists($_wc_dir)) {
-    echo "WooCommerce not found at {$_wc_dir}. Skipping WC suite.\n";
+// WooCommerce lives outside this repo, and where it sits depends on the checkout:
+// a plugin installed under wp-content/plugins/ finds it as a sibling, but a
+// standalone dev clone symlinked into a site does not. Hence the explicit override.
+$_wc_candidates = array_values(array_filter([
+    getenv('WC_PLUGIN_PATH') ?: null,
+    dirname(__DIR__, 2) . '/woocommerce/woocommerce.php',
+    defined('WP_PLUGIN_DIR') ? WP_PLUGIN_DIR . '/woocommerce/woocommerce.php' : null,
+]));
+
+$_wc_dir = null;
+foreach ($_wc_candidates as $_candidate) {
+    if (file_exists($_candidate)) {
+        $_wc_dir = $_candidate;
+
+        break;
+    }
+}
+
+if (null === $_wc_dir) {
+    echo "WooCommerce not found. Set WC_PLUGIN_PATH to its woocommerce.php. Tried:\n";
+    echo '  ' . implode("\n  ", $_wc_candidates) . "\n";
     exit(1);
 }
 

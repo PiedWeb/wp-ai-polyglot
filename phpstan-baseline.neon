@@ -2095,6 +2095,12 @@ parameters:
 			path: inc/frontend.php
 
 		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 2
+			path: inc/frontend.php
+
+		-
 			message: '#^Offset ''hreflang'' might not exist on array\|null\.$#'
 			identifier: offsetAccess.notFound
 			count: 1
@@ -2137,8 +2143,8 @@ parameters:
 			path: inc/frontend.php
 
 		-
-			message: '#^Right side of && is always true\.$#'
-			identifier: booleanAnd.rightAlwaysTrue
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
 			count: 1
 			path: inc/frontend.php
 

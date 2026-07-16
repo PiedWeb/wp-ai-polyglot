@@ -138,6 +138,42 @@ function polyglot_bar_i18n(): array
     ];
 }
 
+/**
+ * Signed WooCommerce session token for the cross-domain cart bridge, or '' when
+ * there is nothing to carry over.
+ *
+ * The token names one visitor's session, and the receiver
+ * (polyglot_restore_session_from_url) hands the cart to anyone presenting a valid
+ * signature within its 60s window. The bar renders on wp_body_open — every page —
+ * so under a full-page cache the token would be frozen into HTML served to
+ * everyone, and the next anonymous visitor clicking through would adopt the cart
+ * of whoever filled the cache.
+ *
+ * Emitting it only for a non-empty cart keeps the HTML identical for every other
+ * visitor (so pages stay cacheable), and DONOTCACHEPAGE keeps the rare
+ * token-bearing response out of the cache entirely.
+ */
+function polyglot_bar_session_arg(): string
+{
+    if (! function_exists('WC')) {
+        return '';
+    }
+
+    $wc = WC();
+    if (! $wc->session || ! $wc->cart || $wc->cart->is_empty()) {
+        return '';
+    }
+
+    if (! defined('DONOTCACHEPAGE')) {
+        define('DONOTCACHEPAGE', true);
+    }
+
+    $token = $wc->session->get_customer_id().'|'.(time() + 60);
+    $sig = hash_hmac('sha256', $token, wp_salt('auth'));
+
+    return urlencode($token.'|'.$sig);
+}
+
 function polyglot_language_switcher_bar(): void
 {
     if (! polyglot_bar_is_enabled()) {
@@ -148,6 +184,8 @@ function polyglot_language_switcher_bar(): void
     $current_hreflang = polyglot_get_current_entry()['hreflang'];
     $i18n = polyglot_bar_i18n();
     $paths = polyglot_get_locale_paths();
+
+    $session_arg = polyglot_bar_session_arg();
 
     $locales = [];
     foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -162,12 +200,8 @@ function polyglot_language_switcher_bar(): void
 
         $url = polyglot_authority_to_url($authority).$path;
 
-        if (function_exists('WC') && WC()->session) {
-            $session_key = WC()->session->get_customer_id();
-            $expires = time() + 60;
-            $token = $session_key.'|'.$expires;
-            $sig = hash_hmac('sha256', $token, wp_salt('auth'));
-            $url = add_query_arg('wc_session', urlencode($token.'|'.$sig), $url);
+        if ('' !== $session_arg) {
+            $url = add_query_arg('wc_session', $session_arg, $url);
         }
 
         $hl = $cfg['hreflang'];
