@@ -399,7 +399,11 @@ class Polyglot_CLI
 
         $rows = [];
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
-            $resp = wp_remote_get('http://'.$authority.'/polyglot-feed/google.xml', ['timeout' => 5, 'redirection' => 0]);
+            // Scheme per environment (https in prod, http on loopback). Hardcoding http://
+            // made every probe report the site's own http→https 301 as a failure, so the
+            // feed rows failed permanently and trained the reader to ignore doctor.
+            $url = polyglot_authority_to_url($authority).'/polyglot-feed/google.xml';
+            $resp = wp_remote_get($url, ['timeout' => 5, 'redirection' => 0]);
             $name = 'Feed '.$cfg['locale'];
             if (is_wp_error($resp)) {
                 $rows[] = ['name' => $name, 'status' => 'warn', 'detail' => 'unreachable ('.$resp->get_error_message().')'];
