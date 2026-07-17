@@ -317,4 +317,69 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringContainsString('[LOCALHOST]', $output);
         $this->assertStringContainsString('[fr_FR]', $output);
     }
+
+    /**
+     * Links must be fixable *before* a post goes live. Scoping the scan to
+     * 'publish' made the command answer "no mislocalized links found" on
+     * unpublished content — a false negative that shipped French slugs into
+     * translated posts.
+     */
+    public function test_scans_draft_and_scheduled_shadows(): void
+    {
+        foreach (['draft', 'future'] as $status) {
+            wp_update_post(['ID' => $this->en_page, 'post_status' => $status]);
+
+            ob_start();
+            $this->cli->check_links([], ['locale' => 'en_IE']);
+            $output = ob_get_clean();
+
+            $this->assertStringContainsString(
+                '[WRONG_SLUG]',
+                $output,
+                "A $status shadow must still be scanned for mislocalized links."
+            );
+            $this->assertStringContainsString('"/contact"', $output);
+        }
+    }
+
+    /**
+     * A draft shadow is also authoritative as a *target*: its slug has to feed
+     * the map, otherwise sibling shadows keep pointing at the French slug.
+     */
+    public function test_draft_shadow_slug_feeds_the_slug_map(): void
+    {
+        // The EN shadow of `poutres` is the only thing that can tell us
+        // /poutres must become /hangboards on the EN domain.
+        wp_update_post(['ID' => $this->en_product, 'post_status' => 'draft']);
+
+        // Another EN shadow still links to the French slug.
+        wp_update_post([
+            'ID' => $this->en_blog,
+            'post_content' => '<p><a href="/poutres">our hangboards</a></p>',
+        ]);
+
+        ob_start();
+        $this->cli->check_links([], ['locale' => 'en_IE', 'fix' => true]);
+        ob_get_clean();
+
+        $this->assertStringContainsString(
+            'href="/hangboards"',
+            get_post($this->en_blog)->post_content,
+            'A draft shadow must still provide its slug to the map so siblings get fixed.'
+        );
+    }
+
+    /**
+     * Trashed and auto-draft posts stay out of scope: they are not content.
+     */
+    public function test_ignores_trashed_shadows(): void
+    {
+        wp_update_post(['ID' => $this->en_page, 'post_status' => 'trash']);
+
+        ob_start();
+        $this->cli->check_links([], ['locale' => 'en_IE']);
+        $output = ob_get_clean();
+
+        $this->assertStringNotContainsString('"/contact"', $output);
+    }
 }

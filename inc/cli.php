@@ -525,12 +525,14 @@ class Polyglot_CLI
             $params[] = $filter_locale;
         }
 
+        // Lint drafts and scheduled posts too: translation QA is only useful
+        // *before* a post goes live. See the same note in run_check_links().
         $shadows = $wpdb->get_results($wpdb->prepare(
             "SELECT p.ID, p.post_title, p.post_content, loc.meta_value AS locale, mid.meta_value AS master_id
              FROM $wpdb->posts p
              JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
              JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
-             WHERE p.post_type IN ($ph) AND p.post_status = 'publish'{$locale_filter}",
+             WHERE p.post_type IN ($ph) AND p.post_status NOT IN ('trash', 'auto-draft'){$locale_filter}",
             ...$params
         ));
 
@@ -699,7 +701,7 @@ class Polyglot_CLI
             "SELECT p.ID, p.post_name, COALESCE(cp.meta_value, '') cp
              FROM $wpdb->posts p
              LEFT JOIN $wpdb->postmeta cp ON p.ID = cp.post_id AND cp.meta_key = 'custom_permalink'
-             WHERE p.post_type IN ($ph) AND p.post_status = 'publish'
+             WHERE p.post_type IN ($ph) AND p.post_status NOT IN ('trash', 'auto-draft')
                AND p.ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')",
             ...$post_types
         ));
@@ -714,7 +716,7 @@ class Polyglot_CLI
              JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
              JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
              LEFT JOIN $wpdb->postmeta cp ON p.ID = cp.post_id AND cp.meta_key = 'custom_permalink'
-             WHERE p.post_type IN ($ph) AND p.post_status = 'publish'",
+             WHERE p.post_type IN ($ph) AND p.post_status NOT IN ('trash', 'auto-draft')",
             ...$post_types
         ));
         $map = [];
@@ -2393,13 +2395,20 @@ class Polyglot_CLI
         // 2. Build slug map: $slug_map[$locale][$fr_slug] = $shadow_slug
         $placeholders = implode(',', array_fill(0, count($post_types), '%s'));
 
+        // Scan drafts and scheduled posts too, not just published ones: links have
+        // to be fixed *before* a post goes live, not after. Restricting this to
+        // 'publish' made the command silently report "no mislocalized links" on
+        // unpublished content — a false negative that shipped French slugs into
+        // translated posts. Same status scope as doctor's parity check.
+        $status_scope = "p.post_status NOT IN ('trash', 'auto-draft')";
+
         // All master posts (no _master_id meta)
         $masters_rows = $wpdb->get_results($wpdb->prepare(
             "SELECT p.ID, p.post_name,
                     COALESCE(pm.meta_value, '') AS custom_permalink
              FROM $wpdb->posts p
              LEFT JOIN $wpdb->postmeta pm ON p.ID = pm.post_id AND pm.meta_key = 'custom_permalink'
-             WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
+             WHERE p.post_type IN ($placeholders) AND $status_scope
              AND p.ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')",
             ...$post_types
         ));
@@ -2426,7 +2435,7 @@ class Polyglot_CLI
              JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
              JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
              LEFT JOIN $wpdb->postmeta cp ON p.ID = cp.post_id AND cp.meta_key = 'custom_permalink'
-             WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'",
+             WHERE p.post_type IN ($placeholders) AND $status_scope",
             ...$post_types
         ));
 
@@ -2470,7 +2479,7 @@ class Polyglot_CLI
                  FROM $wpdb->posts p
                  JOIN $wpdb->postmeta mid ON p.ID = mid.post_id AND mid.meta_key = '_master_id'
                  JOIN $wpdb->postmeta loc ON p.ID = loc.post_id AND loc.meta_key = '_locale'
-                 WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
+                 WHERE p.post_type IN ($placeholders) AND $status_scope
                  AND p.post_content != ''{$locale_filter}",
                 ...$params
             );
@@ -2480,7 +2489,7 @@ class Polyglot_CLI
             $queries[] = $wpdb->prepare(
                 "SELECT p.ID, p.post_content, p.post_title, %s AS locale
                  FROM $wpdb->posts p
-                 WHERE p.post_type IN ($placeholders) AND p.post_status = 'publish'
+                 WHERE p.post_type IN ($placeholders) AND $status_scope
                  AND p.post_content != ''
                  AND p.ID NOT IN (SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_master_id')",
                 $master_locale,
