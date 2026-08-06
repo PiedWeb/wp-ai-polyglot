@@ -289,7 +289,7 @@ function polyglot_feed_map_product(WC_Product $product): ?array
 
 function polyglot_feed_is_includable(WC_Product $product): bool
 {
-    if (in_array($product->get_catalog_visibility(), ['hidden', 'search'], true)) {
+    if (! polyglot_feed_offer_visible($product)) {
         return false;
     }
     if ('' === (string) $product->get_price()) {
@@ -308,7 +308,7 @@ function polyglot_feed_is_includable(WC_Product $product): bool
  */
 function polyglot_feed_map_variable(WC_Product $product): array
 {
-    if (in_array($product->get_catalog_visibility(), ['hidden', 'search'], true)) {
+    if (! polyglot_feed_offer_visible($product)) {
         return [];
     }
     if (apply_filters('polyglot_feed_exclude_product', false, $product)) {
@@ -556,7 +556,7 @@ function polyglot_feed_brand_identifier_fields(WC_Product $product): array
         $fields['g:brand'] = $brand;
     }
 
-    $ref = polyglot_feed_master_product($product) ?: $product;
+    $ref = polyglot_feed_offer_ref($product);
     $gtin = (string) ($ref->get_meta('_gtin', true) ?: $ref->get_meta('gtin', true));
     $mpn = (string) $ref->get_sku();
 
@@ -683,9 +683,46 @@ function polyglot_feed_master_product(WC_Product $product): ?WC_Product
     return $master ?: null;
 }
 
+/**
+ * The product an offer's master-owned attributes come from: identity (SKU,
+ * GTIN, offer id) and withdrawal state live on the master, while the shadow
+ * owns only translated text and the local price. Masters and standalone
+ * products carry no `_master_id` and resolve to themselves.
+ */
+function polyglot_feed_offer_ref(WC_Product $product): WC_Product
+{
+    return polyglot_feed_master_product($product) ?: $product;
+}
+
+/**
+ * Catalog visibility, read on the shadow *and* on its master.
+ *
+ * The two answer different questions and both can withdraw an offer: hiding a
+ * shadow pulls that one locale, hiding the master pulls the product from every
+ * domain. Only the shadow was consulted — and a shadow is created outside WC's
+ * CRUD, so it carries no `product_visibility` terms and answers "visible" by
+ * default, even for a model the master has retired. A withdrawn product
+ * therefore stayed in all seven shadow feeds while the master feed correctly
+ * dropped it (Varappe refuge de l'envers, hidden on the master).
+ *
+ * Stock needs no equivalent: the inventory bridge (inc/wc-product-bridge.php)
+ * already proxies `is_in_stock()` from shadow to master on shadow domains.
+ * Visibility has no such bridge, which is why this one is spelled out here.
+ */
+function polyglot_feed_offer_visible(WC_Product $product): bool
+{
+    foreach ([$product, polyglot_feed_offer_ref($product)] as $side) {
+        if (in_array($side->get_catalog_visibility(), ['hidden', 'search'], true)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 function polyglot_feed_offer_id(WC_Product $product): string
 {
-    $ref = polyglot_feed_master_product($product) ?: $product;
+    $ref = polyglot_feed_offer_ref($product);
     $sku = (string) $ref->get_sku();
 
     return '' !== $sku ? $sku : 'wc_'.$ref->get_id();

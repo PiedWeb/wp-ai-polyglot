@@ -375,4 +375,68 @@ class GoogleFeedTest extends WP_UnitTestCase
 
         $this->assertSame(10.0, (float) $converted['flat']->get_cost());
     }
+
+    // --- Offer eligibility resolved on the master ---
+    //
+    // A shadow is created outside WC's CRUD, so it carries no `_stock_status`
+    // and no `product_visibility` terms and defaults to "in stock, visible".
+    // Reading those off the shadow published withdrawn products to every shadow
+    // feed while the master feed correctly dropped them.
+
+    public function testHiddenMasterWithdrawsItsShadowFromEveryFeed(): void
+    {
+        $master = $this->makeMaster('100', 'HIDDEN-SKU');
+        $master->set_catalog_visibility('hidden');
+        $master->save();
+
+        $this->makeShadow($master->get_id(), 'da_DK', '700');
+
+        $_SERVER['HTTP_HOST'] = 'dk.test';
+        $this->assertSame(
+            0,
+            substr_count(polyglot_feed_build_xml(), '<item>'),
+            'A shadow carries no product_visibility terms, so only the master can say the product is withdrawn.'
+        );
+    }
+
+    public function testVisibleMasterKeepsItsShadowInTheFeed(): void
+    {
+        $master = $this->makeMaster('100', 'VISIBLE-SKU');
+        $this->makeShadow($master->get_id(), 'da_DK', '700');
+
+        $_SERVER['HTTP_HOST'] = 'dk.test';
+        $this->assertSame(1, substr_count(polyglot_feed_build_xml(), '<item>'));
+    }
+
+    public function testHiddenMasterWithdrawsItsVariableShadowToo(): void
+    {
+        $master = $this->makeVariableMaster('HIDDEN-VAR');
+        $master->set_catalog_visibility('hidden');
+        $master->save();
+
+        $shadow = new WC_Product_Variable();
+        $shadow->set_name('Beam da_DK');
+        $shadow->update_meta_data('_master_id', $master->get_id());
+        $shadow->update_meta_data('_locale', 'da_DK');
+        $shadow->set_status('publish');
+        $shadow->save();
+
+        $_SERVER['HTTP_HOST'] = 'dk.test';
+        $this->assertSame(
+            [],
+            polyglot_feed_map_variable(wc_get_product($shadow->get_id())),
+            'Variable shadows virtualize the master variations, so a hidden master must withdraw them all.'
+        );
+    }
+
+    public function testOfferRefFallsBackToTheProductItself(): void
+    {
+        $master = $this->makeMaster('100', 'STANDALONE-SKU');
+
+        $this->assertSame(
+            $master->get_id(),
+            polyglot_feed_offer_ref(wc_get_product($master->get_id()))->get_id(),
+            'A product with no _master_id must resolve to itself.'
+        );
+    }
 }
