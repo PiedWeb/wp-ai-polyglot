@@ -155,6 +155,28 @@ function polyglot_inject_hreflang()
 // SITEMAP — Locale filtering
 // ============================================================
 
+add_filter('pre_handle_404', 'polyglot_sitemap_pre_handle_404', 10, 2);
+
+function polyglot_sitemap_pre_handle_404($preempt, WP_Query $query)
+{
+    if (false !== $preempt) {
+        return $preempt;
+    }
+
+    $sitemap = $query->get('sitemap');
+    if (! $sitemap) {
+        return false;
+    }
+
+    $server = wp_sitemaps_get_server();
+    if (! $server->sitemaps_enabled()) {
+        return false;
+    }
+
+    // Core renders valid sitemaps later; it will still issue a 404 for empty pages.
+    return 'index' === $sitemap || (bool) $server->registry->get_provider($sitemap);
+}
+
 add_filter('wp_sitemaps_posts_query_args', 'polyglot_sitemap_posts_filter', 20);
 
 function polyglot_sitemap_posts_filter(array $args): array

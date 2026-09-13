@@ -39,6 +39,45 @@ class SitemapTest extends WP_UnitTestCase
         $this->assertSame('NOT EXISTS', $args['meta_query'][0]['compare']);
     }
 
+    public function testRegisteredSitemapBypassesPremature404(): void
+    {
+        $query = new WP_Query();
+        $query->set('sitemap', 'posts');
+
+        $this->assertTrue(apply_filters('pre_handle_404', false, $query));
+
+        $query->set('sitemap', 'index');
+        $this->assertTrue(apply_filters('pre_handle_404', false, $query));
+    }
+
+    public function testUnknownSitemapKeeps404Handling(): void
+    {
+        $query = new WP_Query();
+        $query->set('sitemap', 'unknown');
+
+        $this->assertFalse(apply_filters('pre_handle_404', false, $query));
+
+        $query->set('sitemap', '');
+        $this->assertFalse(apply_filters('pre_handle_404', false, $query));
+    }
+
+    public function testDisabledSitemapKeeps404Handling(): void
+    {
+        update_option('blog_public', 0);
+        $query = new WP_Query();
+        $query->set('sitemap', 'posts');
+
+        $this->assertFalse(apply_filters('pre_handle_404', false, $query));
+    }
+
+    public function testSitemapPreservesExisting404Override(): void
+    {
+        $query = new WP_Query();
+        $query->set('sitemap', 'posts');
+
+        $this->assertSame('handled', apply_filters('pre_handle_404', 'handled', $query));
+    }
+
     public function testSitemapPostsFilterShadowDomain(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
