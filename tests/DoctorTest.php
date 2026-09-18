@@ -54,7 +54,7 @@ class DoctorTest extends WP_UnitTestCase
         return $sid;
     }
 
-    public function test_clean_setup_passes(): void
+    public function testCleanSetupPasses(): void
     {
         $master = $this->make_master();
         $this->make_shadow($master, 'en_IE');
@@ -69,7 +69,7 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertSame('ok', $checks['Exchange rates']['status']);
     }
 
-    public function test_orphan_shadow_fails(): void
+    public function testOrphanShadowFails(): void
     {
         // _master_id points to a post that does not exist.
         $this->make_shadow(999999, 'en_IE');
@@ -77,7 +77,7 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertSame('fail', $this->checks()['Orphan shadows']['status']);
     }
 
-    public function test_invalid_shadow_locale_fails(): void
+    public function testInvalidShadowLocaleFails(): void
     {
         $master = $this->make_master();
         $this->make_shadow($master, 'xx_XX'); // not in POLYGLOT_LOCALES
@@ -85,7 +85,7 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertSame('fail', $this->checks()['Shadow locales']['status']);
     }
 
-    public function test_status_drift_warns(): void
+    public function testStatusDriftWarns(): void
     {
         $master = $this->make_master('publish');
         $this->make_shadow($master, 'en_IE', 'draft');
@@ -93,7 +93,7 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertSame('warn', $this->checks()['Status parity']['status']);
     }
 
-    public function test_duplicate_hreflang_pair_fails(): void
+    public function testDuplicateHreflangPairFails(): void
     {
         $master = $this->make_master();
         $this->make_shadow($master, 'en_IE');
@@ -114,6 +114,7 @@ class DoctorTest extends WP_UnitTestCase
         // response, never the request — which is how a hardcoded http:// scheme
         // survived here unnoticed.
         add_filter('pre_http_request', $http, 10, 3);
+
         try {
             $method = new ReflectionMethod(Polyglot_CLI::class, 'run_doctor_checks');
             $method->setAccessible(true);
@@ -134,7 +135,7 @@ class DoctorTest extends WP_UnitTestCase
      * which is how a check stops being read. The mocked HTTP layer here never
      * followed a redirect, so the existing tests couldn't see it.
      */
-    public function test_feed_probe_uses_the_locale_scheme(): void
+    public function testFeedProbeUsesTheLocaleScheme(): void
     {
         $urls = [];
         $this->feed_checks(static function ($_pre, $_args, $url) use (&$urls) {
@@ -151,7 +152,7 @@ class DoctorTest extends WP_UnitTestCase
         }
     }
 
-    public function test_feed_endpoint_ok_on_200_xml(): void
+    public function testFeedEndpointOkOn200Xml(): void
     {
         $feed = $this->feed_checks(static fn () => [
             'response' => ['code' => 200],
@@ -162,7 +163,7 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertSame('ok', $feed[0]['status']);
     }
 
-    public function test_feed_endpoint_fails_on_non_200(): void
+    public function testFeedEndpointFailsOnNon200(): void
     {
         $feed = $this->feed_checks(static fn () => ['response' => ['code' => 404], 'body' => '']);
 
@@ -170,7 +171,7 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertSame('fail', $feed[0]['status']);
     }
 
-    public function test_feed_endpoint_warns_when_unreachable(): void
+    public function testFeedEndpointWarnsWhenUnreachable(): void
     {
         $feed = $this->feed_checks(static fn () => new WP_Error('http_request_failed', 'connection refused'));
 
@@ -188,6 +189,7 @@ class DoctorTest extends WP_UnitTestCase
     private function fx_checks(callable $currencies): array
     {
         add_filter('polyglot_fx_target_currencies', $currencies);
+
         try {
             $method = new ReflectionMethod(Polyglot_CLI::class, 'doctor_check_fx');
             $method->setAccessible(true);
@@ -204,7 +206,7 @@ class DoctorTest extends WP_UnitTestCase
         return $by_name;
     }
 
-    public function test_fx_fails_when_no_rates_stored(): void
+    public function testFxFailsWhenNoRatesStored(): void
     {
         delete_option(POLYGLOT_FX_OPTION);
 
@@ -212,7 +214,7 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertSame('fail', $fx['Exchange rates']['status']);
     }
 
-    public function test_fx_coverage_fails_when_currency_missing(): void
+    public function testFxCoverageFailsWhenCurrencyMissing(): void
     {
         update_option(POLYGLOT_FX_OPTION, ['rates' => ['EUR' => 1.0], 'updated_at' => gmdate('c')]);
 
@@ -220,7 +222,7 @@ class DoctorTest extends WP_UnitTestCase
         $this->assertSame('fail', $fx['FX coverage']['status']);
     }
 
-    public function test_fx_freshness_warns_when_stale(): void
+    public function testFxFreshnessWarnsWhenStale(): void
     {
         update_option(POLYGLOT_FX_OPTION, [
             'rates' => ['EUR' => 1.0, 'DKK' => 7.46],

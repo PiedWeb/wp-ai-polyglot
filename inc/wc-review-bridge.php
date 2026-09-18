@@ -70,6 +70,7 @@ function polyglot_locale_rating_counts($post_id)
 
     global $wpdb;
 
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Result is cached immediately below.
     $rows = $wpdb->get_results($wpdb->prepare(
         "SELECT cm_rating.meta_value AS rating, COUNT(*) AS cnt
          FROM {$wpdb->comments} c
@@ -124,7 +125,7 @@ function polyglot_redirect_review_submission($commentdata)
 
 add_action('comment_post', 'polyglot_tag_review_source_locale', 10, 2);
 
-function polyglot_tag_review_source_locale($comment_id, $comment_approved)
+function polyglot_tag_review_source_locale($comment_id, $comment_approved): void
 {
     $comment = get_comment($comment_id);
     $post = get_post($comment->comment_post_ID);

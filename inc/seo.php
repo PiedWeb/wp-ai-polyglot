@@ -69,6 +69,7 @@ function polyglot_get_locale_paths(): array
         $paths[$master_authority] = wp_parse_url(get_permalink($real_master_id), \PHP_URL_PATH);
 
         // All shadows for this master
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Result contributes to the cached hreflang map below.
         $shadows = $wpdb->get_results($wpdb->prepare(
             "SELECT pm1.post_id, pm2.meta_value AS locale
              FROM $wpdb->postmeta pm1
@@ -105,6 +106,7 @@ function polyglot_get_locale_paths(): array
         }
 
         // All shadow terms
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Result contributes to the cached hreflang map below.
         $shadow_terms = $wpdb->get_results($wpdb->prepare(
             "SELECT tm1.term_id, tm2.meta_value AS locale
              FROM $wpdb->termmeta tm1
@@ -135,7 +137,7 @@ function polyglot_get_locale_paths(): array
 
 add_action('wp_head', 'polyglot_inject_hreflang');
 
-function polyglot_inject_hreflang()
+function polyglot_inject_hreflang(): void
 {
     $paths = polyglot_get_locale_paths();
 
@@ -157,14 +159,14 @@ function polyglot_inject_hreflang()
 
 add_filter('pre_handle_404', 'polyglot_sitemap_pre_handle_404', 10, 2);
 
-function polyglot_sitemap_pre_handle_404($preempt, WP_Query $query)
+function polyglot_sitemap_pre_handle_404(mixed $preempt, WP_Query $query): mixed
 {
     if (false !== $preempt) {
         return $preempt;
     }
 
     $sitemap = $query->get('sitemap');
-    if (! $sitemap) {
+    if (! is_string($sitemap) || '' === $sitemap) {
         return false;
     }
 
@@ -181,6 +183,8 @@ add_filter('wp_sitemaps_posts_query_args', 'polyglot_sitemap_posts_filter', 20);
 
 function polyglot_sitemap_posts_filter(array $args): array
 {
+    // Core's sitemap filter exposes only meta_query for locale restrictions.
+    // phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_query
     $locale = polyglot_get_current_locale();
     $is_master = polyglot_is_master();
     $meta_query = $args['meta_query'] ?? [];
@@ -198,6 +202,7 @@ function polyglot_sitemap_posts_filter(array $args): array
     }
 
     $args['meta_query'] = $meta_query;
+    // phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 
     return $args;
 }
@@ -206,6 +211,8 @@ add_filter('wp_sitemaps_taxonomies_query_args', 'polyglot_sitemap_taxonomies_fil
 
 function polyglot_sitemap_taxonomies_filter(array $args): array
 {
+    // Core's sitemap filter exposes only meta_query for locale restrictions.
+    // phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_query
     $locale = polyglot_get_current_locale();
     $is_master = polyglot_is_master();
     $meta_query = $args['meta_query'] ?? [];
@@ -226,6 +233,7 @@ function polyglot_sitemap_taxonomies_filter(array $args): array
     }
 
     $args['meta_query'] = $meta_query;
+    // phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 
     return $args;
 }
@@ -236,7 +244,7 @@ function polyglot_sitemap_taxonomies_filter(array $args): array
 
 add_action('template_redirect', 'polyglot_sitemap_hreflang_ob_start', 0);
 
-function polyglot_sitemap_hreflang_ob_start()
+function polyglot_sitemap_hreflang_ob_start(): void
 {
     if (! get_query_var('sitemap')) {
         return;
@@ -284,6 +292,11 @@ function polyglot_sitemap_hreflang_ob_callback(string $output): string
 
     // Determine master IDs
     $master_ids = [];
+    // These request-local batch queries avoid N+1 lookups. Placeholder lists are
+    // generated internally, all values are prepared, and the maps live for the
+    // duration of this sitemap response, so persistent caching is not useful.
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
     if ($is_master) {
         // Posts in the sitemap ARE masters
         $master_ids = $post_ids;
@@ -353,6 +366,8 @@ function polyglot_sitemap_hreflang_ob_callback(string $output): string
     foreach ($pn_rows as $row) {
         $pn_map[(int) $row->ID] = $row->post_name;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
     // Pre-build locale-to-authority map
     $locale_to_authority = [];

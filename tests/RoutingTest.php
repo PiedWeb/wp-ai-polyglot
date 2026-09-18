@@ -6,6 +6,7 @@
 class RoutingTest extends WP_UnitTestCase
 {
     private int $master_id;
+
     private int $shadow_id;
 
     public function set_up(): void
@@ -13,30 +14,30 @@ class RoutingTest extends WP_UnitTestCase
         parent::set_up();
 
         $this->master_id = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'À propos',
+            'post_type' => 'page',
+            'post_title' => 'À propos',
             'post_status' => 'publish',
         ]);
 
         $this->shadow_id = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'About Us',
+            'post_type' => 'page',
+            'post_title' => 'About Us',
             'post_status' => 'publish',
         ]);
         update_post_meta($this->shadow_id, '_master_id', $this->master_id);
         update_post_meta($this->shadow_id, '_locale', 'en_IE');
     }
 
-    public function test_master_domain_meta_query(): void
+    public function testMasterDomainMetaQuery(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
         $this->assertTrue(polyglot_is_master());
 
         $ids = get_posts([
-            'post_type'   => 'page',
+            'post_type' => 'page',
             'post_status' => 'publish',
-            'fields'      => 'ids',
-            'meta_query'  => [
+            'fields' => 'ids',
+            'meta_query' => [
                 ['key' => '_master_id', 'compare' => 'NOT EXISTS'],
             ],
         ]);
@@ -45,16 +46,16 @@ class RoutingTest extends WP_UnitTestCase
         $this->assertNotContains($this->shadow_id, $ids);
     }
 
-    public function test_shadow_domain_meta_query(): void
+    public function testShadowDomainMetaQuery(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
         $this->assertFalse(polyglot_is_master());
 
         $ids = get_posts([
-            'post_type'   => 'page',
+            'post_type' => 'page',
             'post_status' => 'publish',
-            'fields'      => 'ids',
-            'meta_query'  => [
+            'fields' => 'ids',
+            'meta_query' => [
                 ['key' => '_locale', 'value' => 'en_IE'],
             ],
         ]);
@@ -63,15 +64,15 @@ class RoutingTest extends WP_UnitTestCase
         $this->assertNotContains($this->master_id, $ids);
     }
 
-    public function test_unrelated_shadow_domain_shows_nothing(): void
+    public function testUnrelatedShadowDomainShowsNothing(): void
     {
         $_SERVER['HTTP_HOST'] = 'es.test';
 
         $ids = get_posts([
-            'post_type'   => 'page',
+            'post_type' => 'page',
             'post_status' => 'publish',
-            'fields'      => 'ids',
-            'meta_query'  => [
+            'fields' => 'ids',
+            'meta_query' => [
                 ['key' => '_locale', 'value' => 'es_ES'],
             ],
         ]);
@@ -79,7 +80,7 @@ class RoutingTest extends WP_UnitTestCase
         $this->assertEmpty($ids);
     }
 
-    public function test_filter_hook_sets_meta_query_for_master(): void
+    public function testFilterHookSetsMetaQueryForMaster(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -95,7 +96,7 @@ class RoutingTest extends WP_UnitTestCase
         $this->assertSame('NOT EXISTS', $meta_query[0]['compare']);
     }
 
-    public function test_filter_hook_sets_meta_query_for_shadow(): void
+    public function testFilterHookSetsMetaQueryForShadow(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
 
@@ -110,7 +111,7 @@ class RoutingTest extends WP_UnitTestCase
         $this->assertSame('en_IE', $meta_query[0]['value']);
     }
 
-    public function test_page_on_front_returns_shadow_id_on_shadow_domain(): void
+    public function testPageOnFrontReturnsShadowIdOnShadowDomain(): void
     {
         update_option('page_on_front', $this->master_id);
         update_option('show_on_front', 'page');
@@ -120,7 +121,7 @@ class RoutingTest extends WP_UnitTestCase
         $this->assertSame($this->shadow_id, (int) get_option('page_on_front'));
     }
 
-    public function test_page_on_front_returns_master_id_on_master_domain(): void
+    public function testPageOnFrontReturnsMasterIdOnMasterDomain(): void
     {
         update_option('page_on_front', $this->master_id);
         update_option('show_on_front', 'page');
@@ -130,7 +131,7 @@ class RoutingTest extends WP_UnitTestCase
         $this->assertSame($this->master_id, (int) get_option('page_on_front'));
     }
 
-    public function test_page_on_front_returns_master_id_when_no_shadow_exists(): void
+    public function testPageOnFrontReturnsMasterIdWhenNoShadowExists(): void
     {
         update_option('page_on_front', $this->master_id);
         update_option('show_on_front', 'page');
@@ -141,7 +142,7 @@ class RoutingTest extends WP_UnitTestCase
         $this->assertSame($this->master_id, (int) get_option('page_on_front'));
     }
 
-    public function test_page_on_front_returns_zero_when_unset(): void
+    public function testPageOnFrontReturnsZeroWhenUnset(): void
     {
         update_option('page_on_front', 0);
 

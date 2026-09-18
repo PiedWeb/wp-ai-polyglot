@@ -51,4 +51,25 @@ class BatchShadowLookupTest extends WP_UnitTestCase
         $result_es = polyglot_find_shadow_ids([$master], 'es_ES');
         $this->assertSame($shadow_es, $result_es[$master]);
     }
+
+    public function testBatchLookupPrimesSingleLookupCache(): void
+    {
+        $master = self::factory()->post->create(['post_type' => 'product', 'post_status' => 'publish']);
+        $shadow = self::factory()->post->create(['post_type' => 'product', 'post_status' => 'publish']);
+        update_post_meta($shadow, '_master_id', $master);
+        update_post_meta($shadow, '_locale', 'en_IE');
+
+        polyglot_find_shadow_ids([$master], 'en_IE');
+
+        $this->assertSame($shadow, wp_cache_get("shadow_id|{$master}|en_IE", 'polyglot'));
+        $this->assertSame($shadow, polyglot_find_shadow_id($master, 'en_IE'));
+    }
+
+    public function testSingleLookupCachesMissingShadowAsZero(): void
+    {
+        $master = self::factory()->post->create(['post_type' => 'product', 'post_status' => 'publish']);
+
+        $this->assertNull(polyglot_find_shadow_id($master, 'en_IE'));
+        $this->assertSame(0, wp_cache_get("shadow_id|{$master}|en_IE", 'polyglot'));
+    }
 }

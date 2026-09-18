@@ -6,6 +6,7 @@
 class FooterSwitcherTest extends WP_UnitTestCase
 {
     private int $master_id;
+
     private int $shadow_id;
 
     public function set_up(): void
@@ -19,16 +20,16 @@ class FooterSwitcherTest extends WP_UnitTestCase
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $this->master_id = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'À propos',
-            'post_name'   => 'a-propos',
+            'post_type' => 'page',
+            'post_title' => 'À propos',
+            'post_name' => 'a-propos',
             'post_status' => 'publish',
         ]);
 
         $this->shadow_id = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'About Us',
-            'post_name'   => 'about-us',
+            'post_type' => 'page',
+            'post_title' => 'About Us',
+            'post_name' => 'about-us',
             'post_status' => 'publish',
         ]);
         update_post_meta($this->shadow_id, '_master_id', $this->master_id);
@@ -138,9 +139,9 @@ class FooterSwitcherTest extends WP_UnitTestCase
     public function testFooterBarFallsBackToHomepage(): void
     {
         $standalone = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'Standalone',
-            'post_name'   => 'standalone',
+            'post_type' => 'page',
+            'post_title' => 'Standalone',
+            'post_name' => 'standalone',
             'post_status' => 'publish',
         ]);
 
@@ -185,8 +186,8 @@ class FooterSwitcherTest extends WP_UnitTestCase
     private function simulate_front_page(): void
     {
         $page_id = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'Home',
+            'post_type' => 'page',
+            'post_title' => 'Home',
             'post_status' => 'publish',
         ]);
         update_option('show_on_front', 'page');

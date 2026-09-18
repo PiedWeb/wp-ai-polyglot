@@ -5,52 +5,52 @@
  */
 class HelpersTest extends WP_UnitTestCase
 {
-    public function test_get_current_locale_defaults_to_french(): void
+    public function testGetCurrentLocaleDefaultsToFrench(): void
     {
         $_SERVER['HTTP_HOST'] = 'unknown.test';
 
         $this->assertSame('fr_FR', polyglot_get_current_locale());
     }
 
-    public function test_get_current_locale_returns_shadow_locale(): void
+    public function testGetCurrentLocaleReturnsShadowLocale(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
 
         $this->assertSame('en_IE', polyglot_get_current_locale());
     }
 
-    public function test_is_master_on_master_domain(): void
+    public function testIsMasterOnMasterDomain(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $this->assertTrue(polyglot_is_master());
     }
 
-    public function test_is_master_on_shadow_domain(): void
+    public function testIsMasterOnShadowDomain(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
 
         $this->assertFalse(polyglot_is_master());
     }
 
-    public function test_get_master_authority(): void
+    public function testGetMasterAuthority(): void
     {
         $this->assertSame('master.test', polyglot_get_master_authority());
     }
 
-    public function test_authority_to_url_local(): void
+    public function testAuthorityToUrlLocal(): void
     {
         $this->assertSame('http://127.0.0.1:9172', polyglot_authority_to_url('127.0.0.1:9172'));
         $this->assertSame('http://localhost:8080', polyglot_authority_to_url('localhost:8080'));
     }
 
-    public function test_authority_to_url_production(): void
+    public function testAuthorityToUrlProduction(): void
     {
         $this->assertSame('https://www.woodrock.fr', polyglot_authority_to_url('www.woodrock.fr'));
         $this->assertSame('https://woodrockclimbing.com', polyglot_authority_to_url('woodrockclimbing.com'));
     }
 
-    public function test_get_current_entry_falls_back_to_master_in_cli(): void
+    public function testGetCurrentEntryFallsBackToMasterInCli(): void
     {
         $_SERVER['HTTP_HOST'] = 'unknown.test';
 
@@ -59,7 +59,7 @@ class HelpersTest extends WP_UnitTestCase
         $this->assertTrue($entry['master']);
     }
 
-    public function test_get_current_entry_returns_config(): void
+    public function testGetCurrentEntryReturnsConfig(): void
     {
         $_SERVER['HTTP_HOST'] = 'es.test';
 
@@ -69,7 +69,7 @@ class HelpersTest extends WP_UnitTestCase
         $this->assertSame('EUR', $entry['currency']);
     }
 
-    public function test_exportable_statuses_includes_publish_and_draft(): void
+    public function testExportableStatusesIncludesPublishAndDraft(): void
     {
         $statuses = polyglot_exportable_statuses();
 
@@ -77,7 +77,7 @@ class HelpersTest extends WP_UnitTestCase
         $this->assertContains('draft', $statuses);
     }
 
-    public function test_exportable_statuses_excludes_non_content_statuses(): void
+    public function testExportableStatusesExcludesNonContentStatuses(): void
     {
         $statuses = polyglot_exportable_statuses();
 
@@ -86,7 +86,7 @@ class HelpersTest extends WP_UnitTestCase
         $this->assertNotContains('inherit', $statuses);
     }
 
-    public function test_exportable_statuses_is_filterable(): void
+    public function testExportableStatusesIsFilterable(): void
     {
         $filter = static fn (): array => ['publish'];
         add_filter('polyglot_exportable_statuses', $filter);

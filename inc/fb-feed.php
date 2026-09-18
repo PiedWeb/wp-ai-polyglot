@@ -28,8 +28,8 @@ add_filter('wc_facebook_should_sync_product', 'polyglot_fb_exclude_shadows', 10,
 /**
  * Exclude shadow products (and their variations) from the Facebook catalog.
  *
- * @param bool $should  Whether Facebook should sync the product so far.
- * @param mixed $product The WC_Product under evaluation.
+ * @param bool  $should  whether Facebook should sync the product so far
+ * @param mixed $product the WC_Product under evaluation
  *
  * @return bool
  */

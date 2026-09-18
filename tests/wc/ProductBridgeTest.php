@@ -10,8 +10,11 @@
 class ProductBridgeTest extends WP_UnitTestCase
 {
     private WC_Product_Simple $master;
+
     private WC_Product_Simple $shadow;
+
     private int $master_id;
+
     private int $shadow_id;
 
     public function set_up(): void

@@ -5,7 +5,7 @@
  */
 class HumanLockTest extends WP_UnitTestCase
 {
-    public function test_manual_edit_sets_translation_mode_when_not_cli(): void
+    public function testManualEditSetsTranslationModeWhenNotCli(): void
     {
         // In our test env, WP_CLI is true, so the function returns early.
         // We test the underlying logic directly instead.
@@ -20,7 +20,7 @@ class HumanLockTest extends WP_UnitTestCase
         $this->assertSame('manual', get_post_meta($shadow_id, '_translation_mode', true));
     }
 
-    public function test_manual_edit_skipped_on_master(): void
+    public function testManualEditSkippedOnMaster(): void
     {
         $master_id = self::factory()->post->create(['post_type' => 'page', 'post_status' => 'publish']);
 
@@ -32,7 +32,7 @@ class HumanLockTest extends WP_UnitTestCase
         $this->assertEmpty(get_post_meta($master_id, '_translation_mode', true));
     }
 
-    public function test_flag_manual_edit_returns_early_under_wp_cli(): void
+    public function testFlagManualEditReturnsEarlyUnderWpCli(): void
     {
         $shadow_id = self::factory()->post->create(['post_type' => 'page', 'post_status' => 'publish']);
         update_post_meta($shadow_id, '_master_id', 999);

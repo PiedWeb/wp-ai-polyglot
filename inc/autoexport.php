@@ -85,8 +85,8 @@ add_action('deleted_post', 'polyglot_autoexport_on_delete', 999, 2);
  * `deleted_post` passes the (already removed) WP_Post — hence the WP_Post check
  * with a get_post() fallback for the trash/restore path.
  *
- * @param int               $post_id
- * @param WP_Post|string|null $post  WP_Post on deleted_post, previous status otherwise.
+ * @param int                 $post_id
+ * @param WP_Post|string|null $post    WP_Post on deleted_post, previous status otherwise
  */
 function polyglot_autoexport_on_delete($post_id, $post = null): void
 {

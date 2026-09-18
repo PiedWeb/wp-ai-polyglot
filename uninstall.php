@@ -8,40 +8,44 @@ if (! defined('WP_UNINSTALL_PLUGIN')) {
     exit;
 }
 
+// Uninstall runs once and must delete canonical rows immediately. Persistent
+// caching and higher-level metadata APIs would add work without improving safety.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+
 // Always clean plugin options
 delete_option('polyglot_wc_slugs');
 
 // Check if the user opted for full cleanup (shadow deletion)
-$full_cleanup = get_option('polyglot_uninstall_delete_shadows', false);
+$polyglot_full_cleanup = get_option('polyglot_uninstall_delete_shadows', false);
 
-if ($full_cleanup) {
+if ($polyglot_full_cleanup) {
     global $wpdb;
 
     // Delete all shadow posts (posts with _master_id meta)
-    $shadow_ids = $wpdb->get_col(
+    $polyglot_shadow_ids = $wpdb->get_col(
         "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_master_id'"
     );
-    foreach ($shadow_ids as $shadow_id) {
-        wp_delete_post((int) $shadow_id, true);
+    foreach ($polyglot_shadow_ids as $polyglot_shadow_id) {
+        wp_delete_post((int) $polyglot_shadow_id, true);
     }
 
     // Delete all shadow terms (terms with _master_term_id meta)
-    $shadow_term_ids = $wpdb->get_col(
+    $polyglot_shadow_term_ids = $wpdb->get_col(
         "SELECT term_id FROM {$wpdb->termmeta} WHERE meta_key = '_master_term_id'"
     );
-    foreach ($shadow_term_ids as $term_id) {
-        $term = get_term((int) $term_id);
+    foreach ($polyglot_shadow_term_ids as $polyglot_term_id) {
+        $term = get_term((int) $polyglot_term_id);
         if ($term && ! is_wp_error($term)) {
-            wp_delete_term((int) $term_id, $term->taxonomy);
+            wp_delete_term((int) $polyglot_term_id, $term->taxonomy);
         }
     }
 
     // Delete translated comments (comments with _master_comment_id meta)
-    $shadow_comment_ids = $wpdb->get_col(
+    $polyglot_shadow_comment_ids = $wpdb->get_col(
         "SELECT comment_id FROM {$wpdb->commentmeta} WHERE meta_key = '_master_comment_id'"
     );
-    foreach ($shadow_comment_ids as $comment_id) {
-        wp_delete_comment((int) $comment_id, true);
+    foreach ($polyglot_shadow_comment_ids as $polyglot_comment_id) {
+        wp_delete_comment((int) $polyglot_comment_id, true);
     }
 
     // Clean remaining meta keys

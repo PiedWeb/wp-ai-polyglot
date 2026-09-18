@@ -20,17 +20,17 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         register_post_type('product', ['public' => true]);
 
         $this->master_published = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'À propos',
-            'post_name'   => 'a-propos',
+            'post_type' => 'page',
+            'post_title' => 'À propos',
+            'post_name' => 'a-propos',
             'post_status' => 'publish',
         ]);
         update_post_meta($this->master_published, 'custom_permalink', 'a-propos');
 
         $this->master_draft = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'Page brouillon',
-            'post_name'   => 'brouillon',
+            'post_type' => 'page',
+            'post_title' => 'Page brouillon',
+            'post_name' => 'brouillon',
             'post_status' => 'draft',
         ]);
         update_post_meta($this->master_draft, 'custom_permalink', 'brouillon');
@@ -38,9 +38,9 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         // EN shadow of published page
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $this->shadow_en_published = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'About',
-            'post_name'   => 'about',
+            'post_type' => 'page',
+            'post_title' => 'About',
+            'post_name' => 'about',
             'post_status' => 'publish',
         ]);
         unset($GLOBALS['polyglot_pending_locale']);
@@ -51,9 +51,9 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         // EN shadow of draft page
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $this->shadow_en_draft = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'Draft EN',
-            'post_name'   => 'draft-en',
+            'post_type' => 'page',
+            'post_title' => 'Draft EN',
+            'post_name' => 'draft-en',
             'post_status' => 'draft',
         ]);
         unset($GLOBALS['polyglot_pending_locale']);
@@ -73,7 +73,7 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
     // polyglot_resolve_url_any_status()
     // ================================================================
 
-    public function test_resolves_published_page_by_custom_permalink(): void
+    public function testResolvesPublishedPageByCustomPermalink(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -82,7 +82,7 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         $this->assertSame($this->master_published, $id);
     }
 
-    public function test_resolves_draft_page_by_custom_permalink(): void
+    public function testResolvesDraftPageByCustomPermalink(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -91,7 +91,7 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         $this->assertSame($this->master_draft, $id);
     }
 
-    public function test_resolves_shadow_draft_from_shadow_domain(): void
+    public function testResolvesShadowDraftFromShadowDomain(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
 
@@ -100,21 +100,21 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         $this->assertSame($this->shadow_en_draft, $id);
     }
 
-    public function test_returns_null_for_external_url(): void
+    public function testReturnsNullForExternalUrl(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $this->assertNull(polyglot_resolve_url_any_status('https://example.com/foo'));
     }
 
-    public function test_returns_null_for_homepage(): void
+    public function testReturnsNullForHomepage(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $this->assertNull(polyglot_resolve_url_any_status('http://master.test/'));
     }
 
-    public function test_returns_null_for_unknown_slug(): void
+    public function testReturnsNullForUnknownSlug(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -125,22 +125,22 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
     // polyglot_handle_draft_links() — the_content filter
     // ================================================================
 
-    public function test_published_link_kept_on_master(): void
+    public function testPublishedLinkKeptOnMaster(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $content = '<p><a href="http://master.test/a-propos">À propos</a></p>';
-        $result  = apply_filters('the_content', $content);
+        $result = apply_filters('the_content', $content);
 
         $this->assertStringContainsString('<a href="http://master.test/a-propos">', $result);
     }
 
-    public function test_draft_link_replaced_with_span_on_master(): void
+    public function testDraftLinkReplacedWithSpanOnMaster(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $content = '<p><a href="http://master.test/brouillon">Voir la page</a></p>';
-        $result  = apply_filters('the_content', $content);
+        $result = apply_filters('the_content', $content);
 
         $this->assertStringNotContainsString('<a ', $result);
         $this->assertStringContainsString('data-draft="Page brouillon"', $result);
@@ -148,56 +148,56 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         $this->assertStringContainsString('Voir la page', $result);
     }
 
-    public function test_shadow_draft_link_replaced_on_shadow_domain(): void
+    public function testShadowDraftLinkReplacedOnShadowDomain(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
 
         $content = '<p><a href="http://en.test/draft-en">Read more</a></p>';
-        $result  = apply_filters('the_content', $content);
+        $result = apply_filters('the_content', $content);
 
         $this->assertStringNotContainsString('<a ', $result);
         $this->assertStringContainsString('data-draft="Draft EN"', $result);
         $this->assertStringContainsString('Read more', $result);
     }
 
-    public function test_external_links_untouched(): void
+    public function testExternalLinksUntouched(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $content = '<p><a href="https://example.com/foo">External</a></p>';
-        $result  = apply_filters('the_content', $content);
+        $result = apply_filters('the_content', $content);
 
         $this->assertStringContainsString('<a href="https://example.com/foo">', $result);
     }
 
-    public function test_mailto_link_untouched(): void
+    public function testMailtoLinkUntouched(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $content = '<p><a href="mailto:test@example.com">Contact</a></p>';
-        $result  = apply_filters('the_content', $content);
+        $result = apply_filters('the_content', $content);
 
         $this->assertStringContainsString('href="mailto:test@example.com"', $result);
     }
 
-    public function test_anchor_only_link_untouched(): void
+    public function testAnchorOnlyLinkUntouched(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $content = '<p><a href="#section">Section</a></p>';
-        $result  = apply_filters('the_content', $content);
+        $result = apply_filters('the_content', $content);
 
         $this->assertStringContainsString('href="#section"', $result);
     }
 
-    public function test_empty_content_returned_unchanged(): void
+    public function testEmptyContentReturnedUnchanged(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $this->assertSame('', polyglot_handle_draft_links(''));
     }
 
-    public function test_content_without_links_returned_unchanged(): void
+    public function testContentWithoutLinksReturnedUnchanged(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -205,7 +205,7 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         $this->assertSame($content, polyglot_handle_draft_links($content));
     }
 
-    public function test_draft_becomes_active_after_publish(): void
+    public function testDraftBecomesActiveAfterPublish(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -224,21 +224,21 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         $this->assertStringContainsString('<a href="http://master.test/brouillon">', $after);
     }
 
-    public function test_pending_and_private_links_also_replaced(): void
+    public function testPendingAndPrivateLinksAlsoReplaced(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         foreach (['pending', 'private'] as $status) {
             $post_id = self::factory()->post->create([
-                'post_type'   => 'page',
-                'post_name'   => "page-{$status}",
-                'post_title'  => "Page {$status}",
+                'post_type' => 'page',
+                'post_name' => "page-{$status}",
+                'post_title' => "Page {$status}",
                 'post_status' => $status,
             ]);
             update_post_meta($post_id, 'custom_permalink', "page-{$status}");
 
             $content = "<p><a href=\"http://master.test/page-{$status}\">Lien</a></p>";
-            $result  = apply_filters('the_content', $content);
+            $result = apply_filters('the_content', $content);
 
             $this->assertStringNotContainsString('<a ', $result, "Status: {$status}");
             $this->assertStringContainsString("data-status=\"{$status}\"", $result, "Status: {$status}");
@@ -247,7 +247,7 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         }
     }
 
-    public function test_editor_user_sees_draft_link_intact(): void
+    public function testEditorUserSeesDraftLinkIntact(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -255,20 +255,20 @@ class DraftLinkHandlerTest extends WP_UnitTestCase
         wp_set_current_user($editor);
 
         $content = '<p><a href="http://master.test/brouillon">Brouillon</a></p>';
-        $result  = apply_filters('the_content', $content);
+        $result = apply_filters('the_content', $content);
 
         $this->assertStringContainsString('<a href="http://master.test/brouillon">', $result);
 
         wp_set_current_user(0);
     }
 
-    public function test_cross_domain_draft_link_replaced(): void
+    public function testCrossDomainDraftLinkReplaced(): void
     {
         // On master domain, a link pointing to a shadow draft domain should be replaced
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $content = '<p><a href="http://en.test/draft-en">English draft</a></p>';
-        $result  = apply_filters('the_content', $content);
+        $result = apply_filters('the_content', $content);
 
         $this->assertStringNotContainsString('<a ', $result);
         $this->assertStringContainsString('data-draft=', $result);

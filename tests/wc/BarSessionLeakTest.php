@@ -26,6 +26,7 @@ class BarSessionLeakTest extends WP_UnitTestCase
 
     public function tear_down(): void
     {
+        unset($_GET['wc_session']);
         WC()->cart->empty_cart();
         parent::tear_down();
     }
@@ -89,5 +90,13 @@ class BarSessionLeakTest extends WP_UnitTestCase
             'Signature must remain verifiable by polyglot_restore_session_from_url.'
         );
         $this->assertGreaterThan(time(), (int) $expires);
+    }
+
+    public function testMalformedArraySessionTokenIsIgnored(): void
+    {
+        $this->expectNotToPerformAssertions();
+        $_GET['wc_session'] = ['invalid'];
+
+        polyglot_restore_session_from_url();
     }
 }

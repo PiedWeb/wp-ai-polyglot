@@ -18,14 +18,15 @@ if (! defined('ABSPATH')) {
       <span class="polyglot-fb-chevron">&#9662;</span>
     </button>
     <div class="polyglot-fb-dropdown" role="listbox">
-      <?php foreach ($items as $item): ?>
-        <?php if (! $item['active']): ?>
-          <a href="<?php echo esc_url($item['url']); ?>" role="option" hreflang="<?php echo esc_attr($item['hreflang']); ?>">
-            <span class="polyglot-fb-flag" style="background-image:url(<?php echo esc_url($item['flag_url']); ?>)"></span>
-            <?php echo esc_html($item['label']); ?>
+      <?php foreach ($items as $polyglot_footer_item): ?>
+        <?php if (! $polyglot_footer_item['active']): ?>
+          <a href="<?php echo esc_url($polyglot_footer_item['url']); ?>" role="option" hreflang="<?php echo esc_attr($polyglot_footer_item['hreflang']); ?>">
+            <span class="polyglot-fb-flag" style="background-image:url(<?php echo esc_url($polyglot_footer_item['flag_url']); ?>)"></span>
+            <?php echo esc_html($polyglot_footer_item['label']); ?>
           </a>
         <?php endif; ?>
       <?php endforeach; ?>
+      <?php unset($polyglot_footer_item); ?>
       <?php if (defined('POLYGLOT_FOOTER_CREDIT') && POLYGLOT_FOOTER_CREDIT) : ?>
         <a class="polyglot-fb-powered" href="https://wap.piedweb.com" target="_blank" rel="noopener" title="best WordPress translation plugin">⚡ PiedWeb AI Polyglot</a>
       <?php endif; ?>

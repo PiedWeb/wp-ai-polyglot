@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
 // ADMIN — Uninstall option (full cleanup toggle)
 // ============================================================
 
-add_action('admin_init', function (): void {
+add_action('admin_init', static function (): void {
     if (! current_user_can('manage_options')) {
         return;
     }
@@ -20,7 +20,7 @@ add_action('admin_init', function (): void {
     add_settings_field(
         'polyglot_uninstall_delete_shadows',
         __('Polyglot: delete shadows on uninstall', 'piedweb-ai-polyglot'),
-        function (): void {
+        static function (): void {
             $checked = get_option('polyglot_uninstall_delete_shadows', false);
             echo '<label><input type="checkbox" name="polyglot_uninstall_delete_shadows" value="1" '.checked($checked, true, false).' /> ';
             echo esc_html__('Delete all shadow posts, terms, and translated comments when this plugin is deleted.', 'piedweb-ai-polyglot');
@@ -38,7 +38,7 @@ add_action('admin_init', function (): void {
     add_settings_field(
         'polyglot_footer_switcher',
         __('Polyglot: footer language switcher', 'piedweb-ai-polyglot'),
-        function (): void {
+        static function (): void {
             $checked = get_option('polyglot_footer_switcher', true);
             echo '<input type="hidden" name="polyglot_footer_switcher" value="0" />';
             echo '<label><input type="checkbox" name="polyglot_footer_switcher" value="1" '.checked($checked, true, false).' /> ';
@@ -56,13 +56,18 @@ add_action('admin_init', function (): void {
 
 add_action('restrict_manage_posts', 'polyglot_admin_locale_dropdown');
 
-function polyglot_admin_locale_dropdown($post_type)
+function polyglot_admin_locale_dropdown($post_type): void
 {
     if (! in_array($post_type, polyglot_get_post_types(), true)) {
         return;
     }
 
-    $current = sanitize_text_field(wp_unslash($_GET['polyglot_locale'] ?? ''));
+    // Read-only list filter; it does not mutate state and therefore needs no nonce.
+    // phpcs:disable WordPress.Security.NonceVerification.Recommended
+    $current = isset($_GET['polyglot_locale']) && is_string($_GET['polyglot_locale'])
+        ? sanitize_text_field(wp_unslash($_GET['polyglot_locale']))
+        : '';
+    // phpcs:enable WordPress.Security.NonceVerification.Recommended
     $master_hreflang = '';
     foreach (POLYGLOT_LOCALES as $cfg) {
         if (! empty($cfg['master'])) {
@@ -95,10 +100,14 @@ function polyglot_admin_locale_dropdown($post_type)
 // ADMIN UI — "Langue" column in listings
 // ============================================================
 
-foreach (polyglot_get_post_types() as $_polyglot_type) {
-    add_filter("manage_{$_polyglot_type}_posts_columns", 'polyglot_add_langue_column');
-    add_action("manage_{$_polyglot_type}_posts_custom_column", 'polyglot_render_langue_column', 10, 2);
+foreach (polyglot_get_post_types() as $polyglot_admin_post_type) {
+    if (! is_string($polyglot_admin_post_type)) {
+        continue;
+    }
+    add_filter("manage_{$polyglot_admin_post_type}_posts_columns", 'polyglot_add_langue_column');
+    add_action("manage_{$polyglot_admin_post_type}_posts_custom_column", 'polyglot_render_langue_column', 10, 2);
 }
+unset($polyglot_admin_post_type);
 
 function polyglot_add_langue_column($columns)
 {
@@ -113,7 +122,7 @@ function polyglot_add_langue_column($columns)
     return $new;
 }
 
-function polyglot_render_langue_column($column, $post_id)
+function polyglot_render_langue_column($column, $post_id): void
 {
     if ('polyglot_langue' !== $column) {
         return;
@@ -156,6 +165,8 @@ function polyglot_render_langue_column($column, $post_id)
 
         // Count existing translations
         global $wpdb;
+        // This admin-only count must reflect the database immediately after edits.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $shadow_count = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM $wpdb->postmeta WHERE meta_key = '_master_id' AND meta_value = %d",
             $post_id
@@ -175,7 +186,7 @@ function polyglot_render_langue_column($column, $post_id)
 
 add_action('admin_notices', 'polyglot_admin_shadow_banner');
 
-function polyglot_admin_shadow_banner()
+function polyglot_admin_shadow_banner(): void
 {
     $screen = get_current_screen();
     if (! $screen || 'post' !== $screen->base) {
@@ -215,7 +226,7 @@ function polyglot_admin_shadow_banner()
 
 add_action('add_meta_boxes', 'polyglot_register_translation_metabox');
 
-function polyglot_register_translation_metabox()
+function polyglot_register_translation_metabox(): void
 {
     global $post;
     if (! $post) {
@@ -242,7 +253,7 @@ function polyglot_register_translation_metabox()
  * currently being edited highlighted. Renders on masters and shadows alike so
  * you can jump between any two locales (or back to the master) in one click.
  */
-function polyglot_render_translation_metabox($post)
+function polyglot_render_translation_metabox($post): void
 {
     global $wpdb;
 
@@ -256,6 +267,8 @@ function polyglot_render_translation_metabox($post)
     $total = count($shadow_locales);
 
     // All shadows of this master, keyed by locale.
+    // This editor inventory must reflect the database immediately after edits.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
     $shadows = $wpdb->get_results($wpdb->prepare(
         "SELECT pm1.post_id, pm2.meta_value AS locale
          FROM $wpdb->postmeta pm1
@@ -323,19 +336,18 @@ function polyglot_render_translation_metabox($post)
  */
 function polyglot_render_switcher_row(string $label, ?string $link, bool $current, bool $exists, bool $manual): void
 {
-    $safe = esc_html($label);
     $style = 'padding:3px 0'.($current ? ';font-weight:600;border-left:3px solid #2271b1;padding-left:6px;margin-left:-9px' : '');
     echo '<li style="'.esc_attr($style).'">';
 
     if ($current) {
-        echo '<span style="color:#2271b1">●</span> '.$safe.' — '.esc_html__('editing', 'piedweb-ai-polyglot');
+        echo '<span style="color:#2271b1">●</span> '.esc_html($label).' — '.esc_html__('editing', 'piedweb-ai-polyglot');
     } elseif ($exists) {
-        echo '<span style="color:#46b450">✓</span> '.$safe.' — <a href="'.esc_url((string) $link).'">'.esc_html__('Edit', 'piedweb-ai-polyglot').'</a>';
+        echo '<span style="color:#46b450">✓</span> '.esc_html($label).' — <a href="'.esc_url((string) $link).'">'.esc_html__('Edit', 'piedweb-ai-polyglot').'</a>';
         if ($manual) {
             echo ' <span style="color:#f0ad4e" title="'.esc_attr__('Manual translation', 'piedweb-ai-polyglot').'">✎</span>';
         }
     } else {
-        echo '<span style="color:#999">✗</span> <span style="color:#999">'.$safe.'</span>';
+        echo '<span style="color:#999">✗</span> <span style="color:#999">'.esc_html($label).'</span>';
     }
 
     echo '</li>';
@@ -404,7 +416,13 @@ function polyglot_save_permalink_metabox(int $post_id, WP_Post $post): void
         return;
     }
 
-    $value = sanitize_text_field(trim(wp_unslash($_POST['polyglot_custom_permalink'] ?? ''), '/'));
+    if (isset($_POST['polyglot_custom_permalink']) && ! is_string($_POST['polyglot_custom_permalink'])) {
+        return;
+    }
+
+    $value = isset($_POST['polyglot_custom_permalink'])
+        ? trim(sanitize_text_field(wp_unslash($_POST['polyglot_custom_permalink'])), '/')
+        : '';
 
     if ($value) {
         update_post_meta($post_id, 'custom_permalink', $value);
@@ -449,10 +467,10 @@ function polyglot_enqueue_admin_assets(): void
                 true
             );
             wp_localize_script('polyglot-admin-inventory', 'polyglotInventory', [
-                'masterId'  => $master_id,
+                'masterId' => $master_id,
                 'masterUrl' => get_edit_post_link($master_id, 'raw'),
-                'locale'    => get_post_meta($post->ID, '_locale', true),
-                'label'     => __('Stock is managed by the master product', 'piedweb-ai-polyglot'),
+                'locale' => get_post_meta($post->ID, '_locale', true),
+                'label' => __('Stock is managed by the master product', 'piedweb-ai-polyglot'),
                 'editLabel' => __('Edit master', 'piedweb-ai-polyglot'),
             ]);
         }
@@ -525,7 +543,7 @@ function polyglot_add_order_locale_column($columns)
     return $new;
 }
 
-function polyglot_render_order_locale_column($column, $post_id)
+function polyglot_render_order_locale_column($column, $post_id): void
 {
     if ('polyglot_locale' !== $column) {
         return;
@@ -535,7 +553,7 @@ function polyglot_render_order_locale_column($column, $post_id)
     echo polyglot_format_locale_badge($locale); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- returns sanitized HTML built from trusted locale labels
 }
 
-function polyglot_render_order_locale_column_hpos($column, $order)
+function polyglot_render_order_locale_column_hpos($column, $order): void
 {
     if ('polyglot_locale' !== $column) {
         return;

@@ -2,7 +2,7 @@
 
 /**
  * Structural checks for the Google product feed that do not require WooCommerce.
- * (Item mapping / pricing is exercised in tests/wc/GoogleFeedTest.php.)
+ * (Item mapping / pricing is exercised in tests/wc/GoogleFeedTest.php.).
  *
  * @group feed
  */

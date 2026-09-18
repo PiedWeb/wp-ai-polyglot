@@ -332,6 +332,24 @@ class PermalinkResolutionTest extends WP_UnitTestCase
         $this->assertEmpty(get_post_meta($post_id, 'custom_permalink', true));
     }
 
+    public function testMetaboxIgnoresNonScalarCustomPermalink(): void
+    {
+        $post_id = self::factory()->post->create([
+            'post_type' => 'page',
+            'post_name' => 'test-invalid',
+            'post_status' => 'publish',
+        ]);
+        update_post_meta($post_id, 'custom_permalink', 'keep-me');
+
+        wp_set_current_user(self::factory()->user->create(['role' => 'administrator']));
+        $_POST['polyglot_permalink_nonce'] = wp_create_nonce('polyglot_permalink_'.$post_id);
+        $_POST['polyglot_custom_permalink'] = ['invalid'];
+
+        polyglot_save_permalink_metabox($post_id, get_post($post_id));
+
+        $this->assertSame('keep-me', get_post_meta($post_id, 'custom_permalink', true));
+    }
+
     public function testResolveShadowByCustomPermalink(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
@@ -389,7 +407,7 @@ class PermalinkResolutionTest extends WP_UnitTestCase
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $canonical = wp_get_canonical_url($this->child_page);
-        $path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+        $path = trim(parse_url($canonical, \PHP_URL_PATH), '/');
 
         $this->assertSame('blog', $path);
     }
@@ -408,7 +426,7 @@ class PermalinkResolutionTest extends WP_UnitTestCase
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $canonical = wp_get_canonical_url($child_no_cp);
-        $path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+        $path = trim(parse_url($canonical, \PHP_URL_PATH), '/');
 
         // Should be flat /faq/, not hierarchical /accueil/faq/
         $this->assertSame('faq', $path);
@@ -421,7 +439,7 @@ class PermalinkResolutionTest extends WP_UnitTestCase
         $_SERVER['HTTP_HOST'] = 'en.test';
 
         $canonical = wp_get_canonical_url($this->child_shadow_en);
-        $path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+        $path = trim(parse_url($canonical, \PHP_URL_PATH), '/');
 
         $this->assertSame('blog', $path);
     }
@@ -431,7 +449,7 @@ class PermalinkResolutionTest extends WP_UnitTestCase
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $canonical = wp_get_canonical_url($this->product);
-        $path = trim(parse_url($canonical, PHP_URL_PATH), '/');
+        $path = trim(parse_url($canonical, \PHP_URL_PATH), '/');
 
         // Product should have flat URL
         $this->assertSame('origin', $path);
@@ -446,7 +464,7 @@ class PermalinkResolutionTest extends WP_UnitTestCase
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $link = get_permalink($this->parent_page);
-        $path = trim(parse_url($link, PHP_URL_PATH), '/');
+        $path = trim(parse_url($link, \PHP_URL_PATH), '/');
 
         // Front page should be "/" not "/accueil/"
         $this->assertSame('', $path);
@@ -554,7 +572,7 @@ class PermalinkResolutionTest extends WP_UnitTestCase
 
         // Even when called from master domain, shadow front page should return /
         $link = get_permalink($shadow_home);
-        $path = trim(parse_url($link, PHP_URL_PATH), '/');
+        $path = trim(parse_url($link, \PHP_URL_PATH), '/');
 
         $this->assertSame('', $path);
     }

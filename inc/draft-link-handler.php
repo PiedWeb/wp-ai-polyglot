@@ -82,7 +82,8 @@ function polyglot_resolve_url_any_status(string $url): ?int
         ? [$path, $slug, $slug]
         : [$locale, $path, $slug, $slug];
 
-    $row = $wpdb->get_row($wpdb->prepare($sql, ...$args)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- $sql is composed from trusted internal SQL fragments and passed through $wpdb->prepare()
+    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,PluginCheck.Security.DirectDB.UnescapedDBParameter -- SQL fragments are internal constants, values are prepared, and the result is cached below.
+    $row = $wpdb->get_row($wpdb->prepare($sql, ...$args));
     wp_cache_set($key, $row ? (int) $row->ID : 0, 'polyglot', 300);
 
     return $row ? (int) $row->ID : null;
@@ -103,7 +104,7 @@ function polyglot_handle_draft_links(string $content): string
     libxml_use_internal_errors(true);
     $dom->loadHTML(
         '<?xml encoding="UTF-8"?><div id="polyglot-wrap">'.$content.'</div>',
-        LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        \LIBXML_HTML_NOIMPLIED | \LIBXML_HTML_NODEFDTD
     );
     libxml_clear_errors();
 

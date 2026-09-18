@@ -1,10 +1,10 @@
 === PiedWeb AI Polyglot ===
 Contributors: piedweb
-Tags: hreflang, ai-translation, automatic-translation, language-switcher, multi-currency, content-translation, multicurrency, multi-language, woo-multilingual, translator, machine-translation, duplicate-content, internationalization, bilingual, localization, i18n, multilingual, translation, woocommerce
+Tags: hreflang, ai-translation, language-switcher, multi-currency, woocommerce
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,11 @@ Brought to you by Robin ([Pied Web](https://en.piedweb.com)), inspired by [Pushw
 Country flag SVGs in `assets/flags/` are from [flag-icons](https://github.com/lipis/flag-icons) by Panayiotis Lipiridis, licensed under the MIT License.
 
 == Changelog ==
+
+= 2.3.1 =
+* Confirmed compatibility with WordPress 7.1.
+* Hardened database, input, output, redirect, date, and filesystem handling reported by Plugin Check.
+* Added complete PHPStan types for sitemap 404 handling and aligned the codebase with the current PHP CS Fixer configuration.
 
 = 2.3.0 =
 * `check-links --fix` now runs automatically after `import` and `translate` (opt out with `--no-fix-links`)

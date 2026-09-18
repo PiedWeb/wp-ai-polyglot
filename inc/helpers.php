@@ -359,14 +359,16 @@ function polyglot_flat_build(WP_Post $post, string $locale, ?int $master_id, boo
 
 function polyglot_find_shadow_id(int $master_id, string $locale): ?int
 {
-    static $cache = [];
-    $key = "{$master_id}|{$locale}";
+    $cache_key = "shadow_id|{$master_id}|{$locale}";
+    $wp_cached = wp_cache_get($cache_key, 'polyglot');
+    if (false !== $wp_cached) {
+        $cached_id = is_numeric($wp_cached) ? (int) $wp_cached : 0;
 
-    if (array_key_exists($key, $cache)) {
-        return $cache[$key];
+        return $cached_id > 0 ? $cached_id : null;
     }
 
     global $wpdb;
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Result is cached immediately below.
     $id = $wpdb->get_var($wpdb->prepare(
         "SELECT pm1.post_id FROM $wpdb->postmeta pm1
          JOIN $wpdb->postmeta pm2 ON pm1.post_id = pm2.post_id AND pm2.meta_key = '_locale'
@@ -376,7 +378,10 @@ function polyglot_find_shadow_id(int $master_id, string $locale): ?int
         $locale
     ));
 
-    return $cache[$key] = $id ? (int) $id : null;
+    $result = $id ? (int) $id : null;
+    wp_cache_set($cache_key, $result ?: 0, 'polyglot', 3600);
+
+    return $result;
 }
 
 /**
@@ -396,6 +401,8 @@ function polyglot_find_shadow_ids(array $master_ids, string $locale): array
     $placeholders = implode(',', array_fill(0, count($master_ids), '%d'));
     $params = array_merge($master_ids, [$locale]);
 
+    // Generated placeholders are prepared, and every result is cached below.
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
     $rows = $wpdb->get_results($wpdb->prepare(
         "SELECT pm1.meta_value AS master_id, pm1.post_id
          FROM $wpdb->postmeta pm1
@@ -404,10 +411,15 @@ function polyglot_find_shadow_ids(array $master_ids, string $locale): array
          AND pm2.meta_value = %s",
         ...$params
     ));
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     $map = [];
     foreach ($rows as $row) {
         $map[(int) $row->master_id] = (int) $row->post_id;
+    }
+
+    foreach ($master_ids as $master_id) {
+        wp_cache_set("shadow_id|{$master_id}|{$locale}", $map[$master_id] ?? 0, 'polyglot', 3600);
     }
 
     return $map;

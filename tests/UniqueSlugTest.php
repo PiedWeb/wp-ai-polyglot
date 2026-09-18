@@ -23,7 +23,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * Shadow in a different locale can reuse the master's slug.
      */
-    public function test_shadow_can_have_same_slug_as_master(): void
+    public function testShadowCanHaveSameSlugAsMaster(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $shadow_id = self::factory()->post->create([
@@ -44,7 +44,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * Two shadows in different locales can share the same slug.
      */
-    public function test_two_shadows_different_locales_same_slug(): void
+    public function testTwoShadowsDifferentLocalesSameSlug(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $shadow_en = self::factory()->post->create([
@@ -75,7 +75,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * Two shadows in the SAME locale cannot share the same slug — WP suffixing applies.
      */
-    public function test_same_locale_slug_conflict_gets_suffixed(): void
+    public function testSameLocaleSlugConflictGetsSuffixed(): void
     {
         // First shadow
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
@@ -115,7 +115,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * Non-polyglot post types are not affected by the filter.
      */
-    public function test_non_polyglot_post_type_not_affected(): void
+    public function testNonPolyglotPostTypeNotAffected(): void
     {
         register_post_type('custom_type', ['public' => true]);
 
@@ -146,7 +146,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * Updating a shadow preserves its slug even if it matches the master.
      */
-    public function test_update_shadow_keeps_same_slug(): void
+    public function testUpdateShadowKeepsSameSlug(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $shadow_id = self::factory()->post->create([
@@ -172,7 +172,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * The request filter resolves the correct post by slug on the shadow domain.
      */
-    public function test_request_filter_resolves_shadow_by_slug(): void
+    public function testRequestFilterResolvesShadowBySlug(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $shadow_en = self::factory()->post->create([
@@ -195,7 +195,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * The request filter resolves master post by slug on master domain.
      */
-    public function test_request_filter_resolves_master_by_slug(): void
+    public function testRequestFilterResolvesMasterBySlug(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -207,7 +207,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * The request filter passes through when page_id is already set.
      */
-    public function test_request_filter_passthrough_with_page_id(): void
+    public function testRequestFilterPassthroughWithPageId(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -219,7 +219,7 @@ class UniqueSlugTest extends WP_UnitTestCase
     /**
      * Without the pending locale global, a new post with no meta falls through to WP default.
      */
-    public function test_no_pending_locale_falls_through(): void
+    public function testNoPendingLocaleFallsThrough(): void
     {
         // No global, no _locale meta — filter returns null, WP handles normally
         $post = self::factory()->post->create([

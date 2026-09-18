@@ -4,6 +4,15 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+// This file is loaded only by WP-CLI. Its batch commands intentionally query
+// canonical database state without persistent caches; dynamic placeholder lists
+// contain only generated placeholders and all values still pass through prepare().
+// RuntimeException messages are rendered by WP-CLI, never as browser HTML.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_query,PluginCheck.Security.DirectDB.UnescapedDBParameter
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+
 class Polyglot_CLI
 {
     /**
@@ -660,7 +669,7 @@ class Polyglot_CLI
             if (preg_match('~^(?:mailto:|tel:|#|https?://)~i', $url)) {
                 continue;
             }
-            $path = trim((string) parse_url($url, \PHP_URL_PATH), '/');
+            $path = trim((string) wp_parse_url($url, \PHP_URL_PATH), '/');
             if ('' !== $path && ! str_contains($path, 'wp-content')) {
                 $out[] = $path;
             }
@@ -1274,7 +1283,7 @@ class Polyglot_CLI
                 }
                 $folder = "$dir/term-$taxonomy-{$term->term_id}";
                 if (! is_dir($folder)) {
-                    mkdir($folder, 0755, true);
+                    wp_mkdir_p($folder);
                 }
                 file_put_contents("$folder/$master_locale.html", polyglot_term_flat_build($term, $master_locale, null, $taxonomy));
 
@@ -1322,8 +1331,7 @@ class Polyglot_CLI
         // Self-heal: the wide TSV is retired (Option B). Drop a stale one left
         // over from a pre-migration export so it can't be mistaken for live data.
         if (file_exists("$dir/translations.tsv")) {
-            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink -- WP-CLI command, batch flat-file I/O.
-            unlink("$dir/translations.tsv");
+            wp_delete_file("$dir/translations.tsv");
         }
 
         return ['dir' => $dir, 'entities' => count($index_rows), 'purged' => $purged];
@@ -1685,12 +1693,13 @@ class Polyglot_CLI
     {
         if (rtrim(dirname($canonical), '/') !== rtrim(dirname($edited), '/')) {
             if (! is_dir(dirname($canonical))) {
-                mkdir(dirname($canonical), 0755, true);
+                wp_mkdir_p(dirname($canonical));
             }
             file_put_contents($canonical, $content);
-            unlink($edited);
+            wp_delete_file($edited);
             $old_dir = dirname($edited);
             if (is_dir($old_dir) && [] === array_diff((array) scandir($old_dir), ['.', '..'])) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Remove the now-empty source directory after an atomic WP-CLI relocation.
                 rmdir($old_dir);
             }
         } else {
@@ -2088,8 +2097,7 @@ class Polyglot_CLI
             if (is_dir($child) && ! is_link($child)) {
                 $this->rmdir_recursive($child);
             } else {
-                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.
-                unlink($child);
+                wp_delete_file($child);
             }
         }
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- WP-CLI command running with admin privileges; WP_Filesystem is overkill for batch flat-file I/O.

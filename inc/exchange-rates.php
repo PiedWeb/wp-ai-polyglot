@@ -136,7 +136,7 @@ function polyglot_update_exchange_rates()
     $currencies = polyglot_fx_target_currencies();
     if (empty($currencies)) {
         // Nothing to convert — store an empty (but valid) snapshot.
-        $data = polyglot_fx_snapshot([], date('Y-m-d'));
+        $data = polyglot_fx_snapshot([], gmdate('Y-m-d'));
         update_option(POLYGLOT_FX_OPTION, $data, false);
 
         return $data;
@@ -181,7 +181,7 @@ function polyglot_update_exchange_rates()
     $date_nodes = $xpath->query('//ecb:Cube[@time]/@time');
     $date = (false !== $date_nodes && $date_nodes->length > 0 && null !== $date_nodes->item(0))
         ? (string) $date_nodes->item(0)->nodeValue
-        : date('Y-m-d');
+        : gmdate('Y-m-d');
 
     $data = polyglot_fx_snapshot($rates, $date);
     update_option(POLYGLOT_FX_OPTION, $data, false);
@@ -217,7 +217,7 @@ function polyglot_fx_snapshot(array $rates, string $date): array
 
 add_action('polyglot_fx_refresh', 'polyglot_update_exchange_rates');
 
-add_action('init', function (): void {
+add_action('init', static function (): void {
     if (empty(polyglot_fx_target_currencies())) {
         return;
     }

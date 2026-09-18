@@ -1,9 +1,10 @@
 <?php
-/**
+
+/*
  * Plugin Name: PiedWeb AI Polyglot
  * Plugin URI:  https://wap.piedweb.com
  * Description: Master/Shadow i18n architecture. One master language, N shadow languages via domain map.
- * Version:     2.3.0
+ * Version:     2.3.1
  * Author:      PiedWeb
  * Author URI:  https://en.piedweb.com
  * License:     GPL-2.0-or-later
@@ -36,7 +37,7 @@ if (! defined('POLYGLOT_LOCALES')) {
 // Resolution happens lazily via polyglot_translations_dir() in inc/helpers.php.
 
 if (is_multisite()) {
-    add_action('admin_notices', function (): void {
+    add_action('admin_notices', static function (): void {
         echo '<div class="notice notice-error"><p>';
         echo esc_html__('PiedWeb AI Polyglot is not compatible with WordPress Multisite.', 'piedweb-ai-polyglot');
         echo '</p></div>';
@@ -45,7 +46,7 @@ if (is_multisite()) {
     return;
 }
 
-define('POLYGLOT_VERSION', '2.3.0');
+define('POLYGLOT_VERSION', '2.3.1');
 define('POLYGLOT_PLUGIN_FILE', __FILE__);
 define('POLYGLOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('POLYGLOT_WC_SLUGS_OPTION', 'polyglot_wc_slugs');
@@ -54,11 +55,11 @@ define('POLYGLOT_WC_SLUGS_OPTION', 'polyglot_wc_slugs');
 // ACTIVATION / DEACTIVATION
 // ============================================================
 
-register_activation_hook(__FILE__, function (): void {
+register_activation_hook(__FILE__, static function (): void {
     flush_rewrite_rules();
 });
 
-register_deactivation_hook(__FILE__, function (): void {
+register_deactivation_hook(__FILE__, static function (): void {
     wp_clear_scheduled_hook('polyglot_fx_refresh');
     flush_rewrite_rules();
 });
@@ -89,7 +90,7 @@ if (defined('WP_CLI') && WP_CLI) {
 // CACHE INVALIDATION — Flush polyglot object cache on changes
 // ============================================================
 
-add_action('save_post', function (int $post_id): void {
+add_action('save_post', static function (int $post_id): void {
     if (! in_array(get_post_type($post_id), polyglot_get_post_types(), true)) {
         return;
     }
@@ -105,13 +106,13 @@ add_action('save_post', function (int $post_id): void {
     }
 });
 
-add_action('comment_post', function (): void {
+add_action('comment_post', static function (): void {
     if (function_exists('wp_cache_flush_group')) {
         wp_cache_flush_group('polyglot');
     }
 });
 
-add_action('wp_set_comment_status', function (): void {
+add_action('wp_set_comment_status', static function (): void {
     if (function_exists('wp_cache_flush_group')) {
         wp_cache_flush_group('polyglot');
     }

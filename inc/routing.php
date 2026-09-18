@@ -95,13 +95,15 @@ function polyglot_filter_by_domain($query): void
     $query->set('meta_query', $meta_query);
 }
 
-function polyglot_admin_filter_shadows($query)
+function polyglot_admin_filter_shadows($query): void
 {
     $post_type = $query->get('post_type');
     if (! in_array($post_type, polyglot_get_post_types(), true)) {
         return;
     }
 
+    // Read-only list filter; it does not mutate state and therefore needs no nonce.
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $filter = sanitize_text_field(wp_unslash($_GET['polyglot_locale'] ?? ''));
     $meta_query = $query->get('meta_query') ?: [];
 
@@ -158,6 +160,7 @@ function polyglot_wc_page_id(int $page_id): int
     }
 
     global $wpdb;
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Result is cached immediately below.
     $shadow_id = $wpdb->get_var($wpdb->prepare(
         "SELECT pm1.post_id FROM $wpdb->postmeta pm1
          JOIN $wpdb->postmeta pm2 ON pm1.post_id = pm2.post_id AND pm2.meta_key = '_locale'
@@ -202,11 +205,17 @@ add_action('init', 'polyglot_restore_session_from_url', 1);
 
 function polyglot_restore_session_from_url(): void
 {
-    if (empty($_GET['wc_session']) || ! function_exists('WC')) {
+    // Cross-domain requests cannot share a WordPress nonce; the token is authenticated by HMAC below.
+    // phpcs:disable WordPress.Security.NonceVerification.Recommended
+    $session_token = isset($_GET['wc_session']) && is_string($_GET['wc_session'])
+        ? sanitize_text_field(wp_unslash($_GET['wc_session']))
+        : '';
+    // phpcs:enable WordPress.Security.NonceVerification.Recommended
+    if ('' === $session_token || ! function_exists('WC')) {
         return;
     }
 
-    $parts = explode('|', sanitize_text_field(wp_unslash($_GET['wc_session'])));
+    $parts = explode('|', $session_token);
     if (3 !== count($parts)) {
         return;
     }

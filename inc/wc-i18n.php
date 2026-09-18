@@ -136,7 +136,7 @@ function polyglot_translate_cart_item_name($name, $cart_item, $cart_item_key)
 
 add_action('user_register', 'polyglot_tag_registration_locale');
 
-function polyglot_tag_registration_locale($user_id)
+function polyglot_tag_registration_locale($user_id): void
 {
     update_user_meta($user_id, '_registration_locale', polyglot_get_current_locale());
 }
@@ -147,7 +147,7 @@ function polyglot_tag_registration_locale($user_id)
 
 add_action('woocommerce_checkout_order_processed', 'polyglot_save_order_locale', 10, 1);
 
-function polyglot_save_order_locale($order_id)
+function polyglot_save_order_locale($order_id): void
 {
     $locale = polyglot_get_current_locale();
     update_post_meta($order_id, '_order_locale', $locale);
@@ -180,7 +180,7 @@ function polyglot_email_locale_active(?bool $set = null): bool
     return $active;
 }
 
-$_polyglot_wc_email_hooks = [
+$polyglot_wc_email_hooks = [
     'woocommerce_order_status_pending_to_processing_notification',
     'woocommerce_order_status_pending_to_completed_notification',
     'woocommerce_order_status_pending_to_on-hold_notification',
@@ -191,17 +191,17 @@ $_polyglot_wc_email_hooks = [
     'woocommerce_order_status_refunded_notification',
 ];
 
-foreach ($_polyglot_wc_email_hooks as $_hook) {
-    add_action($_hook, 'polyglot_email_switch_locale', 5, 1);
-    add_action($_hook, 'polyglot_email_restore_locale', 999, 1);
+foreach ($polyglot_wc_email_hooks as $polyglot_wc_email_hook) {
+    add_action($polyglot_wc_email_hook, 'polyglot_email_switch_locale', 5, 1);
+    add_action($polyglot_wc_email_hook, 'polyglot_email_restore_locale', 999, 1);
 }
-unset($_polyglot_wc_email_hooks, $_hook);
+unset($polyglot_wc_email_hook, $polyglot_wc_email_hooks);
 
 // Resend hooks: same functions — polyglot_email_switch_locale accepts int|object
 add_action('woocommerce_before_resend_order_emails', 'polyglot_email_switch_locale', 5, 1);
 add_action('woocommerce_after_resend_order_email', 'polyglot_email_restore_locale', 999, 1);
 
-function polyglot_email_switch_locale($order_id)
+function polyglot_email_switch_locale($order_id): void
 {
     if (is_object($order_id)) {
         $order_id = $order_id->get_id();
@@ -223,7 +223,7 @@ function polyglot_email_switch_locale($order_id)
     switch_to_locale($order_locale);
 }
 
-function polyglot_email_restore_locale($order_id = null)
+function polyglot_email_restore_locale($order_id = null): void
 {
     if (! polyglot_email_locale_active()) {
         return;
@@ -257,7 +257,7 @@ function polyglot_get_email_locale(): string
 
 // --- Email additional_content translations ---
 
-$_polyglot_email_content_types = [
+$polyglot_email_content_types = [
     'customer_processing_order',
     'customer_completed_order',
     'customer_on_hold_order',
@@ -268,10 +268,10 @@ $_polyglot_email_content_types = [
     'customer_reset_password',
 ];
 
-foreach ($_polyglot_email_content_types as $_type) {
-    add_filter("woocommerce_email_additional_content_{$_type}", 'polyglot_translate_email_additional_content', 10, 3);
+foreach ($polyglot_email_content_types as $polyglot_email_content_type) {
+    add_filter("woocommerce_email_additional_content_{$polyglot_email_content_type}", 'polyglot_translate_email_additional_content', 10, 3);
 }
-unset($_polyglot_email_content_types, $_type);
+unset($polyglot_email_content_type, $polyglot_email_content_types);
 
 function polyglot_translate_email_additional_content($content, $object, $email)
 {
@@ -281,7 +281,7 @@ function polyglot_translate_email_additional_content($content, $object, $email)
     }
 
     static $map = null;
-    if ($map === null) {
+    if (null === $map) {
         $map = polyglot_email_content_translations();
     }
 
@@ -295,7 +295,7 @@ function polyglot_translate_email_additional_content($content, $object, $email)
     // Replace {site_url} placeholder with the shadow domain hostname
     if (str_contains($text, '{site_url}')) {
         $authority = polyglot_locale_to_authority($locale);
-        $text = str_replace('{site_url}', $authority ?: wp_parse_url(home_url(), PHP_URL_HOST), $text);
+        $text = str_replace('{site_url}', $authority ?: wp_parse_url(home_url(), \PHP_URL_HOST), $text);
     }
 
     return $text;
@@ -382,7 +382,7 @@ function polyglot_translate_email_footer($text, $email = null)
     }
 
     $shadow_url = polyglot_authority_to_url($authority);
-    $shadow_host = wp_parse_url($shadow_url, PHP_URL_HOST) ?: $authority;
+    $shadow_host = wp_parse_url($shadow_url, \PHP_URL_HOST) ?: $authority;
 
     // Replace all hrefs pointing to master domain
     $master_authority = polyglot_get_master_authority();
@@ -390,7 +390,7 @@ function polyglot_translate_email_footer($text, $email = null)
     $text = str_replace($master_url, $shadow_url, $text);
 
     // Replace display hostname (handles both "woodrock.fr" and "www.woodrock.fr" patterns)
-    $master_host = wp_parse_url($master_url, PHP_URL_HOST) ?: $master_authority;
+    $master_host = wp_parse_url($master_url, \PHP_URL_HOST) ?: $master_authority;
     if ($master_host !== $shadow_host) {
         $text = str_replace($master_host, $shadow_host, $text);
     }

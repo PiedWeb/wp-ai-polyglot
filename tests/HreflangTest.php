@@ -6,6 +6,7 @@
 class HreflangTest extends WP_UnitTestCase
 {
     private int $master_id;
+
     private int $shadow_id;
 
     public function set_up(): void
@@ -13,23 +14,23 @@ class HreflangTest extends WP_UnitTestCase
         parent::set_up();
 
         $this->master_id = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'À propos',
-            'post_name'   => 'a-propos',
+            'post_type' => 'page',
+            'post_title' => 'À propos',
+            'post_name' => 'a-propos',
             'post_status' => 'publish',
         ]);
 
         $this->shadow_id = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'About Us',
-            'post_name'   => 'about-us',
+            'post_type' => 'page',
+            'post_title' => 'About Us',
+            'post_name' => 'about-us',
             'post_status' => 'publish',
         ]);
         update_post_meta($this->shadow_id, '_master_id', $this->master_id);
         update_post_meta($this->shadow_id, '_locale', 'en_IE');
     }
 
-    public function test_hreflang_on_master_singular(): void
+    public function testHreflangOnMasterSingular(): void
     {
         $this->simulate_singular($this->master_id);
 
@@ -42,7 +43,7 @@ class HreflangTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('x-default', $output);
     }
 
-    public function test_hreflang_on_shadow_singular(): void
+    public function testHreflangOnShadowSingular(): void
     {
         $this->simulate_singular($this->shadow_id);
 
@@ -54,11 +55,11 @@ class HreflangTest extends WP_UnitTestCase
         $this->assertStringContainsString('hreflang="en"', $output);
     }
 
-    public function test_no_hreflang_without_shadow(): void
+    public function testNoHreflangWithoutShadow(): void
     {
         $standalone = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'Standalone',
+            'post_type' => 'page',
+            'post_title' => 'Standalone',
             'post_status' => 'publish',
         ]);
 
@@ -71,12 +72,12 @@ class HreflangTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('hreflang', $output);
     }
 
-    public function test_homepage_hreflang(): void
+    public function testHomepageHreflang(): void
     {
         // Create a static front page
         $page_id = self::factory()->post->create([
-            'post_type'   => 'page',
-            'post_title'  => 'Home',
+            'post_type' => 'page',
+            'post_title' => 'Home',
             'post_status' => 'publish',
         ]);
         update_option('show_on_front', 'page');

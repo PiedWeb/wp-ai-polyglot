@@ -16,7 +16,9 @@
 class SecondaryQueryFilterTest extends WP_UnitTestCase
 {
     private int $master_id;
+
     private int $shadow_id;
+
     private int $variation_id;
 
     public function set_up(): void
@@ -32,14 +34,14 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
         }
 
         $this->master_id = self::factory()->post->create([
-            'post_type'   => 'product',
-            'post_title'  => 'Origin',
+            'post_type' => 'product',
+            'post_title' => 'Origin',
             'post_status' => 'publish',
         ]);
 
         $this->shadow_id = self::factory()->post->create([
-            'post_type'   => 'product',
-            'post_title'  => 'Origin (EN)',
+            'post_type' => 'product',
+            'post_title' => 'Origin (EN)',
             'post_status' => 'publish',
         ]);
         update_post_meta($this->shadow_id, '_master_id', $this->master_id);
@@ -47,7 +49,7 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
 
         // A variation of the master product: no _master_id / _locale of its own.
         $this->variation_id = self::factory()->post->create([
-            'post_type'   => 'product_variation',
+            'post_type' => 'product_variation',
             'post_parent' => $this->master_id,
             'post_status' => 'publish',
         ]);
@@ -70,7 +72,7 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
 
     // --- The fix: mixed product+variation queries are now filtered ----------
 
-    public function test_mixed_query_is_filtered_on_master(): void
+    public function testMixedQueryIsFilteredOnMaster(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -85,15 +87,15 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
         $this->assertSame('NOT EXISTS', $meta_query[0]['compare']);
     }
 
-    public function test_mixed_query_keeps_masters_and_variations_drops_shadows(): void
+    public function testMixedQueryKeepsMastersAndVariationsDropsShadows(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
         $ids = get_posts([
-            'post_type'        => ['product', 'product_variation'],
-            'post_status'      => 'publish',
-            'fields'           => 'ids',
-            'posts_per_page'   => -1,
+            'post_type' => ['product', 'product_variation'],
+            'post_status' => 'publish',
+            'fields' => 'ids',
+            'posts_per_page' => -1,
             'suppress_filters' => false, // let pre_get_posts run
         ]);
 
@@ -102,7 +104,7 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
         $this->assertNotContains($this->shadow_id, $ids, 'shadow product excluded');
     }
 
-    public function test_mixed_query_on_shadow_keeps_only_locale(): void
+    public function testMixedQueryOnShadowKeepsOnlyLocale(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
 
@@ -116,7 +118,7 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
 
     // --- Still untouched: queries with no managed type ----------------------
 
-    public function test_standalone_variation_lookup_is_untouched(): void
+    public function testStandaloneVariationLookupIsUntouched(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -126,7 +128,7 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
         $this->assertEmpty($query->get('meta_query'), 'pure variation query must not be domain-filtered');
     }
 
-    public function test_unmanaged_type_query_is_untouched(): void
+    public function testUnmanagedTypeQueryIsUntouched(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
 
@@ -136,7 +138,7 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
         $this->assertEmpty($query->get('meta_query'));
     }
 
-    public function test_empty_post_type_secondary_query_is_untouched(): void
+    public function testEmptyPostTypeSecondaryQueryIsUntouched(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -148,7 +150,7 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
 
     // --- Regression: single managed type and main query still filter --------
 
-    public function test_single_managed_type_secondary_query_still_filters(): void
+    public function testSingleManagedTypeSecondaryQueryStillFilters(): void
     {
         $_SERVER['HTTP_HOST'] = 'master.test';
 
@@ -159,7 +161,7 @@ class SecondaryQueryFilterTest extends WP_UnitTestCase
         $this->assertSame('_master_id', $meta_query[0]['key']);
     }
 
-    public function test_main_query_is_still_filtered(): void
+    public function testMainQueryIsStillFiltered(): void
     {
         $_SERVER['HTTP_HOST'] = 'en.test';
 

@@ -46,7 +46,7 @@ class LintTest extends WP_UnitTestCase
         return [$master, $shadow];
     }
 
-    public function test_faithful_translation_has_no_findings(): void
+    public function testFaithfulTranslationHasNoFindings(): void
     {
         $this->make_pair(
             '<p><a href="/a">x</a> [breadcrumb]</p>',
@@ -56,7 +56,7 @@ class LintTest extends WP_UnitTestCase
         $this->assertSame([], $this->findings());
     }
 
-    public function test_missing_shortcode_is_a_failure_listing_the_tag(): void
+    public function testMissingShortcodeIsAFailureListingTheTag(): void
     {
         $this->make_pair('<p>[wr_calcul_charge]</p>', '<p>tool gone</p>');
 
@@ -66,14 +66,14 @@ class LintTest extends WP_UnitTestCase
         $this->assertContains('[wr_calcul_charge]', $fails[0]['missing']);
     }
 
-    public function test_missing_placeholder_is_a_failure(): void
+    public function testMissingPlaceholderIsAFailure(): void
     {
         $this->make_pair('<p>Total %s due</p>', '<p>Total due</p>');
 
         $this->assertContains('fail', array_column($this->findings(), 'status'));
     }
 
-    public function test_localized_link_is_resolved_not_flagged(): void
+    public function testLocalizedLinkIsResolvedNotFlagged(): void
     {
         // A target page that exists in both locales with different slugs.
         $tmaster = self::factory()->post->create([
@@ -102,7 +102,7 @@ class LintTest extends WP_UnitTestCase
         $this->assertNotContains('links', array_column($this->findings(), 'type'));
     }
 
-    public function test_missing_link_lists_the_specific_target(): void
+    public function testMissingLinkListsTheSpecificTarget(): void
     {
         $this->make_pair('<p><a href="/cotation-escalade">x</a></p>', '<p>no link</p>');
 
@@ -111,7 +111,7 @@ class LintTest extends WP_UnitTestCase
         $this->assertContains('cotation-escalade', $links[0]['missing']);
     }
 
-    public function test_link_drift_is_a_warning_not_a_failure(): void
+    public function testLinkDriftIsAWarningNotAFailure(): void
     {
         $this->make_pair(
             '<p><a href="/a">1</a><a href="/b">2</a></p>',
@@ -123,7 +123,7 @@ class LintTest extends WP_UnitTestCase
         $this->assertNotContains('fail', $statuses);
     }
 
-    public function test_residual_french_is_a_warning(): void
+    public function testResidualFrenchIsAWarning(): void
     {
         $this->make_pair(
             '<p>with for you we your our this also</p>',
@@ -133,7 +133,7 @@ class LintTest extends WP_UnitTestCase
         $this->assertContains('residual-fr', array_column($this->findings(), 'type'));
     }
 
-    public function test_stale_src_hash_is_a_warning(): void
+    public function testStaleSrcHashIsAWarning(): void
     {
         [, $shadow] = $this->make_pair('<p>same body</p>', '<p>same body</p>');
         update_post_meta($shadow, '_src_hash', 'stale-hash-value');
@@ -141,7 +141,7 @@ class LintTest extends WP_UnitTestCase
         $this->assertContains('stale', array_column($this->findings(), 'type'));
     }
 
-    public function test_length_anomaly_is_a_warning(): void
+    public function testLengthAnomalyIsAWarning(): void
     {
         // Master ~320 visible chars, shadow a handful → ratio well below 0.5.
         $this->make_pair('<p>'.str_repeat('mot ', 80).'</p>', '<p>court</p>');

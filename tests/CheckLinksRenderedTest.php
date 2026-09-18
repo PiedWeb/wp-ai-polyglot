@@ -139,13 +139,13 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         return ob_get_clean();
     }
 
-    public function test_rendered_fix_is_incompatible(): void
+    public function testRenderedFixIsIncompatible(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->cli->check_links([], ['rendered' => true, 'fix' => true]);
     }
 
-    public function test_detects_trailing_slash_in_rendered_html(): void
+    public function testDetectsTrailingSlashInRenderedHtml(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -174,7 +174,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringContainsString('— en_IE —', $output);
     }
 
-    public function test_no_trailing_slash_is_clean(): void
+    public function testNoTrailingSlashIsClean(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -198,7 +198,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('[TRAILING_SLASH]', $output);
     }
 
-    public function test_deduplicates_menu_links_across_pages(): void
+    public function testDeduplicatesMenuLinksAcrossPages(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -225,7 +225,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringContainsString('template (menu/footer', $output);
     }
 
-    public function test_detects_trailing_slash_in_sitemap(): void
+    public function testDetectsTrailingSlashInSitemap(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -253,7 +253,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringContainsString('contact-us/', $output);
     }
 
-    public function test_detects_trailing_slash_in_hreflang(): void
+    public function testDetectsTrailingSlashInHreflang(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -277,7 +277,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringContainsString('contact-us/', $output);
     }
 
-    public function test_skips_external_links(): void
+    public function testSkipsExternalLinks(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -300,7 +300,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('example.com', $output);
     }
 
-    public function test_skips_wp_internal_paths(): void
+    public function testSkipsWpInternalPaths(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -322,7 +322,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringContainsString('No trailing slash issues', $output);
     }
 
-    public function test_respects_custom_permalink_with_trailing_slash(): void
+    public function testRespectsCustomPermalinkWithTrailingSlash(): void
     {
         // Create a master+shadow where custom_permalink intentionally has trailing slash
         $master = self::factory()->post->create([
@@ -368,7 +368,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringContainsString('No trailing slash issues', $output);
     }
 
-    public function test_detects_trailing_slash_in_absolute_same_domain_links(): void
+    public function testDetectsTrailingSlashInAbsoluteSameDomainLinks(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -392,7 +392,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringContainsString('contact-us/', $output);
     }
 
-    public function test_sitemap_hreflang_links_checked(): void
+    public function testSitemapHreflangLinksChecked(): void
     {
         $en_authority = null;
         $fr_authority = null;
@@ -422,7 +422,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringContainsString('hreflang href', $output);
     }
 
-    public function test_page_specific_link_shows_source_url(): void
+    public function testPageSpecificLinkShowsSourceUrl(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {
@@ -449,7 +449,7 @@ class CheckLinksRenderedTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('template', $output);
     }
 
-    public function test_trailing_slash_before_fragment_detected_and_deduped(): void
+    public function testTrailingSlashBeforeFragmentDetectedAndDeduped(): void
     {
         $en_authority = null;
         foreach (POLYGLOT_LOCALES as $authority => $cfg) {

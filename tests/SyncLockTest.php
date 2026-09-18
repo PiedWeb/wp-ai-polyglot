@@ -16,12 +16,12 @@ class SyncLockTest extends WP_UnitTestCase
     public function tear_down(): void
     {
         global $wpdb;
-        $wpdb->query($wpdb->prepare("SELECT RELEASE_LOCK(%s)", 'polyglot_sync'));
+        $wpdb->query($wpdb->prepare('SELECT RELEASE_LOCK(%s)', 'polyglot_sync'));
         delete_transient('polyglot_sync_lock_info');
         parent::tear_down();
     }
 
-    public function test_acquire_lock_succeeds_when_free(): void
+    public function testAcquireLockSucceedsWhenFree(): void
     {
         $method = new ReflectionMethod(Polyglot_CLI::class, 'acquire_sync_lock');
         $method->setAccessible(true);
@@ -35,7 +35,7 @@ class SyncLockTest extends WP_UnitTestCase
         $this->assertSame(getmypid(), $info['pid']);
     }
 
-    public function test_acquire_lock_fails_when_held(): void
+    public function testAcquireLockFailsWhenHeld(): void
     {
         global $wpdb;
 
@@ -56,7 +56,7 @@ class SyncLockTest extends WP_UnitTestCase
         try {
             $method->invoke($this->cli, 'export');
             $this->fail('Expected RuntimeException from WP_CLI::error()');
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             $this->assertStringContainsString('already running', $e->getMessage());
         } finally {
             $conn->query("SELECT RELEASE_LOCK('polyglot_sync')");
@@ -64,7 +64,7 @@ class SyncLockTest extends WP_UnitTestCase
         }
     }
 
-    public function test_release_lock_clears_transient(): void
+    public function testReleaseLockClearsTransient(): void
     {
         $acquire = new ReflectionMethod(Polyglot_CLI::class, 'acquire_sync_lock');
         $acquire->setAccessible(true);
@@ -77,7 +77,7 @@ class SyncLockTest extends WP_UnitTestCase
         $this->assertFalse(get_transient('polyglot_sync_lock_info'));
     }
 
-    public function test_lock_reacquirable_after_release(): void
+    public function testLockReacquirableAfterRelease(): void
     {
         $acquire = new ReflectionMethod(Polyglot_CLI::class, 'acquire_sync_lock');
         $acquire->setAccessible(true);

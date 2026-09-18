@@ -103,7 +103,7 @@ class CheckLinksTest extends WP_UnitTestCase
         parent::tear_down();
     }
 
-    public function test_detects_french_slug_in_shadow_content(): void
+    public function testDetectsFrenchSlugInShadowContent(): void
     {
         ob_start();
         $this->cli->check_links([], ['locale' => 'en_IE']);
@@ -114,7 +114,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringContainsString('"/poutres"', $output);
     }
 
-    public function test_correct_slug_without_trailing_slash_not_flagged(): void
+    public function testCorrectSlugWithoutTrailingSlashNotFlagged(): void
     {
         ob_start();
         $this->cli->check_links([], ['locale' => 'en_IE']);
@@ -124,7 +124,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('href="/contact-us"', $output);
     }
 
-    public function test_same_slug_across_locales_without_trailing_slash_not_flagged(): void
+    public function testSameSlugAcrossLocalesWithoutTrailingSlashNotFlagged(): void
     {
         ob_start();
         $this->cli->check_links([], ['locale' => 'en_IE']);
@@ -135,7 +135,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('[TRAILING_SLASH] href="/blog"', $output);
     }
 
-    public function test_fix_replaces_french_slugs(): void
+    public function testFixReplacesFrenchSlugs(): void
     {
         $this->cli->check_links([], ['locale' => 'en_IE', 'fix' => true]);
 
@@ -148,7 +148,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('href="/poutres"', $updated_product->post_content);
     }
 
-    public function test_translate_auto_fixes_links_without_manual_check(): void
+    public function testTranslateAutoFixesLinksWithoutManualCheck(): void
     {
         // Re-translating the master pushes content linking to the French slug
         // /contact; the post-translate auto-fix chain must localize it to
@@ -168,7 +168,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('href="/contact"', $updated->post_content);
     }
 
-    public function test_no_fix_links_flag_skips_auto_fix(): void
+    public function testNoFixLinksFlagSkipsAutoFix(): void
     {
         $this->cli->translate([$this->master_page], [
             'target' => 'en_IE',
@@ -186,7 +186,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringContainsString('href="/contact"', $updated->post_content);
     }
 
-    public function test_skips_external_and_anchor_links(): void
+    public function testSkipsExternalAndAnchorLinks(): void
     {
         // Create shadow with only external/anchor links
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
@@ -212,7 +212,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('mailto:', $output);
     }
 
-    public function test_detects_localhost_urls(): void
+    public function testDetectsLocalhostUrls(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $shadow = self::factory()->post->create([
@@ -233,7 +233,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringContainsString('[LOCALHOST', $output);
     }
 
-    public function test_detects_localhost_in_medialink(): void
+    public function testDetectsLocalhostInMedialink(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $shadow = self::factory()->post->create([
@@ -255,7 +255,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringContainsString('mediaLink=', $output);
     }
 
-    public function test_detects_trailing_slash_before_fragment(): void
+    public function testDetectsTrailingSlashBeforeFragment(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $shadow = self::factory()->post->create([
@@ -278,7 +278,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringContainsString('/contact-us/#section', $output);
     }
 
-    public function test_fix_removes_trailing_slash_before_fragment(): void
+    public function testFixRemovesTrailingSlashBeforeFragment(): void
     {
         $GLOBALS['polyglot_pending_locale'] = 'en_IE';
         $shadow = self::factory()->post->create([
@@ -302,7 +302,7 @@ class CheckLinksTest extends WP_UnitTestCase
         $this->assertStringNotContainsString('/hangboards/#', $updated->post_content);
     }
 
-    public function test_detects_localhost_in_master_content(): void
+    public function testDetectsLocalhostInMasterContent(): void
     {
         // Master post with localhost URL
         wp_update_post([
@@ -324,7 +324,7 @@ class CheckLinksTest extends WP_UnitTestCase
      * unpublished content — a false negative that shipped French slugs into
      * translated posts.
      */
-    public function test_scans_draft_and_scheduled_shadows(): void
+    public function testScansDraftAndScheduledShadows(): void
     {
         foreach (['draft', 'future'] as $status) {
             wp_update_post(['ID' => $this->en_page, 'post_status' => $status]);
@@ -346,7 +346,7 @@ class CheckLinksTest extends WP_UnitTestCase
      * A draft shadow is also authoritative as a *target*: its slug has to feed
      * the map, otherwise sibling shadows keep pointing at the French slug.
      */
-    public function test_draft_shadow_slug_feeds_the_slug_map(): void
+    public function testDraftShadowSlugFeedsTheSlugMap(): void
     {
         // The EN shadow of `poutres` is the only thing that can tell us
         // /poutres must become /hangboards on the EN domain.
@@ -372,7 +372,7 @@ class CheckLinksTest extends WP_UnitTestCase
     /**
      * Trashed and auto-draft posts stay out of scope: they are not content.
      */
-    public function test_ignores_trashed_shadows(): void
+    public function testIgnoresTrashedShadows(): void
     {
         wp_update_post(['ID' => $this->en_page, 'post_status' => 'trash']);
 

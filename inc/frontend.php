@@ -165,6 +165,8 @@ function polyglot_bar_session_arg(): string
     }
 
     if (! defined('DONOTCACHEPAGE')) {
+        // This standard WordPress cache-control constant is intentionally unprefixed.
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
         define('DONOTCACHEPAGE', true);
     }
 

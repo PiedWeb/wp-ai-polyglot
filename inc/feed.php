@@ -23,11 +23,11 @@ if (! defined('ABSPATH')) {
 // Endpoint registration
 // ------------------------------------------------------------
 
-add_action('init', function (): void {
+add_action('init', static function (): void {
     add_rewrite_rule('^polyglot-feed/google\.xml$', 'index.php?polyglot_feed=google', 'top');
 }, 5);
 
-add_filter('query_vars', function (array $vars): array {
+add_filter('query_vars', static function (array $vars): array {
     $vars[] = 'polyglot_feed';
 
     return $vars;
@@ -57,6 +57,8 @@ function polyglot_feed_render(): void
     $cache_key = 'polyglot_feed_google_'.$locale;
 
     $xml = get_transient($cache_key);
+    // Read-only debug switch; it does not mutate state and therefore needs no nonce.
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $bypass = defined('WP_DEBUG') && WP_DEBUG && isset($_GET['nocache']);
     if (false === $xml || $bypass) {
         $xml = polyglot_feed_build_xml();
@@ -69,7 +71,8 @@ function polyglot_feed_render(): void
         header('X-Robots-Tag: noindex, follow');
     }
 
-    echo $xml;
+    // Every dynamic XML field is escaped during document construction; HTML escaping here would corrupt the feed.
+    echo $xml; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     exit;
 }
 
