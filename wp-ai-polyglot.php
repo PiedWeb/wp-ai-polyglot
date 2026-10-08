@@ -22,8 +22,8 @@ if (! defined('ABSPATH')) {
 // ============================================================
 //
 // POLYGLOT_LOCALES must be defined in wp-config.php (or test bootstrap).
-// Each entry: 'authority' => [ locale, hreflang, label, currency ]
-// The first entry is always the master language.
+// Each entry: 'authority' => [ locale, hreflang, label, currency, master? ]
+// Exactly one entry has 'master' => true.
 //
 
 if (! defined('POLYGLOT_LOCALES')) {

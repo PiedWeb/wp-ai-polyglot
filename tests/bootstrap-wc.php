@@ -7,7 +7,7 @@
  * tables so the product-bridge (stock/price/image virtualization, stock
  * reduction interception) can be exercised against real WC_Product objects.
  *
- * Run with: composer test:wc  (or vendor/bin/phpunit -c phpunit-wc.xml.dist)
+ * Run with: composer test:wc  (or vendor/bin/phpunit -c phpunit-wc.xml)
  */
 $_tests_dir = getenv('WP_TESTS_DIR') ?: '/tmp/wordpress-tests-lib';
 

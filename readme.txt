@@ -40,7 +40,7 @@ Designed to fit AI-powered translation workflows — but works just as well with
 * **Draft link handling** — internal links pointing to drafts are auto-hidden for public visitors and re-activate once the target is published. Editors keep working links.
 * **Language switcher** — drop-in function for your theme with WooCommerce cart session transfer across domains.
 * **Admin UI** — locale filter dropdown, language badge column, shadow warning banner, and translations metabox on masters.
-* **Flat-file export/import** — bulk export all translations to TSV + HTML files, edit offline, re-import.
+* **Flat-file export/import** — one frontmatter + HTML file per locale and entity, edit offline, sync back under an optimistic lock.
 * **WP-CLI powered** — list untranslated content, push translations, manage slugs — all from the command line.
 
 = Works without WooCommerce =
@@ -53,7 +53,7 @@ For the complete documentation (data model, WP-CLI command reference, hooks, dra
 
 == Installation ==
 
-1. Upload the plugin folder to `wp-content/plugins/wp-ai-polyglot/`, or install it through the WordPress plugin screen.
+1. Upload the plugin folder to `wp-content/plugins/piedweb-ai-polyglot/`, or install it through the WordPress plugin screen.
 2. **Before activating**, define the `POLYGLOT_LOCALES` constant in `wp-config.php`:
 
 `define('POLYGLOT_LOCALES', [

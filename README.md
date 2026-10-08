@@ -28,21 +28,19 @@ Designed to fit AI-powered translation workflows — but works just as well with
 - **Human lock** — manually edited translations are protected from automated overwrite (unless you `--force`).
 - **Language suggestion banner** — auto-detects the visitor's browser language and suggests switching locale, with dismiss + localStorage persistence. Disable via config.
 - **Draft link handling** — internal links pointing to drafts (or any non-published target) are auto-hidden for public visitors and re-activate at render time once the target is published. Editors keep working links.
-- **Language switcher** — drop-in function for your theme with WooCommerce cart session transfer across domains.
-- **Admin UI** — locale filter dropdown, language badge column, shadow warning banner, and translations metabox on masters.
-- **Flat-file export/import** — bulk export all translations to TSV + HTML files, edit offline, re-import. Concurrency lock prevents simultaneous runs.
+- **Language switcher** — drop-in function for your theme with WooCommerce cart session transfer across domains, plus a footer flag dropdown (disable with `POLYGLOT_FOOTER` or in Settings → General).
+- **Admin UI** — locale filter dropdown, language badge column, shadow warning banner, and a translations metabox that switches between master and shadows.
+- **Flat-file export/import** — one frontmatter + HTML file per locale and entity (`{type}-{id}/{locale}.html`). Edit offline, then sync back with `write`, `push` or `import` under an optimistic lock (etag). A concurrency lock prevents simultaneous runs.
+- **Staleness tracking** — shadows record a hash of the master content they were translated from; `untranslated --stale` lists the outdated ones.
+- **Google Merchant feed** — `/polyglot-feed/google.xml` on each domain: one product feed per locale, currency and URL.
+- **Per-domain currency** — each locale has its own currency; master prices are converted with the ECB daily rates (plus an optional markup) unless the shadow has its own price.
+- **Health check and QA** — `wp polyglot doctor` checks config, master/shadow integrity, hreflang, exchange rates and feed endpoints; `wp polyglot lint` reports missing links, placeholders and drift per shadow.
 - **WP-CLI powered** — list untranslated content, push translations, manage slugs — all from the command line.
-- **Extensible** — filters for authority detection (`polyglot_current_authority`) and shipping label translations (`polyglot_shipping_labels`).
+- **Extensible** — `polyglot_*` filters and constants, see [Constants and filters](#constants-and-filters).
 
 ### Works without WooCommerce
 
 All WooCommerce features (stock, reviews, cart, slugs) activate only when WooCommerce is present. On a standard WordPress site, the plugin handles routing, hreflang, admin UI, and translation management with no extra dependencies.
-
----
-
-## Todo
-
-- [ ] Marketing - compare features (table) to 10 Best WordPress Translation Plugins (write compared versions !) - WPML vs Polylang vs TranslatePress vs Loco ...
 
 ---
 
@@ -163,6 +161,30 @@ define('POLYGLOT_LOCALES', [
 ]);
 ```
 
+### Constants and filters
+
+Define constants in `wp-config.php`.
+
+| Constant                    | Effect                                                                                        |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| `POLYGLOT_LOCALES`          | Required. Domain → locale map (see above)                                                     |
+| `POLYGLOT_TRANSLATIONS_DIR` | Flat-file directory: absolute, or relative to uploads (default `uploads/polyglot-flat`)       |
+| `POLYGLOT_BAR`              | `false` disables the language suggestion banner                                               |
+| `POLYGLOT_FOOTER`           | `false` disables the footer language switcher                                                 |
+| `POLYGLOT_FEED`             | `false` disables the Google feed endpoint                                                     |
+| `POLYGLOT_FEED_BRAND`       | Feed brand (default: site name)                                                               |
+| `POLYGLOT_FEED_GPC_DEFAULT` | Default Google product category (per-category map: option `polyglot_feed_gpc`)                |
+| `POLYGLOT_FX_MARKUP`        | Markup on ECB rates: `0.05` for all currencies, or `['DKK' => 0.05, 'PLN' => 0.03]`           |
+| `POLYGLOT_AUTOEXPORT`       | Forces export-on-save on or off (default: on only when `WP_HOME` is `127.0.0.1`/`localhost`)  |
+| `POLYGLOT_WP_BIN`           | `wp` binary used by the export-on-save worker (default `ABSPATH/wp`)                          |
+
+| Area         | Filters |
+| ------------ | ------- |
+| Routing      | `polyglot_current_authority`, `polyglot_post_types`, `polyglot_exportable_statuses` |
+| Translations | `polyglot_shipping_labels`, `polyglot_cookie_translations` |
+| Currency     | `polyglot_fx_target_currencies`, `polyglot_fx_markup`, `polyglot_fx_round` |
+| Feed         | `polyglot_feed_query_args`, `polyglot_feed_exclude_product`, `polyglot_feed_item`, `polyglot_feed_brand`, `polyglot_feed_gpc`, `polyglot_feed_shipping`, `polyglot_feed_min_handling_time`, `polyglot_feed_max_handling_time`, `polyglot_feed_promotion_ids`, `polyglot_feed_cache_ttl` |
+
 ## Data Model
 
 ### Posts / Products
@@ -172,6 +194,7 @@ define('POLYGLOT_LOCALES', [
 | `_locale`           | _(not set)_ | `en_GB`, `es_ES`, etc.  |
 | `_master_id`        | _(not set)_ | Master post ID          |
 | `_translation_mode` | _(not set)_ | `manual` if hand-edited |
+| `_src_hash`         | _(not set)_ | Hash of the master content it was translated from (staleness) |
 
 ### Terms (categories, tags)
 
@@ -207,9 +230,10 @@ define('POLYGLOT_LOCALES', [
 # List configured locales
 wp polyglot locales
 
-# List untranslated content
+# List untranslated content (--stale: also shadows whose master changed since)
 wp polyglot untranslated --type=product
 wp polyglot untranslated --type=product --target=en_GB
+wp polyglot untranslated --type=page --stale
 
 # Get master data (for AI translation)
 wp polyglot translate 100 --target=en_GB
@@ -241,6 +265,21 @@ wp polyglot check_links --rendered             # report-only, no --fix
 wp polyglot export
 wp polyglot import --dry-run
 wp polyglot import
+
+# Apply one edited flat file (STDIN or --file) under the etag lock; JSON result
+wp polyglot write --file=<path>
+
+# Sync flat files edited out-of-band (vim, git pull) since the last push
+wp polyglot push
+wp polyglot push --all
+
+# Health check and translation QA (non-zero exit on failure)
+wp polyglot doctor --quick
+wp polyglot lint --locale=en_GB --format=json
+
+# Refresh ECB exchange rates (also run daily by WP-Cron), render one locale's Google feed
+wp polyglot update_exchange_rates
+wp polyglot feed --target=en_GB
 ```
 
 ## Tests
@@ -272,28 +311,18 @@ composer test:filter HelpersTest
 composer test:filter test_is_master_on_master_domain
 ```
 
-### Coverage
+### WooCommerce suite and static checks
 
-| Test file                | Area                                                          |
-| ------------------------ | ------------------------------------------------------------- |
-| `HelpersTest`            | Authority detection, locale resolution, URL scheme            |
-| `RoutingTest`            | `pre_get_posts` locale filtering, master/shadow query scoping |
-| `HreflangTest`           | `<link rel="alternate">` tag injection                        |
-| `SitemapTest`            | Sitemap locale filtering + `xhtml:link` annotations           |
-| `FeedTest`               | RSS feed locale filtering                                     |
-| `AdminUITest`            | Admin column, locale filter dropdown, metabox                 |
-| `HumanLockTest`          | `_translation_mode = manual` protection                       |
-| `VirtualReviewsTest`     | Review virtualization + rating aggregation                    |
-| `OrderLocaleTest`        | `_order_locale` meta on checkout                              |
-| `RegistrationLocaleTest` | `_registration_locale` user meta                              |
-| `ExportImportTest`       | TSV + HTML flat-file export/import round-trip                 |
-| `SyncLockTest`           | MySQL advisory lock preventing concurrent import/export       |
-| `BlocksBridgeTest`       | Gutenberg block product ID rewriting                          |
-| `CheckLinksTest`         | Link scanning: wrong slugs, trailing slashes, localhost, fix  |
-| `CheckLinksRenderedTest` | Rendered HTML scanning: dedup, sitemaps, hreflang, fragments  |
-| `DraftLinkHandlerTest`   | Draft link resolution + `the_content` span replacement        |
+```bash
+# Product bridge (stock, price, image virtualization, stock reduction) against real WooCommerce.
+# Looks for ../woocommerce/woocommerce.php, or set WC_PLUGIN_PATH to its woocommerce.php.
+composer test:wc
 
-Inventory bridge (stock virtualization, stock reduction) is tested via WP-CLI integration since it requires WooCommerce at runtime.
+composer phpstan   # static analysis (WordPress/WooCommerce stubs)
+composer cs        # coding style (composer cs:fix to apply)
+```
+
+`composer.lock` is resolved for PHP 8.0 (`config.platform.php`), the lowest version of the CI matrix.
 
 ## Release to WordPress.org
 
@@ -305,20 +334,14 @@ Pushing a `vX.Y.Z` tag runs `.github/workflows/deploy.yml` (10up/action-wordpres
 4. Don't also publish a GitHub Release: the workflow fires on `release: published` too, the two runs race on the same SVN tag and one fails. If it happens, cancel one (`gh run cancel <id>`) and keep the tag-push run.
 5. Check `curl -s https://api.wordpress.org/plugins/info/1.0/piedweb-ai-polyglot.json`: its `version` updates within minutes.
 
-A git checkout installed as `wp-content/plugins/wp-ai-polyglot/` must never go through `wp plugin update`: the updater works by slug, installs `piedweb-ai-polyglot/`, deletes the `wp-ai-polyglot/` folder (and its `.git`) and leaves the plugin silently inactive. Use `wp plugin update --all --exclude=wp-ai-polyglot`.
+A git checkout installed as `wp-content/plugins/wp-ai-polyglot/`, or a symlink to one, must never go through `wp plugin update`: the updater works by slug, installs `piedweb-ai-polyglot/`, deletes the `wp-ai-polyglot/` folder (and its `.git`) and leaves the plugin silently inactive. Use `wp plugin update --all --exclude=wp-ai-polyglot`.
 
 ### Manual zip (fallback)
 
-```
-cd /tmp && rm -rf piedweb-ai-polyglot && \
-rsync -a \
-  --exclude='.git' --exclude='.github' --exclude='.wordpress-org' \
-  --exclude='bin' --exclude='node_modules' --exclude='tests' --exclude='vendor' \
-  --exclude='.distignore' --exclude='.gitignore' --exclude='.php-cs-fixer*' \
-  --exclude='.phpunit.result.cache' --exclude='composer.json' --exclude='composer.lock' \
-  --exclude='phpunit.xml*' --exclude='README.md' \
-  /home/robin/localhost/woodrock/wp-content/plugins/wp-ai-polyglot/ /tmp/piedweb-ai-polyglot/ && \
-cd /tmp && zip -r piedweb-ai-polyglot.zip piedweb-ai-polyglot
+```bash
+rm -rf /tmp/piedweb-ai-polyglot && \
+rsync -a --exclude-from=.distignore ./ /tmp/piedweb-ai-polyglot/ && \
+(cd /tmp && zip -r piedweb-ai-polyglot.zip piedweb-ai-polyglot)
 ```
 
 ---

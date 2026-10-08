@@ -197,9 +197,9 @@ class Polyglot_CLI
      *
      * ## USAGE
      *
-     *   wp polyglot doctor            # full check (incl. HTTP feed probes)
-     *   wp polyglot doctor --quick    # offline checks only
-     *   wp polyglot doctor --json     # machine-readable output
+     *   wp polyglot doctor                # full check (incl. HTTP feed probes)
+     *   wp polyglot doctor --quick        # offline checks only
+     *   wp polyglot doctor --format=json  # machine-readable output
      *
      * ## OPTIONS
      *
@@ -448,7 +448,7 @@ class Polyglot_CLI
      *
      *   wp polyglot lint                  # all shadows
      *   wp polyglot lint --locale=de_DE   # one locale
-     *   wp polyglot lint --json
+     *   wp polyglot lint --format=json
      *
      * ## OPTIONS
      *
@@ -992,7 +992,7 @@ class Polyglot_CLI
     }
 
     /**
-     * Export all translations to a directory (TSV + HTML files).
+     * Export all translations to flat files ({type}-{id}/{locale}.html, frontmatter + HTML).
      *
      * ## USAGE
      *
@@ -1225,7 +1225,7 @@ class Polyglot_CLI
 
         // Purge orphan flat folders. A master that was deleted, trashed,
         // emptied, or had its slug changed leaves its old folder behind: the
-        // TSV is rewritten wholesale each run, but the HTML folders are not.
+        // _index.md is rewritten wholesale each run, but the HTML folders are not.
         // Remove any folder for an exported post type that wasn't (re)written
         // above. Scoped to $post_types so a --type=product run never touches
         // page/post folders. Folder existence is master-keyed (locale-
