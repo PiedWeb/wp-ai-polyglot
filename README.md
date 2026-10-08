@@ -221,21 +221,21 @@ wp polyglot translate 100 --target=en_GB --payload='{"translated_title":"..."}'
 wp polyglot translate 100 --target=en_GB --payload='...' --force
 
 # Translate a taxonomy term
-wp polyglot translate-term 5 --taxonomy=product_cat --target=en_GB --name="Shoes"
+wp polyglot translate_term 5 --taxonomy=product_cat --target=en_GB --name="Shoes"
 
 # Translate a review
-wp polyglot translate-comment 42 --target=en_GB --payload='{"translated_content":"..."}'
+wp polyglot translate_comment 42 --target=en_GB --payload='{"translated_content":"..."}'
 
 # Manage WooCommerce slug translations
 wp polyglot translate_slugs --status
 wp polyglot translate_slugs --target=en_GB --payload='{"product_base":"product","category_base":"product-category","tag_base":"product-tag"}'
 
 # Check internal links for mislocalized slugs, trailing slashes, localhost URLs
-wp polyglot check-links                        # scan post_content (all locales)
-wp polyglot check-links --locale=en_GB --fix   # auto-fix one locale
+wp polyglot check_links                        # scan post_content (all locales)
+wp polyglot check_links --locale=en_GB --fix   # auto-fix one locale
 
 # Audit rendered HTML (templates, menus, sitemaps) for trailing slashes
-wp polyglot check-links --rendered             # report-only, no --fix
+wp polyglot check_links --rendered             # report-only, no --fix
 
 # Export/import flat files (mutually exclusive — concurrent runs are blocked)
 wp polyglot export
@@ -295,7 +295,19 @@ composer test:filter test_is_master_on_master_domain
 
 Inventory bridge (stock virtualization, stock reduction) is tested via WP-CLI integration since it requires WooCommerce at runtime.
 
-## Build & submit
+## Release to WordPress.org
+
+Pushing a `vX.Y.Z` tag runs `.github/workflows/deploy.yml` (10up/action-wordpress-plugin-deploy → SVN, slug `piedweb-ai-polyglot`).
+
+1. Take the version from the top `= X.Y.Z =` entry of the `readme.txt` changelog. It is staged there before the release and may be a minor bump, not a patch.
+2. Set it in 3 places, without the `v`: the `Version:` header of `wp-ai-polyglot.php`, the `POLYGLOT_VERSION` define, and `Stable tag:` in `readme.txt` (WordPress.org serves whatever `Stable tag` names, so it must match the tag).
+3. `git tag vX.Y.Z && git push origin vX.Y.Z`.
+4. Don't also publish a GitHub Release: the workflow fires on `release: published` too, the two runs race on the same SVN tag and one fails. If it happens, cancel one (`gh run cancel <id>`) and keep the tag-push run.
+5. Check `curl -s https://api.wordpress.org/plugins/info/1.0/piedweb-ai-polyglot.json`: its `version` updates within minutes.
+
+A git checkout installed as `wp-content/plugins/wp-ai-polyglot/` must never go through `wp plugin update`: the updater works by slug, installs `piedweb-ai-polyglot/`, deletes the `wp-ai-polyglot/` folder (and its `.git`) and leaves the plugin silently inactive. Use `wp plugin update --all --exclude=wp-ai-polyglot`.
+
+### Manual zip (fallback)
 
 ```
 cd /tmp && rm -rf piedweb-ai-polyglot && \
