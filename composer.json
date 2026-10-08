@@ -35,6 +35,9 @@
         "phpstan:baseline": "phpstan analyse --generate-baseline=phpstan-baseline.neon"
     },
     "config": {
-        "allow-plugins": {}
+        "allow-plugins": {},
+        "platform": {
+            "php": "8.0.30"
+        }
     }
 }
