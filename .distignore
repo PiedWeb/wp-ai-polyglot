@@ -24,6 +24,7 @@
 /phpunit.xml.dist
 /phpunit-wc.xml
 /README.md
+/AGENTS.md
 
 # OS / editor
 .DS_Store
