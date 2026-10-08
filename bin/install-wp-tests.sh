@@ -42,6 +42,8 @@ if [ ! -d "$WP_TESTS_DIR/includes" ]; then
     mkdir -p "$WP_TESTS_DIR"
 
     TMPDIR=$(mktemp -d)
+    # Clean up even when curl/tar/cp fails under set -e.
+    trap 'rm -rf "${TMPDIR:-}"' EXIT INT TERM
     curl -sL "https://github.com/WordPress/wordpress-develop/archive/refs/tags/${WP_DEV_VERSION}.tar.gz" -o "$TMPDIR/wp-dev.tar.gz"
     tar -xzf "$TMPDIR/wp-dev.tar.gz" -C "$TMPDIR"
 
