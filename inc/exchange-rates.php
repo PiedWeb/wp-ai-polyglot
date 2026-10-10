@@ -89,7 +89,10 @@ function polyglot_fx_markup(string $currency): float
     $configured = defined('POLYGLOT_FX_MARKUP') ? POLYGLOT_FX_MARKUP : 0.0;
     $value = is_array($configured) ? ($configured[$currency] ?? 0.0) : $configured;
 
-    return (float) apply_filters('polyglot_fx_markup', (float) $value, $currency);
+    $markup = (float) $value;
+    $filtered = apply_filters('polyglot_fx_markup', $markup, $currency);
+
+    return is_numeric($filtered) ? (float) $filtered : $markup;
 }
 
 /**
@@ -123,7 +126,10 @@ function polyglot_convert_price(float $amount, string $currency): float
     $rate = polyglot_get_exchange_rate($currency) * (1 + polyglot_fx_markup($currency));
     $converted = $amount * $rate;
 
-    return (float) apply_filters('polyglot_fx_round', round($converted, 2), $converted, $currency);
+    $rounded = round($converted, 2);
+    $filtered = apply_filters('polyglot_fx_round', $rounded, $converted, $currency);
+
+    return is_numeric($filtered) ? (float) $filtered : $rounded;
 }
 
 /**
@@ -171,17 +177,22 @@ function polyglot_update_exchange_rates()
     $rates = [];
     foreach ($currencies as $currency) {
         $nodes = $xpath->query(sprintf("//ecb:Cube[@currency='%s']/@rate", $currency));
-        if (false === $nodes || 0 === $nodes->length || null === $nodes->item(0)) {
+        $node = false !== $nodes ? $nodes->item(0) : null;
+        if (! $node instanceof DOMAttr) {
             return new WP_Error('polyglot_fx_missing', sprintf('%s rate not found in ECB data', $currency));
         }
 
-        $rates[$currency] = round((float) $nodes->item(0)->nodeValue, 6);
+        $value = $node->value;
+        if (! is_numeric($value) || (float) $value <= 0) {
+            return new WP_Error('polyglot_fx_invalid', sprintf('%s rate is invalid in ECB data', $currency));
+        }
+
+        $rates[$currency] = round((float) $value, 6);
     }
 
     $date_nodes = $xpath->query('//ecb:Cube[@time]/@time');
-    $date = (false !== $date_nodes && $date_nodes->length > 0 && null !== $date_nodes->item(0))
-        ? (string) $date_nodes->item(0)->nodeValue
-        : gmdate('Y-m-d');
+    $date_node = false !== $date_nodes ? $date_nodes->item(0) : null;
+    $date = $date_node instanceof DOMAttr ? $date_node->value : gmdate('Y-m-d');
 
     $data = polyglot_fx_snapshot($rates, $date);
     update_option(POLYGLOT_FX_OPTION, $data, false);

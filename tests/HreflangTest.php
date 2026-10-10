@@ -55,6 +55,40 @@ class HreflangTest extends WP_UnitTestCase
         $this->assertStringContainsString('hreflang="en"', $output);
     }
 
+    public function testReadsValidCachedPathsAndHonoursInvalidation(): void
+    {
+        $this->simulate_singular($this->master_id);
+        $key = 'hreflang|post_'.$this->master_id;
+        wp_cache_set($key, ['master.test' => '/cached/'], 'polyglot');
+        $this->assertSame(['master.test' => '/cached/'], polyglot_get_locale_paths());
+
+        wp_cache_delete($key, 'polyglot');
+        $this->assertArrayHasKey('en.test', polyglot_get_locale_paths());
+    }
+
+    /** @dataProvider invalidCachedPaths */
+    public function testInvalidCachedPathsAreRecomputed($cached): void
+    {
+        $this->simulate_singular($this->master_id);
+        $key = 'hreflang|post_'.$this->master_id;
+        wp_cache_set($key, $cached, 'polyglot');
+
+        $paths = polyglot_get_locale_paths();
+
+        $this->assertArrayHasKey('master.test', $paths);
+        $this->assertArrayHasKey('en.test', $paths);
+        $this->assertSame($paths, wp_cache_get($key, 'polyglot'));
+    }
+
+    public static function invalidCachedPaths(): array
+    {
+        return [
+            'scalar' => ['invalid'],
+            'numeric authority' => [[0 => '/cached/']],
+            'invalid path after a valid entry' => [['master.test' => '/cached/', 'en.test' => null]],
+        ];
+    }
+
     public function testNoHreflangWithoutShadow(): void
     {
         $standalone = self::factory()->post->create([

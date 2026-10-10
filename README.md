@@ -185,6 +185,9 @@ Define constants in `wp-config.php`.
 | Currency     | `polyglot_fx_target_currencies`, `polyglot_fx_markup`, `polyglot_fx_round` |
 | Feed         | `polyglot_feed_query_args`, `polyglot_feed_exclude_product`, `polyglot_feed_item`, `polyglot_feed_brand`, `polyglot_feed_gpc`, `polyglot_feed_shipping`, `polyglot_feed_min_handling_time`, `polyglot_feed_max_handling_time`, `polyglot_feed_promotion_ids`, `polyglot_feed_cache_ttl` |
 
+Failed ECB refreshes preserve the previous rates. Currency filters must return numeric values;
+invalid markup or rounding values fall back to the computed value.
+
 ## Data Model
 
 ### Posts / Products

@@ -1885,12 +1885,6 @@ parameters:
 			path: inc/exchange-rates.php
 
 		-
-			message: '#^Cannot cast mixed to float\.$#'
-			identifier: cast.double
-			count: 2
-			path: inc/exchange-rates.php
-
-		-
 			message: '#^Function polyglot_fx_base_currency\(\) should return string but returns bool\|string\.$#'
 			identifier: return.type
 			count: 1
@@ -2719,12 +2713,6 @@ parameters:
 			path: inc/seo.php
 
 		-
-			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 6
-			path: inc/seo.php
-
-		-
 			message: '#^Cannot access property \$ID on mixed\.$#'
 			identifier: property.nonObject
 			count: 4
@@ -2818,12 +2806,6 @@ parameters:
 			message: '#^Function polyglot_get_locale_paths\(\) should return array\<string, string\> but returns array\<string, string\|false\|null\>\.$#'
 			identifier: return.type
 			count: 1
-			path: inc/seo.php
-
-		-
-			message: '#^Function polyglot_get_locale_paths\(\) should return array\<string, string\> but returns mixed\.$#'
-			identifier: return.type
-			count: 2
 			path: inc/seo.php
 
 		-

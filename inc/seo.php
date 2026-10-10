@@ -15,9 +15,6 @@ if (! defined('ABSPATH')) {
  */
 function polyglot_get_locale_paths(): array
 {
-    // Build a context key for memoization
-    static $cache = [];
-
     if (is_front_page()) {
         $context = 'front';
     } elseif (is_singular()) {
@@ -28,14 +25,19 @@ function polyglot_get_locale_paths(): array
         $context = 'none';
     }
 
-    if (isset($cache[$context])) {
-        return $cache[$context];
-    }
-
     if ('none' !== $context) {
         $wp_cached = wp_cache_get("hreflang|{$context}", 'polyglot');
-        if (false !== $wp_cached) {
-            return $cache[$context] = $wp_cached;
+        if (is_array($wp_cached)) {
+            $cached_paths = [];
+            foreach ($wp_cached as $authority => $path) {
+                if (! is_string($authority) || ! is_string($path)) {
+                    break;
+                }
+                $cached_paths[$authority] = $path;
+            }
+            if (count($cached_paths) === count($wp_cached)) {
+                return $cached_paths;
+            }
         }
     }
 
@@ -49,7 +51,7 @@ function polyglot_get_locale_paths(): array
 
         wp_cache_set("hreflang|{$context}", $paths, 'polyglot', 3600);
 
-        return $cache[$context] = $paths;
+        return $paths;
     }
 
     // Pre-build locale-to-authority map
@@ -87,7 +89,7 @@ function polyglot_get_locale_paths(): array
 
         wp_cache_set("hreflang|{$context}", $paths, 'polyglot', 3600);
 
-        return $cache[$context] = $paths;
+        return $paths;
     }
 
     // --- CATEGORIES / TAGS ---
@@ -127,12 +129,12 @@ function polyglot_get_locale_paths(): array
 
         wp_cache_set("hreflang|{$context}", $paths, 'polyglot', 3600);
 
-        return $cache[$context] = $paths;
+        return $paths;
     }
 
     wp_cache_set("hreflang|{$context}", [], 'polyglot', 3600);
 
-    return $cache[$context] = [];
+    return [];
 }
 
 add_action('wp_head', 'polyglot_inject_hreflang');
